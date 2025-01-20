@@ -1,0 +1,134 @@
+[0.006s] Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_library -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library
+[0.039s] -- The C compiler identification is GNU 11.4.0
+[0.072s] -- The CXX compiler identification is GNU 11.4.0
+[0.076s] -- Detecting C compiler ABI info
+[0.117s] -- Detecting C compiler ABI info - done
+[0.121s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.121s] -- Detecting C compile features
+[0.121s] -- Detecting C compile features - done
+[0.123s] -- Detecting CXX compiler ABI info
+[0.171s] -- Detecting CXX compiler ABI info - done
+[0.176s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.176s] -- Detecting CXX compile features
+[0.176s] -- Detecting CXX compile features - done
+[0.178s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[0.275s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.782s] -- Configuring done
+[0.784s] -- Generating done
+[0.786s] -- Build files have been written to: /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library
+[0.789s] Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_library -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library
+[0.790s] Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library -- -j12 -l12
+[0.821s] Built target ament_cmake_python_copy_rosbridge_library
+[0.967s] running egg_info
+[0.967s] creating rosbridge_library.egg-info
+[0.967s] writing rosbridge_library.egg-info/PKG-INFO
+[0.967s] writing dependency_links to rosbridge_library.egg-info/dependency_links.txt
+[0.967s] writing top-level names to rosbridge_library.egg-info/top_level.txt
+[0.968s] writing manifest file 'rosbridge_library.egg-info/SOURCES.txt'
+[0.969s] reading manifest file 'rosbridge_library.egg-info/SOURCES.txt'
+[0.970s] writing manifest file 'rosbridge_library.egg-info/SOURCES.txt'
+[0.985s] Built target ament_cmake_python_build_rosbridge_library_egg
+[0.992s] Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library -- -j12 -l12
+[0.993s] Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library
+[0.997s] -- Install configuration: ""
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/environment/pythonpath.sh
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/environment/pythonpath.dsv
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library-2.0.0-py3.10.egg-info
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library-2.0.0-py3.10.egg-info/dependency_links.txt
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library-2.0.0-py3.10.egg-info/PKG-INFO
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library-2.0.0-py3.10.egg-info/SOURCES.txt
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library-2.0.0-py3.10.egg-info/top_level.txt
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/subscribers.py
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/ros_loader.py
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/outgoing_message.py
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/__init__.py
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/publishers.py
+[0.997s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/cbor_conversion.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/pngcompression.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/services.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/subscription_modifiers.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/message_conversion.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/topics.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/exceptions.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/actions.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/__init__.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/rosbridge_protocol.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/unadvertise_service.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/unadvertise_action.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/subscribe.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/fragmentation.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/__init__.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/action_result.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/service_response.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/advertise.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/send_action_goal.py
+[0.998s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/publish.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/advertise_service.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/action_feedback.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/call_service.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/advertise_action.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/defragmentation.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/protocol.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capability.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util/__init__.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util/cbor.py
+[0.999s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util/ros.py
+[1.034s] Listing '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/__init__.py'...
+[1.034s] Listing '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/__init__.py'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/action_feedback.py'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/action_result.py'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/advertise.py'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/advertise_action.py'...
+[1.034s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/advertise_service.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/call_service.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/defragmentation.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/fragmentation.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/publish.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/send_action_goal.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/service_response.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/subscribe.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/unadvertise_action.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capabilities/unadvertise_service.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/capability.py'...
+[1.035s] Listing '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/__init__.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/actions.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/cbor_conversion.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/exceptions.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/message_conversion.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/outgoing_message.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/pngcompression.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/publishers.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/ros_loader.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/services.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/subscribers.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/subscription_modifiers.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/internal/topics.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/protocol.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/rosbridge_protocol.py'...
+[1.035s] Listing '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util/__init__.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util/cbor.py'...
+[1.035s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/local/lib/python3.10/dist-packages/rosbridge_library/util/ros.py'...
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/ament_index/resource_index/package_run_dependencies/rosbridge_library
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/ament_index/resource_index/parent_prefix_path/rosbridge_library
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/environment/ament_prefix_path.sh
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/environment/ament_prefix_path.dsv
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/environment/path.sh
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/environment/path.dsv
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/local_setup.bash
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/local_setup.sh
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/local_setup.zsh
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/local_setup.dsv
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/package.dsv
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/ament_index/resource_index/packages/rosbridge_library
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/cmake/rosbridge_libraryConfig.cmake
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/cmake/rosbridge_libraryConfig-version.cmake
+[1.037s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_library/share/rosbridge_library/package.xml
+[1.039s] Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_library

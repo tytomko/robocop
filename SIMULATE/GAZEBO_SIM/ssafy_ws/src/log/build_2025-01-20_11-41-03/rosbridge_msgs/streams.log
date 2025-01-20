@@ -1,0 +1,255 @@
+[0.019s] Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/teleop_twist_keyboard:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_msgs -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs
+[0.069s] -- The C compiler identification is GNU 11.4.0
+[0.127s] -- The CXX compiler identification is GNU 11.4.0
+[0.136s] -- Detecting C compiler ABI info
+[0.202s] -- Detecting C compiler ABI info - done
+[0.212s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.212s] -- Detecting C compile features
+[0.213s] -- Detecting C compile features - done
+[0.215s] -- Detecting CXX compiler ABI info
+[0.299s] -- Detecting CXX compiler ABI info - done
+[0.306s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.307s] -- Detecting CXX compile features
+[0.307s] -- Detecting CXX compile features - done
+[0.310s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[0.482s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.581s] -- Found builtin_interfaces: 1.2.1 (/opt/ros/humble/share/builtin_interfaces/cmake)
+[0.617s] -- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.623s] -- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.632s] -- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.644s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.664s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.684s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[1.253s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.367s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.399s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[1.402s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[1.428s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[1.428s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[1.428s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[1.428s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[1.447s] -- Found PythonExtra: .so  
+[1.490s] -- Configuring done
+[1.519s] -- Generating done
+[1.535s] -- Build files have been written to: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs
+[1.544s] Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/teleop_twist_keyboard:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_msgs -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs
+[1.546s] Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/teleop_twist_keyboard:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs -- -j12 -l12
+[1.579s] [  2%] [34m[1mGenerating C code for ROS interfaces[0m
+[1.587s] [  5%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[1.597s] [  5%] Built target ament_cmake_python_copy_rosbridge_msgs
+[1.851s] running egg_info
+[1.852s] creating rosbridge_msgs.egg-info
+[1.852s] writing rosbridge_msgs.egg-info/PKG-INFO
+[1.852s] writing dependency_links to rosbridge_msgs.egg-info/dependency_links.txt
+[1.852s] writing top-level names to rosbridge_msgs.egg-info/top_level.txt
+[1.853s] writing manifest file 'rosbridge_msgs.egg-info/SOURCES.txt'
+[1.855s] reading manifest file 'rosbridge_msgs.egg-info/SOURCES.txt'
+[1.856s] writing manifest file 'rosbridge_msgs.egg-info/SOURCES.txt'
+[1.891s] [  5%] Built target ament_cmake_python_build_rosbridge_msgs_egg
+[1.902s] [ 10%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_generator_c.dir/rosidl_generator_c/rosbridge_msgs/msg/detail/connected_clients__functions.c.o[0m
+[1.902s] [ 10%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_generator_c.dir/rosidl_generator_c/rosbridge_msgs/msg/detail/connected_client__functions.c.o[0m
+[1.940s] [ 10%] Built target rosbridge_msgs__cpp
+[1.950s] [ 12%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+[1.951s] [ 15%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[1.952s] [ 17%] [34m[1mGenerating C++ type support dispatch for ROS interfaces[0m
+[1.971s] [ 20%] [32m[1mLinking C shared library librosbridge_msgs__rosidl_generator_c.so[0m
+[2.022s] [ 20%] Built target rosbridge_msgs__rosidl_generator_c
+[2.036s] [ 23%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[2.036s] [ 25%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[2.037s] [ 28%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[2.389s] [ 30%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/rosbridge_msgs/msg/connected_client__type_support.cpp.o[0m
+[2.389s] [ 33%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_cpp.dir/rosidl_typesupport_cpp/rosbridge_msgs/msg/connected_clients__type_support.cpp.o[0m
+[2.437s] [ 35%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/rosbridge_msgs/msg/detail/dds_fastrtps/connected_clients__type_support.cpp.o[0m
+[2.437s] [ 38%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_fastrtps_cpp.dir/rosidl_typesupport_fastrtps_cpp/rosbridge_msgs/msg/detail/dds_fastrtps/connected_client__type_support.cpp.o[0m
+[2.448s] [ 41%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/rosbridge_msgs/msg/connected_clients__type_support.cpp.o[0m
+[2.450s] [ 43%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/rosbridge_msgs/msg/connected_client__type_support.cpp.o[0m
+[2.505s] [ 46%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/rosbridge_msgs/msg/detail/connected_client__type_support.cpp.o[0m
+[2.507s] [ 48%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/rosbridge_msgs/msg/detail/connected_clients__type_support.cpp.o[0m
+[2.526s] [ 51%] [32m[1mLinking CXX shared library librosbridge_msgs__rosidl_typesupport_c.so[0m
+[2.541s] [ 53%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/rosbridge_msgs/msg/detail/connected_client__type_support_c.cpp.o[0m
+[2.554s] [ 56%] [32mBuilding CXX object CMakeFiles/rosbridge_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/rosbridge_msgs/msg/detail/connected_clients__type_support_c.cpp.o[0m
+[2.632s] [ 56%] Built target rosbridge_msgs__rosidl_typesupport_c
+[2.684s] [ 58%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/rosbridge_msgs/msg/detail/connected_clients__type_support.c.o[0m
+[2.684s] [ 61%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/rosbridge_msgs/msg/detail/connected_client__type_support.c.o[0m
+[2.791s] [ 64%] [32m[1mLinking C shared library librosbridge_msgs__rosidl_typesupport_introspection_c.so[0m
+[2.920s] [ 64%] Built target rosbridge_msgs__rosidl_typesupport_introspection_c
+[2.938s] [ 66%] [32m[1mLinking CXX shared library librosbridge_msgs__rosidl_typesupport_cpp.so[0m
+[3.071s] [ 66%] Built target rosbridge_msgs__rosidl_typesupport_cpp
+[3.152s] [ 69%] [32m[1mLinking CXX shared library librosbridge_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[3.199s] [ 71%] [32m[1mLinking CXX shared library librosbridge_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[3.256s] [ 71%] Built target rosbridge_msgs__rosidl_typesupport_fastrtps_c
+[3.261s] [ 74%] [32m[1mLinking CXX shared library librosbridge_msgs__rosidl_typesupport_fastrtps_cpp.so[0m
+[3.301s] [ 74%] Built target rosbridge_msgs__rosidl_typesupport_introspection_cpp
+[3.332s] [ 74%] Built target rosbridge_msgs__rosidl_typesupport_fastrtps_cpp
+[3.350s] [ 74%] Built target rosbridge_msgs
+[3.370s] [ 76%] [34m[1mGenerating Python code for ROS interfaces[0m
+[3.705s] [ 76%] Built target rosbridge_msgs__py
+[3.723s] [ 79%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_generator_py.dir/rosidl_generator_py/rosbridge_msgs/msg/_connected_client_s.c.o[0m
+[3.726s] [ 82%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_generator_py.dir/rosidl_generator_py/rosbridge_msgs/msg/_connected_clients_s.c.o[0m
+[3.884s] [ 84%] [32m[1mLinking C shared library rosidl_generator_py/rosbridge_msgs/librosbridge_msgs__rosidl_generator_py.so[0m
+[3.939s] [ 84%] Built target rosbridge_msgs__rosidl_generator_py
+[3.967s] [ 89%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_typesupport_introspection_c__pyext.dir/rosidl_generator_py/rosbridge_msgs/_rosbridge_msgs_s.ep.rosidl_typesupport_introspection_c.c.o[0m
+[3.968s] [ 89%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_typesupport_fastrtps_c__pyext.dir/rosidl_generator_py/rosbridge_msgs/_rosbridge_msgs_s.ep.rosidl_typesupport_fastrtps_c.c.o[0m
+[3.968s] [ 92%] [32mBuilding C object CMakeFiles/rosbridge_msgs__rosidl_typesupport_c__pyext.dir/rosidl_generator_py/rosbridge_msgs/_rosbridge_msgs_s.ep.rosidl_typesupport_c.c.o[0m
+[4.093s] [ 94%] [32m[1mLinking C shared library rosidl_generator_py/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so[0m
+[4.138s] [ 97%] [32m[1mLinking C shared library rosidl_generator_py/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so[0m
+[4.138s] [100%] [32m[1mLinking C shared library rosidl_generator_py/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so[0m
+[4.166s] [100%] Built target rosbridge_msgs__rosidl_typesupport_c__pyext
+[4.189s] [100%] Built target rosbridge_msgs__rosidl_typesupport_fastrtps_c__pyext
+[4.189s] [100%] Built target rosbridge_msgs__rosidl_typesupport_introspection_c__pyext
+[4.207s] Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/teleop_twist_keyboard:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs -- -j12 -l12
+[4.210s] Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/teleop_twist_keyboard:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs
+[4.220s] -- Install configuration: ""
+[4.220s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/ament_index/resource_index/rosidl_interfaces/rosbridge_msgs
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/connected_client.h
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/rosidl_generator_c__visibility_control.h
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__functions.h
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__functions.c
+[4.221s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__struct.h
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__functions.h
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__type_support.h
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__type_support.h
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__functions.c
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__struct.h
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/connected_clients.h
+[4.222s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/library_path.sh
+[4.223s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/library_path.dsv
+[4.223s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_generator_c.so
+[4.223s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_generator_c.so" to ""
+[4.223s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs
+[4.223s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg
+[4.224s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail
+[4.224s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__rosidl_typesupport_fastrtps_c.h
+[4.224s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__rosidl_typesupport_fastrtps_c.h
+[4.224s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/rosidl_typesupport_fastrtps_c__visibility_control.h
+[4.224s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_fastrtps_c.so
+[4.224s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_fastrtps_c.so" to ""
+[4.225s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs
+[4.225s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg
+[4.225s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail
+[4.225s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__type_support.hpp
+[4.225s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__struct.hpp
+[4.225s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__builder.hpp
+[4.225s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__struct.hpp
+[4.225s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__type_support.hpp
+[4.225s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__traits.hpp
+[4.226s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__traits.hpp
+[4.226s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__builder.hpp
+[4.226s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/rosidl_generator_cpp__visibility_control.hpp
+[4.226s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/connected_client.hpp
+[4.226s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/connected_clients.hpp
+[4.226s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs
+[4.226s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg
+[4.226s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail
+[4.226s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__rosidl_typesupport_fastrtps_cpp.hpp
+[4.227s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/dds_fastrtps
+[4.227s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__rosidl_typesupport_fastrtps_cpp.hpp
+[4.227s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h
+[4.227s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_fastrtps_cpp.so
+[4.227s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_fastrtps_cpp.so" to ""
+[4.227s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs
+[4.228s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg
+[4.228s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail
+[4.228s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__rosidl_typesupport_introspection_c.h
+[4.228s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__rosidl_typesupport_introspection_c.h
+[4.228s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__type_support.c
+[4.228s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__type_support.c
+[4.228s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/rosidl_typesupport_introspection_c__visibility_control.h
+[4.228s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_introspection_c.so
+[4.229s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_introspection_c.so" to ""
+[4.229s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_c.so
+[4.229s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_c.so" to ""
+[4.229s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs
+[4.230s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg
+[4.230s] -- Up-to-date: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail
+[4.230s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__type_support.cpp
+[4.230s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_clients__rosidl_typesupport_introspection_cpp.hpp
+[4.230s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__rosidl_typesupport_introspection_cpp.hpp
+[4.230s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/include/rosbridge_msgs/rosbridge_msgs/msg/detail/connected_client__type_support.cpp
+[4.230s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_introspection_cpp.so
+[4.231s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_introspection_cpp.so" to ""
+[4.231s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_cpp.so
+[4.231s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_typesupport_cpp.so" to ""
+[4.231s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/pythonpath.sh
+[4.231s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/pythonpath.dsv
+[4.231s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs-2.0.0-py3.10.egg-info
+[4.232s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs-2.0.0-py3.10.egg-info/dependency_links.txt
+[4.232s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs-2.0.0-py3.10.egg-info/PKG-INFO
+[4.232s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs-2.0.0-py3.10.egg-info/SOURCES.txt
+[4.232s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs-2.0.0-py3.10.egg-info/top_level.txt
+[4.232s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs
+[4.232s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/_connected_client_s.c
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/_connected_client.py
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/_connected_clients_s.c
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/__init__.py
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/_connected_clients.py
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/__init__.py
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/_rosbridge_msgs_s.ep.rosidl_typesupport_c.c
+[4.233s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/_rosbridge_msgs_s.ep.rosidl_typesupport_fastrtps_c.c
+[4.234s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/librosbridge_msgs__rosidl_generator_py.so
+[4.234s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[4.234s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/_rosbridge_msgs_s.ep.rosidl_typesupport_introspection_c.c
+[4.234s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[4.288s] Listing '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs'...
+[4.288s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/__init__.py'...
+[4.288s] Listing '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg'...
+[4.288s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/__init__.py'...
+[4.288s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/_connected_client.py'...
+[4.288s] Compiling '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/msg/_connected_clients.py'...
+[4.294s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so
+[4.295s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_fastrtps_c.cpython-310-x86_64-linux-gnu.so" to ""
+[4.295s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so
+[4.295s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_introspection_c.cpython-310-x86_64-linux-gnu.so" to ""
+[4.296s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so
+[4.297s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/local/lib/python3.10/dist-packages/rosbridge_msgs/rosbridge_msgs_s__rosidl_typesupport_c.cpython-310-x86_64-linux-gnu.so" to ""
+[4.297s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_generator_py.so
+[4.297s] -- Set runtime path of "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/lib/librosbridge_msgs__rosidl_generator_py.so" to ""
+[4.298s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/msg/ConnectedClient.idl
+[4.298s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/msg/ConnectedClients.idl
+[4.299s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/msg/ConnectedClient.msg
+[4.299s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/msg/ConnectedClients.msg
+[4.300s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/ament_index/resource_index/package_run_dependencies/rosbridge_msgs
+[4.300s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/ament_index/resource_index/parent_prefix_path/rosbridge_msgs
+[4.300s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/ament_prefix_path.sh
+[4.301s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/ament_prefix_path.dsv
+[4.301s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/path.sh
+[4.301s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/environment/path.dsv
+[4.302s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/local_setup.bash
+[4.302s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/local_setup.sh
+[4.302s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/local_setup.zsh
+[4.303s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/local_setup.dsv
+[4.303s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/package.dsv
+[4.303s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/ament_index/resource_index/packages/rosbridge_msgs
+[4.304s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_generator_cExport.cmake
+[4.304s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_generator_cExport-noconfig.cmake
+[4.305s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_typesupport_fastrtps_cExport.cmake
+[4.305s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_typesupport_fastrtps_cExport-noconfig.cmake
+[4.305s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_generator_cppExport.cmake
+[4.306s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_typesupport_fastrtps_cppExport.cmake
+[4.306s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_typesupport_fastrtps_cppExport-noconfig.cmake
+[4.307s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_introspection_cExport.cmake
+[4.307s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_introspection_cExport-noconfig.cmake
+[4.307s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_cExport.cmake
+[4.308s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_cExport-noconfig.cmake
+[4.308s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_introspection_cppExport.cmake
+[4.308s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_introspection_cppExport-noconfig.cmake
+[4.309s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_cppExport.cmake
+[4.309s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgs__rosidl_typesupport_cppExport-noconfig.cmake
+[4.310s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_generator_pyExport.cmake
+[4.310s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/export_rosbridge_msgs__rosidl_generator_pyExport-noconfig.cmake
+[4.310s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosidl_cmake-extras.cmake
+[4.311s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/ament_cmake_export_dependencies-extras.cmake
+[4.311s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/ament_cmake_export_include_directories-extras.cmake
+[4.311s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/ament_cmake_export_libraries-extras.cmake
+[4.312s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/ament_cmake_export_targets-extras.cmake
+[4.312s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosidl_cmake_export_typesupport_targets-extras.cmake
+[4.313s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosidl_cmake_export_typesupport_libraries-extras.cmake
+[4.313s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgsConfig.cmake
+[4.313s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/cmake/rosbridge_msgsConfig-version.cmake
+[4.314s] -- Installing: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/rosbridge_msgs/share/rosbridge_msgs/package.xml
+[4.317s] Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/install/teleop_twist_keyboard:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/build/rosbridge_msgs
