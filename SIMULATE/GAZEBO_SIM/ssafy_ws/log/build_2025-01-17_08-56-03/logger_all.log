@@ -1,0 +1,566 @@
+[0.189s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.190s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=12, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x7ed3e8446d40>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x7ed3e853fcd0>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x7ed3e853fcd0>>, mixin_verb=('build',))
+[0.357s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.357s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.357s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.357s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.357s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.357s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.357s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/home/ubuntu/GAZEBO_SIM/ssafy_ws'
+[0.357s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.357s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.357s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.357s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.357s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.357s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.358s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.358s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.358s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.365s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extensions ['ignore', 'ignore_ament_install']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extension 'ignore'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extension 'ignore_ament_install'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extensions ['colcon_pkg']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extension 'colcon_pkg'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extensions ['colcon_meta']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extension 'colcon_meta'
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extensions ['ros']
+[0.366s] Level 1:colcon.colcon_core.package_identification:_identify(src/teleop_twist_keyboard) by extension 'ros'
+[0.368s] DEBUG:colcon.colcon_core.package_identification:Package 'src/teleop_twist_keyboard' with type 'ros.ament_python' and name 'teleop_twist_keyboard'
+[0.368s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extensions ['ignore', 'ignore_ament_install']
+[0.368s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extension 'ignore'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extension 'ignore_ament_install'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extensions ['colcon_pkg']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extension 'colcon_pkg'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extensions ['colcon_meta']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extension 'colcon_meta'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extensions ['ros']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_description) by extension 'ros'
+[0.369s] DEBUG:colcon.colcon_core.package_identification:Package 'src/turtlebot3_description' with type 'ros.ament_cmake' and name 'turtlebot3_description'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extensions ['ignore', 'ignore_ament_install']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'ignore'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'ignore_ament_install'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extensions ['colcon_pkg']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'colcon_pkg'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extensions ['colcon_meta']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'colcon_meta'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extensions ['ros']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'ros'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extensions ['cmake', 'python']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'cmake'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'python'
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extensions ['python_setup_py']
+[0.369s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations) by extension 'python_setup_py'
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extensions ['ignore', 'ignore_ament_install']
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extension 'ignore'
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extension 'ignore_ament_install'
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extensions ['colcon_pkg']
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extension 'colcon_pkg'
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extensions ['colcon_meta']
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extension 'colcon_meta'
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extensions ['ros']
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_gazebo) by extension 'ros'
+[0.370s] DEBUG:colcon.colcon_core.package_identification:Package 'src/turtlebot3_simulations/turtlebot3_gazebo' with type 'ros.ament_cmake' and name 'turtlebot3_gazebo'
+[0.370s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extensions ['ignore', 'ignore_ament_install']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extension 'ignore'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extension 'ignore_ament_install'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extensions ['colcon_pkg']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extension 'colcon_pkg'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extensions ['colcon_meta']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extension 'colcon_meta'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extensions ['ros']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/turtlebot3_simulations/turtlebot3_simulations) by extension 'ros'
+[0.371s] DEBUG:colcon.colcon_core.package_identification:Package 'src/turtlebot3_simulations/turtlebot3_simulations' with type 'ros.ament_cmake' and name 'turtlebot3_simulations'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extensions ['ignore', 'ignore_ament_install']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'ignore'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'ignore_ament_install'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extensions ['colcon_pkg']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'colcon_pkg'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extensions ['colcon_meta']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'colcon_meta'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extensions ['ros']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'ros'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extensions ['cmake', 'python']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'cmake'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'python'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extensions ['python_setup_py']
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator) by extension 'python_setup_py'
+[0.371s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extensions ['ignore', 'ignore_ament_install']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'ignore'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'ignore_ament_install'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extensions ['colcon_pkg']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'colcon_pkg'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extensions ['colcon_meta']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'colcon_meta'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extensions ['ros']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'ros'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extensions ['cmake', 'python']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'cmake'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'python'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extensions ['python_setup_py']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/img) by extension 'python_setup_py'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extensions ['ignore', 'ignore_ament_install']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extension 'ignore'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extension 'ignore_ament_install'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extensions ['colcon_pkg']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extension 'colcon_pkg'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extensions ['colcon_meta']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extension 'colcon_meta'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extensions ['ros']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_description) by extension 'ros'
+[0.372s] DEBUG:colcon.colcon_core.package_identification:Package 'src/velodyne_simulator/velodyne_description' with type 'ros.ament_cmake' and name 'velodyne_description'
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extensions ['ignore', 'ignore_ament_install']
+[0.372s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extension 'ignore'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extension 'ignore_ament_install'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extensions ['colcon_pkg']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extension 'colcon_pkg'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extensions ['colcon_meta']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extension 'colcon_meta'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extensions ['ros']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_gazebo_plugins) by extension 'ros'
+[0.373s] DEBUG:colcon.colcon_core.package_identification:Package 'src/velodyne_simulator/velodyne_gazebo_plugins' with type 'ros.ament_cmake' and name 'velodyne_gazebo_plugins'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extensions ['ignore', 'ignore_ament_install']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extension 'ignore'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extension 'ignore_ament_install'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extensions ['colcon_pkg']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extension 'colcon_pkg'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extensions ['colcon_meta']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extension 'colcon_meta'
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extensions ['ros']
+[0.373s] Level 1:colcon.colcon_core.package_identification:_identify(src/velodyne_simulator/velodyne_simulator) by extension 'ros'
+[0.374s] DEBUG:colcon.colcon_core.package_identification:Package 'src/velodyne_simulator/velodyne_simulator' with type 'ros.ament_cmake' and name 'velodyne_simulator'
+[0.374s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.374s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.374s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.374s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.374s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.400s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.400s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.403s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 415 installed packages in /opt/ros/humble
+[0.404s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.433s] WARNING:colcon.colcon_core.package_selection:Some selected packages are already built in one or more underlay workspaces:
+	'teleop_twist_keyboard' is in: /opt/ros/humble
+	'turtlebot3_description' is in: /opt/ros/humble
+If a package in a merged underlay workspace is overridden and it installs headers, then all packages in the overlay must sort their include directories by workspace order. Failure to do so may result in build failures or undefined behavior at run time.
+If the overridden package is used by another package in any underlay, then the overriding package in the overlay must be API and ABI compatible or undefined behavior at run time may occur.
+
+If you understand the risks and want to override a package anyways, add the following to the command line:
+	--allow-overriding teleop_twist_keyboard turtlebot3_description
+
+This may be promoted to an error in a future release of colcon-override-check.
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'cmake_args' from command line to 'None'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'cmake_target' from command line to 'None'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'cmake_clean_cache' from command line to 'False'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'cmake_clean_first' from command line to 'False'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'cmake_force_configure' from command line to 'False'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'ament_cmake_args' from command line to 'None'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'catkin_cmake_args' from command line to 'None'
+[0.433s] Level 5:colcon.colcon_core.verb:set package 'teleop_twist_keyboard' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.434s] DEBUG:colcon.colcon_core.verb:Building package 'teleop_twist_keyboard' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/teleop_twist_keyboard', 'symlink_install': False, 'test_result_base': None}
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'cmake_target' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.434s] DEBUG:colcon.colcon_core.verb:Building package 'turtlebot3_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_description', 'symlink_install': False, 'test_result_base': None}
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'cmake_target' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.434s] DEBUG:colcon.colcon_core.verb:Building package 'velodyne_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_description', 'symlink_install': False, 'test_result_base': None}
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'cmake_args' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'cmake_target' from command line to 'None'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'cmake_clean_cache' from command line to 'False'
+[0.434s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'cmake_clean_first' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'cmake_force_configure' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'ament_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'catkin_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_gazebo_plugins' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.435s] DEBUG:colcon.colcon_core.verb:Building package 'velodyne_gazebo_plugins' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_gazebo_plugins', 'symlink_install': False, 'test_result_base': None}
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'cmake_target' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'cmake_clean_cache' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'cmake_clean_first' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'cmake_force_configure' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'ament_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'catkin_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_gazebo' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.435s] DEBUG:colcon.colcon_core.verb:Building package 'turtlebot3_gazebo' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo', 'symlink_install': False, 'test_result_base': None}
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'cmake_target' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'cmake_clean_cache' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'cmake_clean_first' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'cmake_force_configure' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'ament_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'catkin_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'velodyne_simulator' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.435s] DEBUG:colcon.colcon_core.verb:Building package 'velodyne_simulator' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_simulator', 'symlink_install': False, 'test_result_base': None}
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'cmake_target' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'cmake_clean_cache' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'cmake_clean_first' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'cmake_force_configure' from command line to 'False'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'ament_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'catkin_cmake_args' from command line to 'None'
+[0.435s] Level 5:colcon.colcon_core.verb:set package 'turtlebot3_simulations' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.435s] DEBUG:colcon.colcon_core.verb:Building package 'turtlebot3_simulations' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations', 'merge_install': False, 'path': '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_simulations', 'symlink_install': False, 'test_result_base': None}
+[0.436s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.436s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.436s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_description' with build type 'ament_cmake'
+[0.436s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_description'
+[0.440s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.440s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.440s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.443s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_description' with build type 'ament_cmake'
+[0.443s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_description'
+[0.443s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.443s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.445s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_gazebo_plugins' with build type 'ament_cmake'
+[0.445s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_gazebo_plugins'
+[0.445s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.445s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.447s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/teleop_twist_keyboard' with build type 'ament_python'
+[0.447s] Level 1:colcon.colcon_core.shell:create_environment_hook('teleop_twist_keyboard', 'ament_prefix_path')
+[0.447s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/hook/ament_prefix_path.ps1'
+[0.448s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/hook/ament_prefix_path.dsv'
+[0.448s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/hook/ament_prefix_path.sh'
+[0.449s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.449s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.453s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description -- -j12 -l12
+[0.456s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description -- -j12 -l12
+[0.458s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins -- -j12 -l12
+[0.650s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/teleop_twist_keyboard'
+[0.650s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.650s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.683s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description -- -j12 -l12
+[0.690s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description
+[0.697s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(velodyne_description)
+[0.698s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description
+[0.704s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description' for CMake module files
+[0.704s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description' for CMake config files
+[0.704s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_description', 'cmake_prefix_path')
+[0.705s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/hook/cmake_prefix_path.ps1'
+[0.705s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/hook/cmake_prefix_path.dsv'
+[0.705s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/hook/cmake_prefix_path.sh'
+[0.706s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/bin'
+[0.706s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/lib/pkgconfig/velodyne_description.pc'
+[0.706s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/lib/python3.10/site-packages'
+[0.706s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/bin'
+[0.706s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.ps1'
+[0.708s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.dsv'
+[0.709s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.sh'
+[0.709s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.bash'
+[0.710s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.zsh'
+[0.711s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/colcon-core/packages/velodyne_description)
+[0.712s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(velodyne_description)
+[0.712s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description' for CMake module files
+[0.712s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description' for CMake config files
+[0.712s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_description', 'cmake_prefix_path')
+[0.712s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/hook/cmake_prefix_path.ps1'
+[0.713s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/hook/cmake_prefix_path.dsv'
+[0.713s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/hook/cmake_prefix_path.sh'
+[0.713s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/bin'
+[0.713s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/lib/pkgconfig/velodyne_description.pc'
+[0.713s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/lib/python3.10/site-packages'
+[0.714s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/bin'
+[0.714s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.ps1'
+[0.714s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.dsv'
+[0.715s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.sh'
+[0.715s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.bash'
+[0.715s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/velodyne_description/package.zsh'
+[0.715s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description/share/colcon-core/packages/velodyne_description)
+[0.721s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description -- -j12 -l12
+[0.722s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description
+[0.730s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(turtlebot3_description)
+[0.730s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description' for CMake module files
+[0.730s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description
+[0.731s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description' for CMake config files
+[0.731s] Level 1:colcon.colcon_core.shell:create_environment_hook('turtlebot3_description', 'cmake_prefix_path')
+[0.731s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/hook/cmake_prefix_path.ps1'
+[0.731s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/hook/cmake_prefix_path.dsv'
+[0.732s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/hook/cmake_prefix_path.sh'
+[0.732s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/bin'
+[0.732s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/lib/pkgconfig/turtlebot3_description.pc'
+[0.732s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/lib/python3.10/site-packages'
+[0.732s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/bin'
+[0.733s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.ps1'
+[0.733s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.dsv'
+[0.733s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.sh'
+[0.734s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.bash'
+[0.734s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.zsh'
+[0.734s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/colcon-core/packages/turtlebot3_description)
+[0.734s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(turtlebot3_description)
+[0.734s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description' for CMake module files
+[0.735s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description' for CMake config files
+[0.735s] Level 1:colcon.colcon_core.shell:create_environment_hook('turtlebot3_description', 'cmake_prefix_path')
+[0.735s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/hook/cmake_prefix_path.ps1'
+[0.735s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/hook/cmake_prefix_path.dsv'
+[0.735s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/hook/cmake_prefix_path.sh'
+[0.736s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/bin'
+[0.736s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/lib/pkgconfig/turtlebot3_description.pc'
+[0.736s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/lib/python3.10/site-packages'
+[0.736s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/bin'
+[0.736s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.ps1'
+[0.737s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.dsv'
+[0.737s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.sh'
+[0.737s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.bash'
+[0.738s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/turtlebot3_description/package.zsh'
+[0.738s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description/share/colcon-core/packages/turtlebot3_description)
+[0.738s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo' with build type 'ament_cmake'
+[0.738s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo'
+[0.738s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.738s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.746s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo
+[1.004s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/teleop_twist_keyboard': PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/teleop_twist_keyboard build --build-base /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard/build install --record /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard/install.log --single-version-externally-managed install_data
+[1.221s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard' for CMake module files
+[1.221s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/teleop_twist_keyboard' returned '0': PYTHONPATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/teleop_twist_keyboard build --build-base /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard/build install --record /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/teleop_twist_keyboard/install.log --single-version-externally-managed install_data
+[1.221s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard' for CMake config files
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/lib'
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/bin'
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/lib/pkgconfig/teleop_twist_keyboard.pc'
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/lib/python3.10/site-packages'
+[1.222s] Level 1:colcon.colcon_core.shell:create_environment_hook('teleop_twist_keyboard', 'pythonpath')
+[1.222s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/hook/pythonpath.ps1'
+[1.223s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/hook/pythonpath.dsv'
+[1.223s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/hook/pythonpath.sh'
+[1.223s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/bin'
+[1.223s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(teleop_twist_keyboard)
+[1.224s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/package.ps1'
+[1.224s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/package.dsv'
+[1.224s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/package.sh'
+[1.224s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/package.bash'
+[1.225s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/teleop_twist_keyboard/package.zsh'
+[1.225s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard/share/colcon-core/packages/teleop_twist_keyboard)
+[2.038s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo
+[2.039s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo -- -j12 -l12
+[12.272s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo -- -j12 -l12
+[12.273s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo
+[12.383s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(turtlebot3_gazebo)
+[12.383s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo' for CMake module files
+[12.383s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_gazebo
+[12.384s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo' for CMake config files
+[12.384s] Level 1:colcon.colcon_core.shell:create_environment_hook('turtlebot3_gazebo', 'cmake_prefix_path')
+[12.385s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/hook/cmake_prefix_path.ps1'
+[12.385s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/hook/cmake_prefix_path.dsv'
+[12.385s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/hook/cmake_prefix_path.sh'
+[12.385s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/lib'
+[12.385s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/bin'
+[12.385s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/lib/pkgconfig/turtlebot3_gazebo.pc'
+[12.386s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/lib/python3.10/site-packages'
+[12.386s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/bin'
+[12.386s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.ps1'
+[12.386s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.dsv'
+[12.386s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.sh'
+[12.387s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.bash'
+[12.387s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.zsh'
+[12.387s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/colcon-core/packages/turtlebot3_gazebo)
+[12.387s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(turtlebot3_gazebo)
+[12.387s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo' for CMake module files
+[12.388s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo' for CMake config files
+[12.389s] Level 1:colcon.colcon_core.shell:create_environment_hook('turtlebot3_gazebo', 'cmake_prefix_path')
+[12.389s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/hook/cmake_prefix_path.ps1'
+[12.389s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/hook/cmake_prefix_path.dsv'
+[12.389s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/hook/cmake_prefix_path.sh'
+[12.389s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/lib'
+[12.389s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/bin'
+[12.389s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/lib/pkgconfig/turtlebot3_gazebo.pc'
+[12.390s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/lib/python3.10/site-packages'
+[12.390s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/bin'
+[12.390s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.ps1'
+[12.390s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.dsv'
+[12.390s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.sh'
+[12.391s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.bash'
+[12.391s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/turtlebot3_gazebo/package.zsh'
+[12.391s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo/share/colcon-core/packages/turtlebot3_gazebo)
+[12.391s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_simulations' with build type 'ament_cmake'
+[12.391s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_simulations'
+[12.391s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[12.391s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[12.397s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_simulations -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations
+[12.755s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_simulations -DCMAKE_INSTALL_PREFIX=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations
+[12.756s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations -- -j12 -l12
+[12.776s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations -- -j12 -l12
+[12.777s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations
+[12.783s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(turtlebot3_simulations)
+[12.783s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations' for CMake module files
+[12.784s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_simulations
+[12.784s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations' for CMake config files
+[12.784s] Level 1:colcon.colcon_core.shell:create_environment_hook('turtlebot3_simulations', 'cmake_prefix_path')
+[12.784s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/hook/cmake_prefix_path.ps1'
+[12.784s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/hook/cmake_prefix_path.dsv'
+[12.785s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/hook/cmake_prefix_path.sh'
+[12.785s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/bin'
+[12.785s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/lib/pkgconfig/turtlebot3_simulations.pc'
+[12.785s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/lib/python3.10/site-packages'
+[12.785s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/bin'
+[12.785s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.ps1'
+[12.786s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.dsv'
+[12.786s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.sh'
+[12.786s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.bash'
+[12.786s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.zsh'
+[12.786s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/colcon-core/packages/turtlebot3_simulations)
+[12.787s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(turtlebot3_simulations)
+[12.787s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations' for CMake module files
+[12.787s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations' for CMake config files
+[12.787s] Level 1:colcon.colcon_core.shell:create_environment_hook('turtlebot3_simulations', 'cmake_prefix_path')
+[12.787s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/hook/cmake_prefix_path.ps1'
+[12.788s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/hook/cmake_prefix_path.dsv'
+[12.788s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/hook/cmake_prefix_path.sh'
+[12.788s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/bin'
+[12.788s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/lib/pkgconfig/turtlebot3_simulations.pc'
+[12.788s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/lib/python3.10/site-packages'
+[12.788s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/bin'
+[12.788s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.ps1'
+[12.789s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.dsv'
+[12.789s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.sh'
+[12.789s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.bash'
+[12.789s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/turtlebot3_simulations/package.zsh'
+[12.790s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations/share/colcon-core/packages/turtlebot3_simulations)
+[13.907s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins -- -j12 -l12
+[13.909s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins
+[13.916s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(velodyne_gazebo_plugins)
+[13.917s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_gazebo_plugins
+[13.917s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins' for CMake module files
+[13.917s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins' for CMake config files
+[13.917s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_gazebo_plugins', 'cmake_prefix_path')
+[13.917s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/cmake_prefix_path.ps1'
+[13.918s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/cmake_prefix_path.dsv'
+[13.918s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/cmake_prefix_path.sh'
+[13.918s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib'
+[13.918s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_gazebo_plugins', 'ld_library_path_lib')
+[13.918s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/ld_library_path_lib.ps1'
+[13.919s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/ld_library_path_lib.dsv'
+[13.919s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/ld_library_path_lib.sh'
+[13.919s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/bin'
+[13.919s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib/pkgconfig/velodyne_gazebo_plugins.pc'
+[13.919s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib/python3.10/site-packages'
+[13.919s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/bin'
+[13.919s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.ps1'
+[13.920s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.dsv'
+[13.920s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.sh'
+[13.920s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.bash'
+[13.920s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.zsh'
+[13.921s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/colcon-core/packages/velodyne_gazebo_plugins)
+[13.921s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(velodyne_gazebo_plugins)
+[13.921s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins' for CMake module files
+[13.921s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins' for CMake config files
+[13.921s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_gazebo_plugins', 'cmake_prefix_path')
+[13.921s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/cmake_prefix_path.ps1'
+[13.922s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/cmake_prefix_path.dsv'
+[13.922s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/cmake_prefix_path.sh'
+[13.922s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib'
+[13.922s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_gazebo_plugins', 'ld_library_path_lib')
+[13.922s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/ld_library_path_lib.ps1'
+[13.923s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/ld_library_path_lib.dsv'
+[13.923s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/hook/ld_library_path_lib.sh'
+[13.923s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/bin'
+[13.923s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib/pkgconfig/velodyne_gazebo_plugins.pc'
+[13.923s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib/python3.10/site-packages'
+[13.923s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/bin'
+[13.923s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.ps1'
+[13.924s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.dsv'
+[13.924s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.sh'
+[13.924s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.bash'
+[13.924s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/velodyne_gazebo_plugins/package.zsh'
+[13.925s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/share/colcon-core/packages/velodyne_gazebo_plugins)
+[13.925s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_simulator' with build type 'ament_cmake'
+[13.925s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_simulator'
+[13.925s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[13.925s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[13.931s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib:${LD_LIBRARY_PATH} /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator -- -j12 -l12
+[14.068s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib:${LD_LIBRARY_PATH} /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator -- -j12 -l12
+[14.068s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib:${LD_LIBRARY_PATH} /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator
+[14.074s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(velodyne_simulator)
+[14.074s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator' returned '0': AMENT_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib:${LD_LIBRARY_PATH} /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator
+[14.074s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator' for CMake module files
+[14.075s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator' for CMake config files
+[14.075s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_simulator', 'cmake_prefix_path')
+[14.075s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/hook/cmake_prefix_path.ps1'
+[14.075s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/hook/cmake_prefix_path.dsv'
+[14.075s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/hook/cmake_prefix_path.sh'
+[14.076s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/bin'
+[14.076s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/lib/pkgconfig/velodyne_simulator.pc'
+[14.076s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/lib/python3.10/site-packages'
+[14.076s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/bin'
+[14.076s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.ps1'
+[14.076s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.dsv'
+[14.077s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.sh'
+[14.077s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.bash'
+[14.077s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.zsh'
+[14.077s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/colcon-core/packages/velodyne_simulator)
+[14.078s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(velodyne_simulator)
+[14.078s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator' for CMake module files
+[14.078s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator' for CMake config files
+[14.078s] Level 1:colcon.colcon_core.shell:create_environment_hook('velodyne_simulator', 'cmake_prefix_path')
+[14.078s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/hook/cmake_prefix_path.ps1'
+[14.078s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/hook/cmake_prefix_path.dsv'
+[14.079s] INFO:colcon.colcon_core.shell:Creating environment hook '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/hook/cmake_prefix_path.sh'
+[14.079s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/bin'
+[14.079s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/lib/pkgconfig/velodyne_simulator.pc'
+[14.079s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/lib/python3.10/site-packages'
+[14.079s] Level 1:colcon.colcon_core.environment:checking '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/bin'
+[14.079s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.ps1'
+[14.079s] INFO:colcon.colcon_core.shell:Creating package descriptor '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.dsv'
+[14.080s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.sh'
+[14.080s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.bash'
+[14.080s] INFO:colcon.colcon_core.shell:Creating package script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/velodyne_simulator/package.zsh'
+[14.080s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator/share/colcon-core/packages/velodyne_simulator)
+[14.081s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[14.081s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[14.081s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[14.081s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[14.085s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[14.085s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[14.085s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[14.102s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[14.102s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/local_setup.ps1'
+[14.103s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/_local_setup_util_ps1.py'
+[14.104s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/setup.ps1'
+[14.105s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/local_setup.sh'
+[14.105s] INFO:colcon.colcon_core.shell:Creating prefix util module '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/_local_setup_util_sh.py'
+[14.106s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/setup.sh'
+[14.107s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/local_setup.bash'
+[14.107s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/setup.bash'
+[14.108s] INFO:colcon.colcon_core.shell:Creating prefix script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/local_setup.zsh'
+[14.108s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/setup.zsh'
