@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "rosapi_msgs__py",
+		"source" : "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosapi_msgs/rosapi_msgs__py"
+	}
+}

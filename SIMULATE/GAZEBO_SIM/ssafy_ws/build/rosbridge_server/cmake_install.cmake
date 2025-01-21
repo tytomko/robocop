@@ -1,8 +1,8 @@
-# Install script for directory: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server
+# Install script for directory: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_server")
+  set(CMAKE_INSTALL_PREFIX "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_server")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -43,35 +43,35 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/pythonpath.sh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/pythonpath.sh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/pythonpath.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/pythonpath.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/local/lib/python3.10/dist-packages/rosbridge_server-2.0.0-py3.10.egg-info" TYPE DIRECTORY FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_python/rosbridge_server/rosbridge_server.egg-info/")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/local/lib/python3.10/dist-packages/rosbridge_server-2.0.0-py3.10.egg-info" TYPE DIRECTORY FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_python/rosbridge_server/rosbridge_server.egg-info/")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/local/lib/python3.10/dist-packages/rosbridge_server" TYPE DIRECTORY FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/src/rosbridge_server/" REGEX "/[^/]*\\.pyc$" EXCLUDE REGEX "/\\_\\_pycache\\_\\_$" EXCLUDE)
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/local/lib/python3.10/dist-packages/rosbridge_server" TYPE DIRECTORY FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/src/rosbridge_server/" REGEX "/[^/]*\\.pyc$" EXCLUDE REGEX "/\\_\\_pycache\\_\\_$" EXCLUDE)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   execute_process(
         COMMAND
         "/usr/bin/python3" "-m" "compileall"
-        "/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_server/local/lib/python3.10/dist-packages/rosbridge_server"
+        "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_server/local/lib/python3.10/dist-packages/rosbridge_server"
       )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/rosbridge_server")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/rosbridge_server")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/parent_prefix_path" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/rosbridge_server")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/parent_prefix_path" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/rosbridge_server")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -79,7 +79,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/ament_prefix_path.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/ament_prefix_path.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -87,53 +87,53 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/path.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/environment" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/path.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.bash")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.bash")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.sh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.sh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.zsh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.zsh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/local_setup.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/package.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_environment_hooks/package.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/packages" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_index/share/ament_index/resource_index/packages/rosbridge_server")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/packages" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_index/share/ament_index/resource_index/packages/rosbridge_server")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/cmake" TYPE FILE FILES
-    "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_core/rosbridge_serverConfig.cmake"
-    "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_core/rosbridge_serverConfig-version.cmake"
+    "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_core/rosbridge_serverConfig.cmake"
+    "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/ament_cmake_core/rosbridge_serverConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/package.xml")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/rosbridge_server" TYPE PROGRAM FILES
-    "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/scripts/rosbridge_websocket.py"
-    "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/scripts/rosbridge_websocket"
+    "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/scripts/rosbridge_websocket.py"
+    "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/scripts/rosbridge_websocket"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/launch" TYPE FILE FILES "/home/ubuntu/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/launch/rosbridge_websocket_launch.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/rosbridge_server/launch" TYPE FILE FILES "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_server/launch/rosbridge_websocket_launch.xml")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -144,5 +144,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_server/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

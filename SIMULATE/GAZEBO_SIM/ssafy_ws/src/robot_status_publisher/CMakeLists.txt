@@ -13,8 +13,10 @@ find_package(robot_custom_interfaces REQUIRED)
 
 # 파일 추가시 CMakelist.txt에 추가
 add_executable(robot_status_pub src/robot_status_pub.cpp)
-ament_target_dependencies(robot_status_pub rclcpp std_msgs robot_custom_interfaces)
+add_executable(one_robot_stat src/one_robot_status_pub.cpp)
+ament_target_dependencies(one_robot_stat robot_status_pub rclcpp std_msgs robot_custom_interfaces)
 install(TARGETS
+  one_robot_stat
   robot_status_pub
   DESTINATION lib/${PROJECT_NAME})
 

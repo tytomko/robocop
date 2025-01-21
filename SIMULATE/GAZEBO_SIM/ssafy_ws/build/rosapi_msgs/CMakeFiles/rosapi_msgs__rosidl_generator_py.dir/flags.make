@@ -4,7 +4,7 @@
 # compile C with /usr/bin/cc
 C_DEFINES = -DRCUTILS_ENABLE_FAULT_INJECTION -DROS_PACKAGE_NAME=\"rosapi_msgs\" -Drosapi_msgs__rosidl_generator_py_EXPORTS
 
-C_INCLUDES = -I/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosapi_msgs/rosidl_generator_c -I/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosapi_msgs/rosidl_generator_py -I/usr/include/python3.10 -isystem /opt/ros/humble/include/builtin_interfaces -isystem /opt/ros/humble/include/rosidl_runtime_c -isystem /opt/ros/humble/include/rcutils -isystem /opt/ros/humble/include/rosidl_typesupport_interface
+C_INCLUDES = -I/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosapi_msgs/rosidl_generator_c -I/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosapi_msgs/rosidl_generator_py -I/usr/include/python3.10 -isystem /opt/ros/humble/include/builtin_interfaces -isystem /opt/ros/humble/include/rosidl_runtime_c -isystem /opt/ros/humble/include/rcutils -isystem /opt/ros/humble/include/rosidl_typesupport_interface
 
 C_FLAGS = -fPIC -Wall -Wextra
 

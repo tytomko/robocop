@@ -1,8 +1,8 @@
-# Install script for directory: /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/rosbridge_msgs/rosbridge_msgs__py
+# Install script for directory: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/rosbridge_msgs/rosbridge_msgs__py
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/ubuntu/GAZEBO_SIM/ssafy_ws/install/rosbridge_msgs")
+  set(CMAKE_INSTALL_PREFIX "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_msgs")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

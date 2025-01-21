@@ -1,6 +1,6 @@
 # CMake generated Testfile for 
-# Source directory: /home/ubuntu/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_description
-# Build directory: /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_description
+# Source directory: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/velodyne_simulator/velodyne_description
+# Build directory: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/velodyne_description
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.
