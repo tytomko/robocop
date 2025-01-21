@@ -1,7 +1,0 @@
-{
-  "package_name": "rosbridge_msgs",
-  "non_idl_tuples": [
-    "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_msgs:msg/ConnectedClient.msg",
-    "/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/rosbridge_suite/rosbridge_msgs:msg/ConnectedClients.msg"
-  ]
-}

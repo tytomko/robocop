@@ -1,8 +1,0 @@
-Built target ament_cmake_python_copy_rosbridge_library
-running egg_info
-writing rosbridge_library.egg-info/PKG-INFO
-writing dependency_links to rosbridge_library.egg-info/dependency_links.txt
-writing top-level names to rosbridge_library.egg-info/top_level.txt
-reading manifest file 'rosbridge_library.egg-info/SOURCES.txt'
-writing manifest file 'rosbridge_library.egg-info/SOURCES.txt'
-Built target ament_cmake_python_build_rosbridge_library_egg
