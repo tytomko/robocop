@@ -690,6 +690,10 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
   /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/include/robot_custom_interfaces/robot_custom_interfaces/msg/detail/status__traits.hpp \
   /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/include/robot_custom_interfaces/robot_custom_interfaces/msg/detail/status__type_support.hpp \
   /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/include/robot_custom_interfaces/robot_custom_interfaces/msg/rosidl_generator_cpp__visibility_control.hpp \
+  /usr/include/GeographicLib/UTMUPS.hpp \
+  /usr/include/GeographicLib/Constants.hpp \
+  /usr/include/GeographicLib/Config.h \
+  /usr/include/GeographicLib/Math.hpp \
   /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/imu.hpp \
   /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/imu__struct.hpp \
   /opt/ros/humble/include/std_msgs/std_msgs/msg/detail/header__struct.hpp \
@@ -702,6 +706,23 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
   /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/vector3__traits.hpp \
   /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/imu__type_support.hpp \
   /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/rosidl_generator_cpp__visibility_control.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/nav_sat_fix.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__struct.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_status__struct.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__builder.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__traits.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_status__traits.hpp \
+  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__type_support.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/pose_stamped.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__struct.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose__struct.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/point__struct.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__builder.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__traits.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose__traits.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/point__traits.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__type_support.hpp \
+  /opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/rosidl_generator_cpp__visibility_control.hpp \
   /opt/ros/humble/include/tf2/tf2/LinearMath/Quaternion.h \
   /opt/ros/humble/include/tf2/tf2/LinearMath/Vector3.h \
   /opt/ros/humble/include/tf2/tf2/LinearMath/Scalar.h \
@@ -738,6 +759,22 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/c++/11/cfloat:
 
 /opt/ros/humble/include/tf2/tf2/LinearMath/Quaternion.h:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/rosidl_generator_cpp__visibility_control.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__type_support.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/point__traits.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__builder.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose__struct.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__struct.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/pose_stamped.hpp:
+
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/nav_sat_fix.hpp:
 
 /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/imu__type_support.hpp:
 
@@ -971,6 +1008,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 
 /opt/ros/humble/include/rclcpp/rclcpp/qos.hpp:
 
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__type_support.hpp:
+
 /usr/include/c++/11/bits/hashtable.h:
 
 /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/imu__builder.hpp:
@@ -1075,6 +1114,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 
 /usr/include/endian.h:
 
+/usr/include/GeographicLib/UTMUPS.hpp:
+
 /usr/include/stdint.h:
 
 /usr/include/c++/11/bits/ptr_traits.h:
@@ -1116,6 +1157,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/c++/11/bits/basic_string.tcc:
 
 /opt/ros/humble/include/rcutils/rcutils/logging_macros.h:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose_stamped__traits.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/error_t.h:
 
@@ -1162,6 +1205,10 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/c++/11/bits/stl_set.h:
 
 /opt/ros/humble/include/libstatistics_collector/libstatistics_collector/topic_statistics_collector/topic_statistics_collector.hpp:
+
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_status__struct.hpp:
+
+/usr/include/GeographicLib/Config.h:
 
 /usr/include/c++/11/string_view:
 
@@ -1277,6 +1324,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 
 /usr/include/c++/11/bits/postypes.h:
 
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__builder.hpp:
+
 /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h:
 
 /opt/ros/humble/include/rcl/rcl/graph.h:
@@ -1372,6 +1421,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /opt/ros/humble/include/rclcpp/rclcpp/subscription.hpp:
 
 /usr/include/c++/11/unordered_map:
+
+/usr/include/GeographicLib/Math.hpp:
 
 /usr/include/c++/11/cctype:
 
@@ -1471,6 +1522,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 
 /usr/include/c++/11/bits/this_thread_sleep.h:
 
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__struct.hpp:
+
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/robot_status_publisher/src/one_robot_status_pub.cpp:
 
 /usr/include/c++/11/bits/range_access.h:
@@ -1496,6 +1549,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/c++/11/cmath:
 
 /usr/include/c++/11/pstl/pstl_config.h:
+
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_status__traits.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/sched.h:
 
@@ -1675,6 +1730,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 
 /usr/include/c++/11/istream:
 
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/point__struct.hpp:
+
 /usr/include/c++/11/bits/istream.tcc:
 
 /usr/include/c++/11/list:
@@ -1712,6 +1769,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/x86_64-linux-gnu/bits/pthreadtypes-arch.h:
 
 /opt/ros/humble/include/rcutils/rcutils/visibility_control_macros.h:
+
+/usr/include/GeographicLib/Constants.hpp:
 
 /opt/ros/humble/include/rcl_interfaces/rcl_interfaces/srv/detail/set_parameters__traits.hpp:
 
@@ -1786,6 +1845,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/c++/11/bits/ostream.tcc:
 
 /opt/ros/humble/include/rclcpp/rclcpp/experimental/buffers/ring_buffer_implementation.hpp:
+
+/opt/ros/humble/include/geometry_msgs/geometry_msgs/msg/detail/pose__traits.hpp:
 
 /usr/include/c++/11/bits/list.tcc:
 
@@ -2052,6 +2113,8 @@ CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o: /home/ubuntu/S12P1
 /usr/include/x86_64-linux-gnu/bits/math-vector.h:
 
 /opt/ros/humble/include/tracetools/tracetools/utils.hpp:
+
+/opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/nav_sat_fix__traits.hpp:
 
 /opt/ros/humble/include/rclcpp/rclcpp/parameter_map.hpp:
 
