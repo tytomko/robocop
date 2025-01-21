@@ -1,4 +1,5 @@
 #include <chrono>
+#include <string> // std::string, std::to_string 사용 시 필요한 경우
 #include "rclcpp/rclcpp.hpp"
 #include "robot_custom_interfaces/msg/status.hpp"
 
@@ -16,43 +17,48 @@ public:
     RobotStatusPublisher()
     : Node("robot_status_pub_node")
     {
-        // --------------------
         // 1) 파라미터 선언
-        // --------------------
         this->declare_parameter<std::string>("namespace_prefix", "");
+        this->declare_parameter<int>("robot_number", 1);
 
-        // 파라미터 값 가져오기
         auto prefix = this->get_parameter("namespace_prefix").as_string();
+        auto robot_num = this->get_parameter("robot_number").as_int();
 
-        // prefix가 "ssafy"라면 토픽 이름에 "/ssafy"를 붙이도록 설정
+        // 2) 구독 토픽 결정
+        std::string imu_topic;
         if (prefix == "ssafy") {
-            topic_prefix_ = "/ssafy";
+            imu_topic = "/ssafy/imu";
         } else {
-            topic_prefix_ = "";
+            imu_topic = "/imu";
         }
 
-        // --------------------
-        // 2) IMU 구독
-        // --------------------
+        // 3) 발행 토픽 결정
+        //    예) robot_num = 3 --> /robot_3/heading
+        std::string heading_topic = "/robot_" + std::to_string(robot_num) + "/heading";
+        std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
+        // 디버그용 로그
+        RCLCPP_INFO(
+            this->get_logger(),
+            "Node initialized: namespace_prefix='%s', robot_number=%ld, imu_topic='%s', heading_topic='%s'",
+            prefix.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str()
+        );
+
+        // IMU 구독
         subscription_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            topic_prefix_ + "/parameter/imu",  // 예: /ssafy/parameter/imu
+            imu_topic,
             10,
             std::bind(&RobotStatusPublisher::imu_callback, this, std::placeholders::_1)
         );
 
-        // --------------------
-        // 3) Heading 발행
-        // --------------------
+        // Heading 발행
         publisher_heading_ = this->create_publisher<std_msgs::msg::Float32>(
-            topic_prefix_ + "/parameter/heading", // 예: /ssafy/parameter/heading
+            heading_topic,
             10
         );
 
-        // --------------------
         // 기존 로봇 상태 퍼블리셔
-        // --------------------
         publisher_status_ = this->create_publisher<robot_custom_interfaces::msg::Status>(
-            "robot_status", // 여기서도 토픽 이름을 바꾸고 싶다면 앞에 prefix_를 붙이면 됨
+            status_topic, 
             10
         );
 
@@ -64,12 +70,8 @@ public:
     }
 
 private:
-    // --------------------
-    // IMU 콜백 함수
-    // --------------------
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
     {
-        // 쿼터니언에서 RPY 계산
         tf2::Quaternion q(
             msg->orientation.x,
             msg->orientation.y,
@@ -79,7 +81,7 @@ private:
         tf2::Matrix3x3 m(q);
 
         double roll, pitch, yaw;
-        m.getRPY(roll, pitch, yaw);  // radian 단위
+        m.getRPY(roll, pitch, yaw);
 
         // yaw(heading)만 발행
         auto heading_msg = std_msgs::msg::Float32();
@@ -94,9 +96,6 @@ private:
         publisher_heading_->publish(heading_msg);
     }
 
-    // --------------------
-    // 기존 상태 퍼블리시 함수
-    // --------------------
     void publish_status()
     {
         auto message = robot_custom_interfaces::msg::Status();
@@ -117,22 +116,10 @@ private:
         publisher_status_->publish(message);
     }
 
-    // --------------------
     // 멤버 변수
-    // --------------------
-    // prefix를 저장할 변수
-    std::string topic_prefix_;
-
-    // IMU 구독용
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subscription_imu_;
-
-    // Heading 발행용
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_heading_;
-
-    // 기존 로봇 상태 발행용
     rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
-
-    // 타이머
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
