@@ -25,12 +25,7 @@ public:
         auto robot_num = this->get_parameter("robot_number").as_int();
 
         // 2) 구독 토픽 결정
-        std::string imu_topic;
-        if (prefix == "ssafy") {
-            imu_topic = "/ssafy/imu";
-        } else {
-            imu_topic = "/imu";
-        }
+        std::string imu_topic = namespace_prefix + "/imu";
 
         // 3) 발행 토픽 결정
         //    예) robot_num = 3 --> /robot_3/heading
