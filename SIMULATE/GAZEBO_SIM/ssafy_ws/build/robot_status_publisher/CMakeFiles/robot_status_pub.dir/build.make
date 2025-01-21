@@ -93,6 +93,7 @@ robot_status_pub_EXTERNAL_OBJECTS =
 robot_status_pub: CMakeFiles/robot_status_pub.dir/src/robot_status_pub.cpp.o
 robot_status_pub: CMakeFiles/robot_status_pub.dir/build.make
 robot_status_pub: /opt/ros/humble/lib/librclcpp.so
+robot_status_pub: /opt/ros/humble/lib/libtf2.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_fastrtps_c.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_fastrtps_cpp.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_introspection_c.so
@@ -159,10 +160,10 @@ robot_status_pub: /opt/ros/humble/lib/libgeometry_msgs__rosidl_typesupport_cpp.s
 robot_status_pub: /opt/ros/humble/lib/libstd_msgs__rosidl_typesupport_cpp.so
 robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_typesupport_cpp.so
 robot_status_pub: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
-robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_c.so
-robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_py.so
+robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_c.so
 robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_c.so
+robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libgeometry_msgs__rosidl_generator_py.so
 robot_status_pub: /opt/ros/humble/lib/libstd_msgs__rosidl_generator_py.so

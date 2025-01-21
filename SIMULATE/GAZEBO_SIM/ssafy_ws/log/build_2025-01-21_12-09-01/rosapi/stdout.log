@@ -1,0 +1,8 @@
+Built target ament_cmake_python_copy_rosapi
+running egg_info
+writing rosapi.egg-info/PKG-INFO
+writing dependency_links to rosapi.egg-info/dependency_links.txt
+writing top-level names to rosapi.egg-info/top_level.txt
+reading manifest file 'rosapi.egg-info/SOURCES.txt'
+writing manifest file 'rosapi.egg-info/SOURCES.txt'
+Built target ament_cmake_python_build_rosapi_egg

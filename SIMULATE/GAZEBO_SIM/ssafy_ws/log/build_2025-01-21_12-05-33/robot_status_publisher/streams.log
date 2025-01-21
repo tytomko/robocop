@@ -1,0 +1,38 @@
+[0.017s] Invoking command in '/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher': CMAKE_PREFIX_PATH=/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_suite:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_server:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_msgs:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosapi:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosapi_msgs:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_status_publisher:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_library:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_msgs/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosapi_msgs/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib /usr/bin/cmake --build /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher -- -j12 -l12
+[0.041s] -- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.213s] -- Found rclcpp: 16.0.11 (/opt/ros/humble/share/rclcpp/cmake)
+[0.256s] -- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.259s] -- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.266s] -- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.276s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.287s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.316s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.317s] -- Found rmw_cyclonedds_cpp: 1.3.4 (/opt/ros/humble/share/rmw_cyclonedds_cpp/cmake)
+[0.333s] -- Using RMW implementation 'rmw_cyclonedds_cpp' as default
+[0.379s] -- Found sensor_msgs: 4.2.4 (/opt/ros/humble/share/sensor_msgs/cmake)
+[0.407s] -- Found robot_custom_interfaces: 0.0.0 (/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/share/robot_custom_interfaces/cmake)
+[0.427s] -- Found ament_lint_auto: 0.12.11 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[0.498s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.498s] -- Configured cppcheck include dirs: 
+[0.498s] -- Configured cppcheck exclude dirs and/or files: 
+[0.499s] -- Added test 'lint_cmake' to check CMake code style
+[0.499s] -- Added test 'uncrustify' to check C / C++ code style
+[0.499s] -- Configured uncrustify additional arguments: 
+[0.500s] -- Added test 'xmllint' to check XML markup files
+[0.500s] -- Configuring done
+[0.512s] -- Generating done
+[0.516s] -- Build files have been written to: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher
+[0.538s] [35m[1mConsolidate compiler generated dependencies of target robot_status_pub[0m
+[0.547s] [ 25%] [32mBuilding CXX object CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o[0m
+[0.557s] [ 50%] [32mBuilding CXX object CMakeFiles/robot_status_pub.dir/src/robot_status_pub.cpp.o[0m
+[0.783s] [01m[K/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/robot_status_publisher/src/one_robot_status_pub.cpp:7:10:[m[K [01;31m[Kfatal error: [m[Ktf2/LinearMath/Quaternion.h: No such file or directory
+[0.783s]     7 | #include [01;31m[K<tf2/LinearMath/Quaternion.h>[m[K
+[0.784s]       |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[0.784s] compilation terminated.
+[0.790s] gmake[2]: *** [CMakeFiles/one_robot_stat.dir/build.make:76: CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o] Error 1
+[0.793s] gmake[1]: *** [CMakeFiles/Makefile2:165: CMakeFiles/one_robot_stat.dir/all] Error 2
+[0.793s] gmake[1]: *** Waiting for unfinished jobs....
+[3.728s] [ 75%] [32m[1mLinking CXX executable robot_status_pub[0m
+[3.867s] [ 75%] Built target robot_status_pub
+[3.869s] gmake: *** [Makefile:146: all] Error 2
+[3.872s] Invoked command in '/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher' returned '2': CMAKE_PREFIX_PATH=/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_simulator:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/turtlebot3_simulations:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/turtlebot3_gazebo:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_description:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/turtlebot3_description:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_suite:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_server:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_msgs:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosapi:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosapi_msgs:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_status_publisher:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/teleop_twist_keyboard:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_library:/opt/ros/humble LD_LIBRARY_PATH=/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/velodyne_gazebo_plugins/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_test_msgs/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosbridge_msgs/lib:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/rosapi_msgs/lib:/usr/lib/x86_64-linux-gnu/gazebo-11/plugins:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib /usr/bin/cmake --build /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher -- -j12 -l12
