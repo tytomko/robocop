@@ -21,6 +21,10 @@ public:
     //전역 변수 선언
     std::string robot_name;
     int robot_num;
+    //로그 타이머용
+    std::chrono::steady_clock::time_point last_imu_log_time_;
+    std::chrono::steady_clock::time_point last_gps_log_time_;
+    std::chrono::steady_clock::time_point last_status_log_time_;
 
     RobotStatusPublisher()
     : Node("robot_status_pub_node")
@@ -43,9 +47,10 @@ public:
         // 디버그용 로그
         RCLCPP_INFO(
             this->get_logger(),
-            "Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s'",
-            robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str()
+            "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\nNode initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨",
+            robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str(), status_topic.c_str(), gps_topic.c_str()
         );
+
 
         // IMU 구독
         subscription_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
@@ -79,8 +84,8 @@ public:
         );
 
         // 기존 타이머(500ms)
-        timer_ = this->create_wall_timer(
-            500ms,
+        status_timer_ = this->create_wall_timer(
+            100ms,
             std::bind(&RobotStatusPublisher::publish_status, this)
         );
     }
@@ -103,11 +108,11 @@ private:
         auto heading_msg = std_msgs::msg::Float32();
         heading_msg.data = static_cast<float>(yaw);
 
-        RCLCPP_INFO(
-            this->get_logger(),
-            "IMU received. Yaw (heading): %.2f (rad)",
-            yaw
-        );
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_imu_log_time_).count() >= 2) {
+            RCLCPP_INFO(this->get_logger(), "IMU received. Yaw (heading): %.2f (rad)", yaw);
+            last_imu_log_time_ = now;  // 마지막 로그 시간 업데이트
+        }
 
         publisher_heading_->publish(heading_msg);
     }
@@ -143,16 +148,13 @@ private:
         // Zone + (N/S) 문자열 만들기
         std::string utm_zone_str = std::to_string(zone) + (northp ? "N" : "S");
 
-        RCLCPP_INFO(
-            this->get_logger(),
-            "GPS received. Latitude: %.6f, Longitude: %.6f, Altitude: %.2f",
-            lat, lon, alt
-        );
-        RCLCPP_INFO(
-            this->get_logger(),
-            "Converted to UTM: X=%.2f, Y=%.2f, Zone=%s",
-            x, y, utm_zone_str.c_str()
-        );
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_gps_log_time_).count() >= 2) {
+            std::string utm_zone_str = std::to_string(zone) + (northp ? "N" : "S");
+            RCLCPP_INFO(this->get_logger(), "GPS received. Latitude: %.6f, Longitude: %.6f, Altitude: %.2f", lat, lon, alt);
+            RCLCPP_INFO(this->get_logger(), "Converted to UTM: X=%.2f, Y=%.2f, Zone=%s", x, y, utm_zone_str.c_str());
+            last_gps_log_time_ = now;  // 마지막 로그 시간 업데이트
+        }
 
         // (4) 퍼블리시
         publisher_utm_->publish(utm_msg);
@@ -166,15 +168,17 @@ private:
         message.temperature = 36.5f; 
         message.is_active = true;
 
-        RCLCPP_INFO(
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_status_log_time_).count() >= 2) {
+            RCLCPP_INFO(
             this->get_logger(),
             "Publishing: ID=%d, Status=%s, Temperature=%.2f, Active=%s",
             message.id,
             message.status.c_str(),
             message.temperature,
-            message.is_active ? "true" : "false"
-        );
-
+            message.is_active ? "true" : "false");
+            last_status_log_time_ = now;  // 마지막 로그 시간 업데이트
+        }
         publisher_status_->publish(message);
     }
 
@@ -184,7 +188,7 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_heading_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_utm_;
     rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
-    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr status_timer_;
 };
 
 int main(int argc, char *argv[])
