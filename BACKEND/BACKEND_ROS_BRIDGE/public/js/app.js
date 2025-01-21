@@ -1,5 +1,6 @@
 const ros = new ROSLIB.Ros();
 
+//웹소켓인데 이걸 라이브러리가 대신해주는거임.
 ros.connect('ws://localhost:9090');
 
 ros.on('error', (error) => {
