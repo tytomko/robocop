@@ -37,11 +37,13 @@ class Robot(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: Optional[datetime] = None
 
-    @validator('ip_address')
-    def validate_ip_address(cls, v):
-        pattern = r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
-        if not re.match(pattern, v):
-            raise ValueError('유효하지 않은 IP 주소 형식입니다. (예: 192.168.1.100)')
+    @validator('ip_address', pre=True)
+    def validate_ip_address(cls, v, values, **kwargs):
+        # POST/PUT 요청에서만 검증 수행
+        if 'robot_id' not in values:  # 새로운 로봇 생성 시에만 검증
+            pattern = r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            if not re.match(pattern, v):
+                raise ValueError('유효하지 않은 IP 주소 형식입니다. (예: 192.168.1.100)')
         return v
 
     class Config:

@@ -21,7 +21,10 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    await test_connection()
+    # MongoDB 연결 테스트
+    if not await test_connection():
+        import sys
+        sys.exit(1)
     await create_admin_user()
 
 # 라우터 등록
@@ -33,13 +36,6 @@ app.include_router(persons_router, prefix="/api/v1", tags=["persons"])
 @app.get("/")
 async def root():
     return {"message": "Robot Management API"}
-
-@app.on_event("startup")
-async def startup_event():
-    # MongoDB 연결 테스트
-    if not await test_connection():
-        import sys
-        sys.exit(1)
 
 if __name__ == "__main__":
     import uvicorn
