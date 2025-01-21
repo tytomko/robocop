@@ -1,3 +1,0 @@
-[35m[1mConsolidate compiler generated dependencies of target one_robot_stat[0m
-[ 50%] Built target robot_status_pub
-[ 75%] [32mBuilding CXX object CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o[0m
