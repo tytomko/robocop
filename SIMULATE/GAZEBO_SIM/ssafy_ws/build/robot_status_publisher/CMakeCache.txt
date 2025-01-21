@@ -235,6 +235,12 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 //The directory containing a CMake configuration file for CycloneDDS.
 CycloneDDS_DIR:PATH=/opt/ros/humble/lib/x86_64-linux-gnu/cmake/CycloneDDS
 
+//The directory containing a CMake configuration file for GeographicLib.
+GeographicLib_DIR:PATH=GeographicLib_DIR-NOTFOUND
+
+//Path to a library.
+GeographicLib_LIBRARIES:FILEPATH=/usr/lib/x86_64-linux-gnu/libGeographic.so
+
 //Path to a program.
 Python3_EXECUTABLE:FILEPATH=/usr/bin/python3
 
@@ -245,7 +251,7 @@ RMW_IMPLEMENTATION:STRING=rmw_cyclonedds_cpp
 SITE:STRING=ubuntu-760XDA
 
 //Path to a library.
-_lib:FILEPATH=/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_fastrtps_cpp.so
+_lib:FILEPATH=/opt/ros/humble/lib/libtf2.so
 
 //The directory containing a CMake configuration file for ament_cmake.
 ament_cmake_DIR:PATH=/opt/ros/humble/share/ament_cmake/cmake
@@ -337,6 +343,9 @@ ament_xmllint_BIN:FILEPATH=/opt/ros/humble/bin/ament_xmllint
 //The directory containing a CMake configuration file for builtin_interfaces.
 builtin_interfaces_DIR:PATH=/opt/ros/humble/share/builtin_interfaces/cmake
 
+//The directory containing a CMake configuration file for console_bridge.
+console_bridge_DIR:PATH=/usr/lib/x86_64-linux-gnu/console_bridge/cmake
+
 //The directory containing a CMake configuration file for fastcdr.
 fastcdr_DIR:PATH=/opt/ros/humble/lib/cmake/fastcdr
 
@@ -346,8 +355,14 @@ fastrtps_cmake_module_DIR:PATH=/opt/ros/humble/share/fastrtps_cmake_module/cmake
 //The directory containing a CMake configuration file for fmt.
 fmt_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/fmt
 
+//The directory containing a CMake configuration file for geographiclib.
+geographiclib_DIR:PATH=geographiclib_DIR-NOTFOUND
+
 //The directory containing a CMake configuration file for geometry_msgs.
 geometry_msgs_DIR:PATH=/opt/ros/humble/share/geometry_msgs/cmake
+
+//The directory containing a CMake configuration file for gps_common.
+gps_common_DIR:PATH=gps_common_DIR-NOTFOUND
 
 //The directory containing a CMake configuration file for iceoryx_binding_c.
 iceoryx_binding_c_DIR:PATH=/opt/ros/humble/lib/x86_64-linux-gnu/cmake/iceoryx_binding_c
@@ -474,6 +489,9 @@ statistics_msgs_DIR:PATH=/opt/ros/humble/share/statistics_msgs/cmake
 
 //The directory containing a CMake configuration file for std_msgs.
 std_msgs_DIR:PATH=/opt/ros/humble/share/std_msgs/cmake
+
+//The directory containing a CMake configuration file for tf2.
+tf2_DIR:PATH=/opt/ros/humble/share/tf2/cmake
 
 //The directory containing a CMake configuration file for tracetools.
 tracetools_DIR:PATH=/opt/ros/humble/share/tracetools/cmake
@@ -636,10 +654,14 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding GeographicLib
+FIND_PACKAGE_MESSAGE_DETAILS_GeographicLib:INTERNAL=[/usr/lib/x86_64-linux-gnu][/usr/lib/x86_64-linux-gnu/libGeographic.so][/usr/include][v()]
 //Details about finding Python3
 FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/usr/bin/python3][cfound components: Interpreter ][v3.10.12()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
+//ADVANCED property for variable: GeographicLib_LIBRARIES
+GeographicLib_LIBRARIES-ADVANCED:INTERNAL=1
 _Python3_EXECUTABLE:INTERNAL=/usr/bin/python3
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;12;64;;cpython-310-x86_64-linux-gnu;/usr/lib/python3.10;/usr/lib/python3.10;/usr/lib/python3/dist-packages;/usr/lib/python3/dist-packages

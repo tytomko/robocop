@@ -26,3 +26,16 @@ c++ 파일 만들고 실행하려면 파이썬setup.py 수정하는것처럼 아
         robot_status_pub
         DESTINATION lib/${PROJECT_NAME})
 ```
+
+# 파라미터 포함 명령어
+
+```
+ros2 run robot_status_publisher one_robot_stat --ros-args -p robot_name:=ssafy -p robot_number:=1
+```
+
+# 설치해야하는거
+
+```
+sudo apt-get update
+sudo apt-get install libgeographic-dev
+```

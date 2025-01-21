@@ -9,12 +9,45 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(robot_custom_interfaces REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(geometry_msgs REQUIRED)
+# GeographicLib 추가 
+# Geographiclib installs FindGeographicLib.cmake to this non-standard location
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/geographiclib/")
+find_package(GeographicLib REQUIRED)
 
 # 파일 추가시 CMakelist.txt에 추가
 add_executable(robot_status_pub src/robot_status_pub.cpp)
+ament_target_dependencies(robot_status_pub
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  tf2
+  robot_custom_interfaces
+
+    # tf2_geometry_msgs 등
+)
+target_link_libraries(robot_status_pub
+  /lib/x86_64-linux-gnu/libGeographic.so
+)
+
 add_executable(one_robot_stat src/one_robot_status_pub.cpp)
-ament_target_dependencies(one_robot_stat robot_status_pub rclcpp std_msgs robot_custom_interfaces)
+ament_target_dependencies(one_robot_stat
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  robot_custom_interfaces
+  tf2
+  # tf2_geometry_msgs 등
+)
+target_link_libraries(one_robot_stat
+  /lib/x86_64-linux-gnu/libGeographic.so
+)
+
 install(TARGETS
   one_robot_stat
   robot_status_pub

@@ -210,6 +210,43 @@ robot_status_pub/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/robot_status_pub.dir/build.make CMakeFiles/robot_status_pub.dir/build
 .PHONY : robot_status_pub/fast
 
+#=============================================================================
+# Target rules for targets named one_robot_stat
+
+# Build rule for target.
+one_robot_stat: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 one_robot_stat
+.PHONY : one_robot_stat
+
+# fast build rule for target.
+one_robot_stat/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_robot_stat.dir/build.make CMakeFiles/one_robot_stat.dir/build
+.PHONY : one_robot_stat/fast
+
+src/one_robot_status_pub.o: src/one_robot_status_pub.cpp.o
+.PHONY : src/one_robot_status_pub.o
+
+# target to build an object file
+src/one_robot_status_pub.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_robot_stat.dir/build.make CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o
+.PHONY : src/one_robot_status_pub.cpp.o
+
+src/one_robot_status_pub.i: src/one_robot_status_pub.cpp.i
+.PHONY : src/one_robot_status_pub.i
+
+# target to preprocess a source file
+src/one_robot_status_pub.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_robot_stat.dir/build.make CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.i
+.PHONY : src/one_robot_status_pub.cpp.i
+
+src/one_robot_status_pub.s: src/one_robot_status_pub.cpp.s
+.PHONY : src/one_robot_status_pub.s
+
+# target to generate assembly for a file
+src/one_robot_status_pub.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/one_robot_stat.dir/build.make CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.s
+.PHONY : src/one_robot_status_pub.cpp.s
+
 src/robot_status_pub.o: src/robot_status_pub.cpp.o
 .PHONY : src/robot_status_pub.o
 
@@ -249,7 +286,11 @@ help:
 	@echo "... test"
 	@echo "... robot_status_publisher_uninstall"
 	@echo "... uninstall"
+	@echo "... one_robot_stat"
 	@echo "... robot_status_pub"
+	@echo "... src/one_robot_status_pub.o"
+	@echo "... src/one_robot_status_pub.i"
+	@echo "... src/one_robot_status_pub.s"
 	@echo "... src/robot_status_pub.o"
 	@echo "... src/robot_status_pub.i"
 	@echo "... src/robot_status_pub.s"

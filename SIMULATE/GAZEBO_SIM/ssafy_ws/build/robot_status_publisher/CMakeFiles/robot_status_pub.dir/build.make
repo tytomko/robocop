@@ -93,12 +93,14 @@ robot_status_pub_EXTERNAL_OBJECTS =
 robot_status_pub: CMakeFiles/robot_status_pub.dir/src/robot_status_pub.cpp.o
 robot_status_pub: CMakeFiles/robot_status_pub.dir/build.make
 robot_status_pub: /opt/ros/humble/lib/librclcpp.so
+robot_status_pub: /opt/ros/humble/lib/libtf2.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_fastrtps_c.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_fastrtps_cpp.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_introspection_c.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_introspection_cpp.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_cpp.so
 robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_generator_py.so
+robot_status_pub: /lib/x86_64-linux-gnu/libGeographic.so
 robot_status_pub: /opt/ros/humble/lib/liblibstatistics_collector.so
 robot_status_pub: /opt/ros/humble/lib/librcl.so
 robot_status_pub: /opt/ros/humble/lib/librmw_implementation.so
@@ -159,25 +161,25 @@ robot_status_pub: /opt/ros/humble/lib/libgeometry_msgs__rosidl_typesupport_cpp.s
 robot_status_pub: /opt/ros/humble/lib/libstd_msgs__rosidl_typesupport_cpp.so
 robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_typesupport_cpp.so
 robot_status_pub: /opt/ros/humble/lib/librosidl_typesupport_cpp.so
-robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_c.so
-robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_py.so
-robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_c.so
-robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libgeometry_msgs__rosidl_generator_py.so
 robot_status_pub: /opt/ros/humble/lib/libstd_msgs__rosidl_generator_py.so
-robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_py.so
-robot_status_pub: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_typesupport_c.so
+robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_typesupport_c.so
 robot_status_pub: /opt/ros/humble/lib/libgeometry_msgs__rosidl_typesupport_c.so
 robot_status_pub: /opt/ros/humble/lib/libstd_msgs__rosidl_typesupport_c.so
-robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_typesupport_c.so
+robot_status_pub: /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_custom_interfaces/lib/librobot_custom_interfaces__rosidl_generator_c.so
+robot_status_pub: /opt/ros/humble/lib/libsensor_msgs__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libgeometry_msgs__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/libstd_msgs__rosidl_generator_c.so
+robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_py.so
+robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_typesupport_c.so
 robot_status_pub: /opt/ros/humble/lib/libbuiltin_interfaces__rosidl_generator_c.so
 robot_status_pub: /opt/ros/humble/lib/librosidl_typesupport_c.so
 robot_status_pub: /opt/ros/humble/lib/librcpputils.so
 robot_status_pub: /opt/ros/humble/lib/librosidl_runtime_c.so
 robot_status_pub: /opt/ros/humble/lib/librcutils.so
+robot_status_pub: /usr/lib/x86_64-linux-gnu/libpython3.10.so
 robot_status_pub: CMakeFiles/robot_status_pub.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable robot_status_pub"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/robot_status_pub.dir/link.txt --verbose=$(VERBOSE)

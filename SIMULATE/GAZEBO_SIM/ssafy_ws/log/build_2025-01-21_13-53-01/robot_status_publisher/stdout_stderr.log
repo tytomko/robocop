@@ -1,0 +1,12 @@
+[35m[1mConsolidate compiler generated dependencies of target one_robot_stat[0m
+[ 50%] Built target robot_status_pub
+[ 75%] [32mBuilding CXX object CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o[0m
+[01m[K/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/robot_status_publisher/src/one_robot_status_pub.cpp:19:5:[m[K [01;31m[Kerror: [m[Knon-static data member declared with placeholder ‘[01m[Kauto[m[K’
+   19 |     [01;31m[Kauto[m[K robot_name;
+      |     [01;31m[K^~~~[m[K
+[01m[K/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/robot_status_publisher/src/one_robot_status_pub.cpp:20:5:[m[K [01;31m[Kerror: [m[Knon-static data member declared with placeholder ‘[01m[Kauto[m[K’
+   20 |     [01;31m[Kauto[m[K robot_num;
+      |     [01;31m[K^~~~[m[K
+gmake[2]: *** [CMakeFiles/one_robot_stat.dir/build.make:76: CMakeFiles/one_robot_stat.dir/src/one_robot_status_pub.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:165: CMakeFiles/one_robot_stat.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

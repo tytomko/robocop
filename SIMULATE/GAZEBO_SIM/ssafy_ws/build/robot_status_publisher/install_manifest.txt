@@ -1,3 +1,4 @@
+/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_status_publisher/lib/robot_status_publisher/one_robot_stat
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_status_publisher/lib/robot_status_publisher/robot_status_pub
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_status_publisher/share/ament_index/resource_index/package_run_dependencies/robot_status_publisher
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/install/robot_status_publisher/share/ament_index/resource_index/parent_prefix_path/robot_status_publisher

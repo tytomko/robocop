@@ -1,6 +1,7 @@
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/uninstall.dir
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/robot_status_publisher_uninstall.dir
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/robot_status_pub.dir
+/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/one_robot_stat.dir
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/test.dir
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/edit_cache.dir
 /home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/build/robot_status_publisher/CMakeFiles/rebuild_cache.dir
