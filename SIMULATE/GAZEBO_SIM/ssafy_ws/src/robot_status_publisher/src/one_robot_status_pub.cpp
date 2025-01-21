@@ -13,19 +13,24 @@ using namespace std::chrono_literals;
 
 class RobotStatusPublisher : public rclcpp::Node
 {
+
 public:
+    //전역 변수 선언
+    std::string robot_name;
+    int robot_num;
+
     RobotStatusPublisher()
     : Node("robot_status_pub_node")
     {
         // 1) 파라미터 선언
-        this->declare_parameter<std::string>("namespace_prefix", "");
+        this->declare_parameter<std::string>("robot_name", "");
         this->declare_parameter<int>("robot_number", 1);
 
-        auto prefix = this->get_parameter("namespace_prefix").as_string();
-        auto robot_num = this->get_parameter("robot_number").as_int();
+        robot_name = this->get_parameter("robot_name").as_string();
+        robot_num = this->get_parameter("robot_number").as_int();
 
         // 2) 구독 토픽 결정
-        std::string imu_topic = namespace_prefix + "/imu";
+        std::string imu_topic = "/" + robot_name + "/imu";
 
         // 3) 발행 토픽 결정
         //    예) robot_num = 3 --> /robot_3/heading
@@ -34,8 +39,8 @@ public:
         // 디버그용 로그
         RCLCPP_INFO(
             this->get_logger(),
-            "Node initialized: namespace_prefix='%s', robot_number=%ld, imu_topic='%s', heading_topic='%s'",
-            prefix.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str()
+            "Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s'",
+            robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str()
         );
 
         // IMU 구독
@@ -94,7 +99,7 @@ private:
     void publish_status()
     {
         auto message = robot_custom_interfaces::msg::Status();
-        message.id = 1;
+        message.id = static_cast<int32_t>(robot_num); 
         message.status = "operational";
         message.temperature = 36.5f; 
         message.is_active = true;
