@@ -23,8 +23,8 @@ public:
     : Node("robot_status_pub_node")
     {
         // 1) 파라미터 선언
-        this->declare_parameter<std::string>("robot_name", "");
-        this->declare_parameter<int>("robot_number", 1);
+        this->declare_parameter<std::string>("robot_name", "not_defined");
+        this->declare_parameter<int>("robot_number", -1);
 
         robot_name = this->get_parameter("robot_name").as_string();
         robot_num = this->get_parameter("robot_number").as_int();
