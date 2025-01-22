@@ -19,7 +19,7 @@ ament_target_dependencies(robot_patrol
   std_msgs
   sensor_msgs
   geometry_msgs
-  )
+)
 
 install(TARGETS
   robot_patrol
