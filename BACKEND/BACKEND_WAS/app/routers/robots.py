@@ -3,13 +3,14 @@ from pydantic import BaseModel
 from typing import List, Literal, Optional, Any
 from datetime import datetime
 from ..schemas.responses import BaseResponse, ErrorDetail
-from ..database import db, robots
+from ..database import db
 from ..models.robot import Robot, Position, BatteryStatus, RobotStatus, RobotImage
+from ..models.schedule import Schedule, ScheduleCreate, ScheduleUpdate, Location
 import os
 import uuid
 import re
 
-router = APIRouter(prefix="/robots", tags=["robots"])
+router = APIRouter(tags=["robots"])
 
 # 이미지 저장 경로 설정
 UPLOAD_DIR = "storage/robots"
@@ -90,7 +91,7 @@ async def create_robot(
 ):
     try:
         # 로봇 이름 중복 검사
-        existing_robot = await robots.find_one({"name": name})
+        existing_robot = await Robot.find_one(Robot.name == name)
         if existing_robot:
             raise HTTPException(
                 status_code=400,
@@ -119,9 +120,7 @@ async def create_robot(
         robot_image = None
         image_path = None
         
-        # 이미지가 제공되고 실제 UploadFile인 경우에만 처리
         if image and isinstance(image, UploadFile):
-            # 파일 확장자 추출
             ext = os.path.splitext(image.filename)[1].lower()
             if ext not in ['.jpg', '.jpeg', '.png']:
                 raise HTTPException(
@@ -129,18 +128,15 @@ async def create_robot(
                     detail="지원하지 않는 이미지 형식입니다."
                 )
             
-            # 이미지 저장
             image_id = f"robot_{robot_id}_{uuid.uuid4()}{ext}"
             image_path = os.path.join(UPLOAD_DIR, image_id)
             
             try:
-                # 파일 저장
                 content = await image.read()
-                if content:  # 실제 내용이 있는 경우에만 저장
+                if content:
                     with open(image_path, "wb") as buffer:
                         buffer.write(content)
                     
-                    # RobotImage 모델 생성
                     robot_image = RobotImage(
                         image_id=image_id,
                         url=f"/storage/robots/{image_id}",
@@ -150,43 +146,23 @@ async def create_robot(
                 if image_path and os.path.exists(image_path):
                     os.remove(image_path)
                 print(f"이미지 처리 중 오류 발생: {str(e)}")
-                # 이미지 처리 실패해도 로봇은 생성되도록 함
                 pass
         
-        # 기본값이 포함된 전체 로봇 데이터 생성
-        robot_dict = {
-            "robot_id": robot_id,
-            "name": name,
-            "ip_address": ip_address,
-            "status": RobotStatus.IDLE.value,
-            "position": {
-                "x": 0.0,
-                "y": 0.0,
-                "theta": 0.0
-            },
-            "battery": {
-                "level": 100.0,
-                "is_charging": False
-            },
-            "image": robot_image.dict() if robot_image else None,
-            "last_active": datetime.now(),
-            "created_at": datetime.now()
-        }
+        # 로봇 생성
+        robot = Robot(
+            robot_id=robot_id,
+            name=name,
+            ip_address=ip_address,
+            status=RobotStatus.IDLE,
+            position=Position(),
+            battery=BatteryStatus(),
+            image=robot_image,
+            last_active=datetime.now(),
+            created_at=datetime.now()
+        )
         
-        # Robot 모델로 변환하여 유효성 검사
-        robot = Robot(**robot_dict)
-            
-        # MongoDB에 저장 (robots 컬렉션 사용)
-        result = await robots.insert_one(robot_dict)
-        
-        if not result.inserted_id:
-            # 저장 실패 시 이미지 삭제
-            if image_path and os.path.exists(image_path):
-                os.remove(image_path)
-            raise HTTPException(
-                status_code=500,
-                detail="로봇 데이터 저장에 실패했습니다."
-            )
+        # 저장
+        await robot.insert()
         
         return BaseResponse[Robot](
             status=201,
@@ -196,7 +172,6 @@ async def create_robot(
         )
             
     except Exception as e:
-        # 이미지가 저장된 경우 삭제
         if image_path and os.path.exists(image_path):
             try:
                 os.remove(image_path)
@@ -211,16 +186,13 @@ async def create_robot(
 async def get_robots():
     try:
         # MongoDB에서 모든 로봇 정보 조회
-        robot_list = []
-        cursor = robots.find({})
-        async for doc in cursor:
-            robot_list.append(Robot(**doc))
+        robots = await Robot.find_all().to_list()
             
         return BaseResponse[List[Robot]](
             status=200,
             success=True,
             message="로봇 목록 조회 성공",
-            data=robot_list
+            data=robots
         )
     except Exception as e:
         raise HTTPException(
@@ -363,71 +335,210 @@ async def get_logs(
     type: str = Query(..., description="로그 타입 (route 또는 detection)")
 ):
     try:
-        if type == "route":
-            return BaseResponse[LogResponse](
-                status=200,
-                success=True,
-                message="이동 경로 로그 조회 성공",
-                data=LogResponse(
-                    robotId=f"robot_{id}",
-                    routes=[
-                        RouteLog(
-                            routeId="route_001",
-                            startTime=datetime.now(),
-                            endTime=datetime.now(),
-                            waypoints=[
-                                LogEntry(x=100, y=200, timestamp=datetime.now()),
-                                LogEntry(x=150, y=250, timestamp=datetime.now())
-                            ],
-                            status="completed"
-                        )
-                    ],
-                    pagination={
-                        "currentPage": 1,
-                        "totalPages": 5,
-                        "totalItems": 50,
-                        "itemsPerPage": 10
-                    }
-                )
-            )
-        else:
-            return BaseResponse[LogResponse](
-                status=200,
-                success=True,
-                message="인물 감지 로그 조회 성공",
-                data=LogResponse(
-                    robotId=f"robot_{id}",
-                    detections=[
-                        DetectionInfo(
-                            detectionId="detect_001",
-                            timestamp=datetime.now(),
-                            location=Position(x=150, y=200),
-                            personInfo={
-                                "personId": "person_123",
-                                "label": "John Doe",
-                                "confidence": 0.95
-                            },
-                            imageUrl="/storage/detections/det_001.jpg",
-                            status="verified"
-                        )
-                    ],
-                    pagination={
-                        "currentPage": 1,
-                        "totalPages": 3,
-                        "totalItems": 30,
-                        "itemsPerPage": 10
-                    }
-                )
-            )
-    except Exception:
         return BaseResponse[LogResponse](
-            status=404,
-            success=False,
-            message="로그 조회 실패",
-            errors=[
-                ErrorDetail(
-                    field="robotId",
-                    message="해당 로봇의 로그를 찾을 수 없습니다"
-                )
-            ]
-        ) 
+            status=200,
+            success=True,
+            message="로그 조회 성공",
+            data=LogResponse(
+                robotId=f"robot_{id}",
+                routes=[],
+                detections=[],
+                pagination={"total": 0, "page": 1, "size": 10}
+            )
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+@router.delete("/{id}", response_model=BaseResponse[None])
+async def delete_robot(id: int = Path(..., description="로봇 ID")):
+    try:
+        # 로봇 존재 여부 확인
+        robot = await Robot.find_one(Robot.robot_id == id)
+        if not robot:
+            raise HTTPException(
+                status_code=404,
+                detail="해당 ID의 로봇을 찾을 수 없습니다."
+            )
+        
+        # 로봇 이미지가 있다면 삭제
+        if robot.image and robot.image.image_id:
+            image_path = os.path.join(UPLOAD_DIR, robot.image.image_id)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        # 로봇 데이터 삭제
+        await robot.delete()
+        
+        return BaseResponse[None](
+            status=200,
+            success=True,
+            message="로봇이 성공적으로 삭제되었습니다."
+        )
+            
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@router.post("/{robot_id}/schedules", response_model=BaseResponse[Schedule])
+async def create_robot_schedule(
+    robot_id: int = Path(..., description="로봇 ID"),
+    schedule: ScheduleCreate = None
+):
+    try:
+        # 로봇 존재 확인
+        robot = await Robot.find_one(Robot.robot_id == robot_id)
+        if not robot:
+            raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
+        
+        # ID 생성
+        counter = await db.counters.find_one_and_update(
+            {"_id": "schedule_id"},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=True
+        )
+        
+        # 스케줄 생성
+        new_schedule = Schedule(
+            schedule_id=counter["seq"],
+            robot_id=robot_id,
+            title=schedule.title,
+            description=schedule.description,
+            start_time=schedule.start_time,
+            end_time=schedule.end_time,
+            repeat_days=schedule.repeat_days,
+            locations=schedule.locations
+        )
+        
+        await new_schedule.insert()
+        
+        return BaseResponse[Schedule](
+            status=201,
+            success=True,
+            message="스케줄이 생성되었습니다",
+            data=new_schedule
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{robot_id}/schedules", response_model=BaseResponse[List[Schedule]])
+async def get_robot_schedules(
+    robot_id: int = Path(..., description="로봇 ID"),
+    is_active: Optional[bool] = Query(None, description="활성 상태로 필터링")
+):
+    try:
+        # 로봇 존재 확인
+        robot = await Robot.find_one(Robot.robot_id == robot_id)
+        if not robot:
+            raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
+        
+        # 쿼리 조건 생성
+        query = {"robot_id": robot_id}
+        if is_active is not None:
+            query["status.is_active"] = is_active
+        
+        # 스케줄 조회
+        schedules = await Schedule.find(query).to_list()
+        
+        return BaseResponse[List[Schedule]](
+            status=200,
+            success=True,
+            message="스케줄 목록 조회 성공",
+            data=schedules
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{robot_id}/schedules/{schedule_id}", response_model=BaseResponse[Schedule])
+async def get_robot_schedule(
+    robot_id: int = Path(..., description="로봇 ID"),
+    schedule_id: int = Path(..., description="스케줄 ID")
+):
+    try:
+        # 스케줄 조회
+        schedule = await Schedule.find_one({"robot_id": robot_id, "schedule_id": schedule_id})
+        if not schedule:
+            raise HTTPException(status_code=404, detail="스케줄을 찾을 수 없습니다")
+        
+        return BaseResponse[Schedule](
+            status=200,
+            success=True,
+            message="스케줄 조회 성공",
+            data=schedule
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.patch("/{robot_id}/schedules/{schedule_id}", response_model=BaseResponse[Schedule])
+async def update_robot_schedule(
+    robot_id: int = Path(..., description="로봇 ID"),
+    schedule_id: int = Path(..., description="스케줄 ID"),
+    update_data: ScheduleUpdate = None
+):
+    try:
+        # 스케줄 존재 확인
+        schedule = await Schedule.find_one({"robot_id": robot_id, "schedule_id": schedule_id})
+        if not schedule:
+            raise HTTPException(status_code=404, detail="스케줄을 찾을 수 없습니다")
+        
+        # 기본 필드 업데이트
+        if update_data.title is not None:
+            schedule.title = update_data.title
+        if update_data.description is not None:
+            schedule.description = update_data.description
+        if update_data.start_time is not None:
+            schedule.start_time = update_data.start_time
+        if update_data.end_time is not None:
+            schedule.end_time = update_data.end_time
+        if update_data.repeat_days is not None:
+            schedule.repeat_days = update_data.repeat_days
+        if update_data.locations is not None:
+            schedule.locations = update_data.locations
+        if update_data.is_active is not None:
+            schedule.status.is_active = update_data.is_active
+        
+        schedule.updated_at = datetime.now()
+        await schedule.save()
+        
+        return BaseResponse[Schedule](
+            status=200,
+            success=True,
+            message="스케줄이 수정되었습니다",
+            data=schedule
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{robot_id}/schedules/{schedule_id}", response_model=BaseResponse[None])
+async def delete_robot_schedule(
+    robot_id: int = Path(..., description="로봇 ID"),
+    schedule_id: int = Path(..., description="스케줄 ID")
+):
+    try:
+        # 스케줄 존재 확인
+        schedule = await Schedule.find_one({"robot_id": robot_id, "schedule_id": schedule_id})
+        if not schedule:
+            raise HTTPException(status_code=404, detail="스케줄을 찾을 수 없습니다")
+        
+        await schedule.delete()
+        
+        return BaseResponse[None](
+            status=200,
+            success=True,
+            message="스케줄이 삭제되었습니다"
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) 

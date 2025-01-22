@@ -1,42 +1,35 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database import test_connection
-from .routers.auth import router as auth_router, create_admin_user
-from .routers.schedules import router as schedules_router
-from .routers.robots import router as robots_router
-from .routers.persons import router as persons_router
-from .config import get_settings
+from .routers import auth, robots, persons
+from .database import init_db
+import uvicorn
+import os
 
 app = FastAPI()
-settings = get_settings()
 
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 운영 환경에서는 구체적인 origin을 지정해야 합니다
+    allow_origins=["*"],  # 실제 운영 환경에서는 특정 도메인만 허용하도록 수정
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 라우터 등록
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(robots.router, prefix="/api/v1/robots", tags=["robots"])
+app.include_router(persons.router, tags=["persons"])
+
 @app.on_event("startup")
 async def startup_event():
-    # MongoDB 연결 테스트
-    if not await test_connection():
-        import sys
-        sys.exit(1)
-    await create_admin_user()
-
-# 라우터 등록
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(schedules_router, prefix="/api/v1", tags=["schedules"])
-app.include_router(robots_router, prefix="/api/v1", tags=["robots"])
-app.include_router(persons_router, prefix="/api/v1", tags=["persons"])
+    await init_db()
+    await auth.create_admin_user()
 
 @app.get("/")
 async def root():
     return {"message": "Robot Management API"}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=True) 
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=False) 

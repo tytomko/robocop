@@ -18,6 +18,19 @@ from datetime import datetime
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
+# 초기 관리자 계정 생성 함수
+async def create_admin_user():
+    # 관리자 계정이 없는 경우에만 생성
+    if not await db.users.find_one({"username": "admin"}):
+        admin_user = {
+            "username": "admin",
+            "password": get_password_hash("admin"),
+            "role": "admin",
+            "is_active": True,
+            "created_at": datetime.now()
+        }
+        await db.users.insert_one(admin_user)
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -37,19 +50,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
     return user
-
-# 초기 관리자 계정 생성 함수
-async def create_admin_user():
-    # 관리자 계정이 없는 경우에만 생성
-    if not await db.users.find_one({"username": "admin"}):
-        admin_user = {
-            "username": "admin",
-            "password": get_password_hash("admin"),
-            "role": "admin",
-            "is_active": True,
-            "created_at": datetime.now()
-        }
-        await db.users.insert_one(admin_user)
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -109,6 +109,12 @@ async def refresh_token(current_token: str):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token"
             )
+
+        # 기존 refresh token 삭제
+        await db.users.update_one(
+            {"username": username},
+            {"$set": {"refresh_token": None}}
+        )
 
         # 새로운 토큰 생성
         new_access_token = create_access_token(data={"sub": username})

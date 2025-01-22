@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime
 from ..schemas.responses import BaseResponse, ErrorDetail
 from ..database import db, persons  # persons 컬렉션 import
-from ..models.person import Person, PersonCreate, Department, Position, ImageInfo
+from ..models.person import Person, PersonCreate, ImageInfo
 import os
 import uuid
 
@@ -13,11 +13,6 @@ router = APIRouter(prefix="/api/v1/persons", tags=["persons"])
 # 이미지 저장 경로 설정
 UPLOAD_DIR = "storage/persons"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-class ImageInfo(BaseModel):
-    imageId: str
-    url: str
-    uploadedAt: datetime
 
 class PersonResponse(BaseModel):
     personId: str
