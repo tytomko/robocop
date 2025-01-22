@@ -32,8 +32,7 @@ public:
     // cmd_vel 토픽 발행
     cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
-    // speed_topic 토픽 발행
-    speed_publisher_ = this->create_publisher<std_msgs::msg::Float64>("speed_topic", 10);
+   
 
     // 일정 주기로 속도 갱신(가속/감속)하는 타이머
     timer_ = this->create_wall_timer(
@@ -153,11 +152,8 @@ private:
     cmd_vel_msg.angular.z = angular_vel_;
     cmd_vel_publisher_->publish(cmd_vel_msg);
 
-    // 속력 계산 및 발행
-    double speed = std::sqrt(std::pow(linear_vel_, 2) + std::pow(angular_vel_, 2));
-    std_msgs::msg::Float64 speed_msg;
-    speed_msg.data = speed;
-    speed_publisher_->publish(speed_msg);
+    
+    
   }
 
   // ---------- 멤버 변수들 ----------
