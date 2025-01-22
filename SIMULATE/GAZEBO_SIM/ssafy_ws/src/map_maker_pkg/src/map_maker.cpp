@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
 
     std::cout << "각 점의 좌표를 입력하세요 (x y z):\n";
     for (int i = 0; i < num_points; ++i) {
-        std::cout << "점 " << i + 1 << ": ";
+        std::cout << "🌟 점 " << i + 1 << " 🌟\n";
         Point p;
         std::cout << "x좌표: ";
         std::cin >> p.x;
