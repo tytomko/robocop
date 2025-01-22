@@ -12,6 +12,19 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 
+# 실행파일
+add_executable(robot_patrol src/robot_patrol.cpp)
+ament_target_dependencies(robot_patrol 
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  )
+
+install(TARGETS
+  map_maker
+  DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
