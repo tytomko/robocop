@@ -7,17 +7,20 @@
 #include <chrono>
 #include <iomanip>
 
+// 파라미터 설정 (언제든 수정 가능)
 // 저장 경로 및 파일명 설정 (언제든 수정 가능)
 const std::string SAVE_DIRECTORY = "map/"; // 저장할 디렉토리
 const std::string FILE_PREFIX = "path_"; // 파일 이름 접두사
 const std::string FILE_EXTENSION = ".csv"; // 확장자
 
+// 점 간격 설정 (10cm = 0.1m)
+constexpr double STEP_SIZE = 0.1;
+
 struct Point {
     double x, y;
 };
 
-// 점 간격 설정 (10cm = 0.1m)
-constexpr double STEP_SIZE = 0.1;
+
 
 // 두 점 사이의 거리 계산 함수
 double calculateDistance(const Point& p1, const Point& p2) {
