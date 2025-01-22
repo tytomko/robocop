@@ -1,3 +1,17 @@
+# 실행 가이드
+
+## 스태이터스 실행 파라미터 포함 명령어
+
+```
+ros2 run robot_status_publisher one_robot_stat --ros-args -p robot_name:=ssafy -p robot_number:=1
+```
+
+##
+```
+ros2 run map_maker_pkg map_maker
+```
+
+
 가제보 SIM 폴더 안에 SSAFY_WS가 있음.
 
 그 안에 `robot_custom_interfaces` 패키지에 커스텀 메시지를 정의함.
@@ -27,11 +41,6 @@ c++ 파일 만들고 실행하려면 파이썬setup.py 수정하는것처럼 아
         DESTINATION lib/${PROJECT_NAME})
 ```
 
-# 파라미터 포함 명령어
-
-```
-ros2 run robot_status_publisher one_robot_stat --ros-args -p robot_name:=ssafy -p robot_number:=1
-```
 
 # 설치해야하는거
 
