@@ -2,13 +2,18 @@
 
 ## 스태이터스 실행 파라미터 포함 명령어
 
-```
+```bash
 ros2 run robot_status_publisher one_robot_stat --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
-##
-```
+## 맵 생성기(점 개수, 점좌표 입력하면 직선으로 잇는 csv파일 맵 생성)
+```bash
 ros2 run map_maker_pkg map_maker
+```
+
+## 터틀봇 실행
+```bash
+ros2 launch turtlebot3_gazebo tb3_imu_lidar_gps_burger.launch.py
 ```
 
 
@@ -33,7 +38,7 @@ find_package(robot_custom_interfaces REQUIRED)
 
 c++ 파일 만들고 실행하려면 파이썬setup.py 수정하는것처럼 아래추가해야함
 ### CMakeLists.txt아래추가
-```
+```cmake
     add_executable(robot_status_pub src/robot_status_pub.cpp)
     ament_target_dependencies(robot_status_pub rclcpp std_msgs robot_custom_interfaces)
     install(TARGETS
