@@ -7,11 +7,10 @@
 #include <chrono>
 #include <iomanip>
 
-// 파라미터 설정 (언제든 수정 가능)
 // 저장 경로 및 파일명 설정 (언제든 수정 가능)
-const std::string SAVE_DIRECTORY = "map/"; // 저장할 디렉토리
-const std::string FILE_PREFIX = "path_"; // 파일 이름 접두사
-const std::string FILE_EXTENSION = ".csv"; // 확장자
+const std::string SAVE_DIRECTORY = "map/";  // 저장할 디렉토리
+const std::string FILE_PREFIX = "path_";    // 파일 이름 접두사
+const std::string FILE_EXTENSION = ".csv";  // 확장자
 
 // 점 간격 설정 (10cm = 0.1m)
 constexpr double STEP_SIZE = 0.1;
@@ -20,11 +19,11 @@ struct Point {
     double x, y, z;
 };
 
-
-
-// 두 점 사이의 거리 계산 함수
+// 두 점 사이의 거리 계산 함수 (x, y, z 포함)
 double calculateDistance(const Point& p1, const Point& p2) {
-    return std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
+    return std::sqrt(std::pow(p2.x - p1.x, 2) + 
+                     std::pow(p2.y - p1.y, 2) +
+                     std::pow(p2.z - p1.z, 2));
 }
 
 // 두 점 사이에 일정 간격으로 점 생성 함수
@@ -59,7 +58,7 @@ std::string getCurrentTimestamp() {
     return oss.str();
 }
 
-// 경로 데이터를 CSV 파일로 저장
+// 경로 데이터를 CSV 파일로 저장 (소수점 2자리 제한)
 void savePathToCSV(const std::vector<Point>& path) {
     std::string timestamp = getCurrentTimestamp();
     std::string filename = SAVE_DIRECTORY + FILE_PREFIX + timestamp + FILE_EXTENSION;
@@ -75,7 +74,8 @@ void savePathToCSV(const std::vector<Point>& path) {
 
     file << "x,y,z\n";  // CSV 헤더 추가
     for (const auto& p : path) {
-        file << p.x << "," << p.y << "," << p.z << "\n";
+        file << std::fixed << std::setprecision(2) 
+             << p.x << "," << p.y << "," << p.z << "\n";
     }
 
     file.close();
@@ -88,18 +88,16 @@ int main(int argc, char** argv) {
 
     std::vector<Point> input_points;
     int num_points;
-    
-    // 점 개수 입력
-    while(1){
+
+    // 점 개수 입력 검증
+    while (true) {
         std::cout << "점 개수를 입력하세요: ";
         std::cin >> num_points;
-        if(num_points < 2) {
+        if (num_points < 2) {
             std::cout << "점의 개수는 2개 이상이어야 합니다.\n";
-        }
-        if(num_points > 100 ) {
+        } else if (num_points > 100) {
             std::cout << "점의 개수는 100개 이하이어야 합니다.\n";
-        }
-        else {
+        } else {
             break;
         }
     }
