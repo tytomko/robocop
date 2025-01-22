@@ -22,7 +22,7 @@ ament_target_dependencies(robot_patrol
   )
 
 install(TARGETS
-  map_maker
+  robot_patrol
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

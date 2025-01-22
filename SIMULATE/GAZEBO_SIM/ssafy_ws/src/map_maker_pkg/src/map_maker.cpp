@@ -17,7 +17,7 @@ const std::string FILE_EXTENSION = ".csv"; // 확장자
 constexpr double STEP_SIZE = 0.1;
 
 struct Point {
-    double x, y;
+    double x, y, z;
 };
 
 
@@ -43,6 +43,7 @@ std::vector<Point> generatePath(const std::vector<Point>& input_points) {
             Point interpolated;
             interpolated.x = start.x + t * (end.x - start.x);
             interpolated.y = start.y + t * (end.y - start.y);
+            interpolated.z = start.z + t * (end.z - start.z);
             path.push_back(interpolated);
         }
     }
@@ -72,9 +73,9 @@ void savePathToCSV(const std::vector<Point>& path) {
         return;
     }
 
-    file << "x,y\n";  // CSV 헤더 추가
+    file << "x,y,z\n";  // CSV 헤더 추가
     for (const auto& p : path) {
-        file << p.x << "," << p.y << "\n";
+        file << p.x << "," << p.y << "," << p.z << "\n";
     }
 
     file.close();
@@ -94,16 +95,25 @@ int main(int argc, char** argv) {
         std::cin >> num_points;
         if(num_points < 2) {
             std::cout << "점의 개수는 2개 이상이어야 합니다.\n";
-        } else {
+        }
+        if(num_points > 100 ) {
+            std::cout << "점의 개수는 100개 이하이어야 합니다.\n";
+        }
+        else {
             break;
         }
     }
 
-    std::cout << "각 점의 좌표를 입력하세요 (x y):\n";
+    std::cout << "각 점의 좌표를 입력하세요 (x y z):\n";
     for (int i = 0; i < num_points; ++i) {
         std::cout << "점 " << i + 1 << ": ";
         Point p;
-        std::cin >> p.x >> p.y;
+        std::cout << "x좌표: ";
+        std::cin >> p.x;
+        std::cout << "y좌표: ";
+        std::cin >> p.y;
+        std::cout << "z좌표: ";
+        std::cin >> p.z;
         input_points.push_back(p);
     }
 
