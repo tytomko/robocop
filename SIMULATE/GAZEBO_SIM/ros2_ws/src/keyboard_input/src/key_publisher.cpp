@@ -73,6 +73,22 @@ private:
         {
         case ' ':
             return "SPACE";
+        case 'I':
+            return "UP_LEFT";
+        case 'i':
+            return "UP_LEFT";
+        case 'O':
+            return "UP_RIGHT";
+        case 'o':
+            return "UP_RIGHT";
+        case 'K':
+            return "DOWN_LEFT";
+        case 'k':
+            return "DOWN_LEFT";
+        case 'L':
+            return "DOWN_RIGHT";
+        case 'l':
+            return "DOWN_RIGHT";
         case '\033': // Arrow keys start with an escape sequence
             if (getKey() == '[')
             {
@@ -86,6 +102,7 @@ private:
                     return "RIGHT";
                 case 'D':
                     return "LEFT";
+                
                 }
             }
             break;
