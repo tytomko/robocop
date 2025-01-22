@@ -35,15 +35,28 @@ except Exception as e:
     print(f"오류 발생: {e}")
     exit()
 
+# 첫 번째 점을 기준으로 모든 좌표를 이동하여 시작점을 (0,0)으로 설정
+start_x = df['x'].iloc[0]
+start_y = df['y'].iloc[0]
+df['x'] = df['x'] - start_x
+df['y'] = df['y'] - start_y
+
 # 좌표 시각화 (NumPy 배열로 변환하여 오류 방지)
 plt.figure(figsize=(10, 10))
 
 # 경로 두께 조정 및 색상 설정 (두꺼운 선)
-plt.plot(df['x'].to_numpy(), df['y'].to_numpy(), 'r-', linewidth=5, label='Path')  # linewidth=5로 조정
+plt.plot(df['x'].to_numpy(), df['y'].to_numpy(), 'r-', linewidth=5, label='Path')
 
-# 그래프 설정 (경로 부분만 확대)
-plt.xlim(df['x'].min() - 1, df['x'].max() + 1)
-plt.ylim(df['y'].min() - 1, df['y'].max() + 1)
+# 그래프 설정 (이미지 중앙에 시작점 배치)
+x_min, x_max = df['x'].min(), df['x'].max()
+y_min, y_max = df['y'].min(), df['y'].max()
+
+plt.xlim(x_min - 1, x_max + 1)
+plt.ylim(y_min - 1, y_max + 1)
+
+# x, y축을 중앙에 위치하도록 설정
+plt.axhline(y=0, color='black', linewidth=1, linestyle='--')  # 중앙선 가이드
+plt.axvline(x=0, color='black', linewidth=1, linestyle='--')
 
 # 축, 그리드, 배경 제거
 plt.axis('off')  # 축 숨김
@@ -51,7 +64,7 @@ plt.grid(False)  # 그리드 제거
 plt.legend().set_visible(False)  # 범례 숨김
 
 # 이미지 저장 및 표시
-output_file = "path_visualization.png"
+output_file = "path_visualization_centered.png"
 plt.savefig(output_file, dpi=300, bbox_inches='tight', transparent=True)  # 배경 투명 설정
 print(f"경로 이미지가 '{output_file}'로 저장되었습니다.")
 plt.show()
