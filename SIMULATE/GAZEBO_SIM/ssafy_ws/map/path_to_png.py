@@ -2,6 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+os.system("pip install utm")  # utm 라이브러리 설치
+import utm  # UTM 변환을 위한 라이브러리
+
+
+
 
 # NumPy 버전 고정 (버전 체크 후 자동 변경)
 required_numpy_version = "1.26.4"
@@ -9,6 +14,14 @@ if np.__version__ != required_numpy_version:
     print(f"현재 NumPy 버전: {np.__version__}, {required_numpy_version}로 변경이 필요합니다.")
     os.system(f"pip install numpy=={required_numpy_version} --force-reinstall")
     exit("NumPy 버전이 업데이트되었습니다. 스크립트를 다시 실행하세요.")
+
+# Gazebo 맵 중앙 (위도, 경도) -> UTM 변환
+latitude = 35.1595
+longitude = 126.8526
+
+# UTM 변환 (zone 정보 포함)
+utm_x, utm_y, utm_zone, utm_letter = utm.from_latlon(latitude, longitude)
+print(f"Gazebo 중앙 UTM 좌표: ({utm_x}, {utm_y}) Zone: {utm_zone}{utm_letter}")
 
 # CSV 파일 로드
 csv_file = "patrol_path1.csv"
@@ -35,11 +48,17 @@ except Exception as e:
     print(f"오류 발생: {e}")
     exit()
 
-# 첫 번째 점을 기준으로 모든 좌표를 이동하여 시작점을 (0,0)으로 설정
-start_x = df['x'].iloc[0]
-start_y = df['y'].iloc[0]
-df['x'] = df['x'] - start_x
-df['y'] = df['y'] - start_y
+# Gazebo 중앙 좌표를 (0,0)으로 변환하여 조정
+df['x'] = df['x'] - utm_x
+df['y'] = df['y'] - utm_y
+
+# 이미지 중앙에 맞추기 위한 보정
+x_min, x_max = df['x'].min(), df['x'].max()
+y_min, y_max = df['y'].min(), df['y'].max()
+
+# 경로의 시작점이 이미지 중앙에 오도록 조정
+df['x'] = df['x'] - (x_min + x_max) / 2
+df['y'] = df['y'] - (y_min + y_max) / 2
 
 # 좌표 시각화 (NumPy 배열로 변환하여 오류 방지)
 plt.figure(figsize=(10, 10))
@@ -47,24 +66,18 @@ plt.figure(figsize=(10, 10))
 # 경로 두께 조정 및 색상 설정 (두꺼운 선)
 plt.plot(df['x'].to_numpy(), df['y'].to_numpy(), 'r-', linewidth=5, label='Path')
 
-# 그래프 설정 (이미지 중앙에 시작점 배치)
-x_min, x_max = df['x'].min(), df['x'].max()
-y_min, y_max = df['y'].min(), df['y'].max()
+# 그래프 설정 (중앙 배치 및 여백 조정)
+margin = 10  # 여백 추가
+plt.xlim(df['x'].min() - margin, df['x'].max() + margin)
+plt.ylim(df['y'].min() - margin, df['y'].max() + margin)
 
-plt.xlim(x_min - 1, x_max + 1)
-plt.ylim(y_min - 1, y_max + 1)
-
-# x, y축을 중앙에 위치하도록 설정
-plt.axhline(y=0, color='black', linewidth=1, linestyle='--')  # 중앙선 가이드
-plt.axvline(x=0, color='black', linewidth=1, linestyle='--')
-
-# 축, 그리드, 배경 제거
+# 축 및 불필요한 요소 제거
 plt.axis('off')  # 축 숨김
 plt.grid(False)  # 그리드 제거
 plt.legend().set_visible(False)  # 범례 숨김
 
 # 이미지 저장 및 표시
-output_file = "path_visualization_centered.png"
+output_file = "path_visualization.png"
 plt.savefig(output_file, dpi=300, bbox_inches='tight', transparent=True)  # 배경 투명 설정
 print(f"경로 이미지가 '{output_file}'로 저장되었습니다.")
 plt.show()
