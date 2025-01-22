@@ -2,11 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-os.system("pip install utm")  # utm 라이브러리 설치
+from PIL import Image
+
+# 필요한 라이브러리 설치
+os.system("pip install utm pillow")  # UTM 및 Pillow 설치
 import utm  # UTM 변환을 위한 라이브러리
-
-
-
 
 # NumPy 버전 고정 (버전 체크 후 자동 변경)
 required_numpy_version = "1.26.4"
@@ -63,7 +63,7 @@ df['y'] = df['y'] - (y_min + y_max) / 2
 # 좌표 시각화 (NumPy 배열로 변환하여 오류 방지)
 plt.figure(figsize=(10, 10))
 
-# 경로 두께 조정 및 색상 설정 (두꺼운 선)
+# 경로 두께 조정 및 색상 설정 (두꺼운 선, 빨간색)
 plt.plot(df['x'].to_numpy(), df['y'].to_numpy(), 'r-', linewidth=5, label='Path')
 
 # 그래프 설정 (중앙 배치 및 여백 조정)
@@ -76,8 +76,21 @@ plt.axis('off')  # 축 숨김
 plt.grid(False)  # 그리드 제거
 plt.legend().set_visible(False)  # 범례 숨김
 
-# 이미지 저장 및 표시
-output_file = "path_visualization.png"
-plt.savefig(output_file, dpi=300, bbox_inches='tight', transparent=True)  # 배경 투명 설정
-print(f"경로 이미지가 '{output_file}'로 저장되었습니다.")
+# 이미지 저장 (PNG - 투명한 배경 포함)
+output_file_png = "path_visualization.png"
+plt.savefig(output_file_png, dpi=300, bbox_inches='tight', transparent=True)
+print(f"경로 이미지가 '{output_file_png}'로 저장되었습니다.")
+
+# PNG 이미지를 RGBA 포맷으로 변환 및 확인
+img = Image.open(output_file_png).convert("RGBA")
+rgba_output_file = "path_visualization_rgba.png"
+img.save(rgba_output_file, format="PNG")
+print(f"RGBA 포맷 이미지가 '{rgba_output_file}'로 저장되었습니다.")
+
+# DDS 포맷으로 변환 (Gazebo 호환용)
+dds_output_file = "path_visualization.dds"
+img.save(dds_output_file, format="DDS")
+print(f"DDS 포맷 이미지가 '{dds_output_file}'로 저장되었습니다.")
+
+# 이미지 표시
 plt.show()
