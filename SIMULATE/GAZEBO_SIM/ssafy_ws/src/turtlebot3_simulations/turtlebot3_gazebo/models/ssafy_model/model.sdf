@@ -111,6 +111,7 @@
         </ray>
         <plugin name='gazebo_ros_laser_controller' filename='libgazebo_ros_velodyne_laser.so'>
           <ros>
+            <!-- 네임스페이스 설정 -->
             <namespace>ssafy</namespace> 
             <remapping>~/out:=velodyne_points</remapping>
           </ros>
@@ -173,6 +174,7 @@
         <!-- 플러그인 네임 중복되면 에러남 -->
         <plugin name="gazebo_ros_front_camera" filename="libgazebo_ros_camera.so">
           <ros>
+            <!-- 네임스페이스 설정 -->
             <namespace>ssafy</namespace>
             <!-- 필요한 remapping 설정 -->
             <remapping>~/image_raw:=front_camera/image_raw</remapping>
@@ -231,6 +233,7 @@
         <!-- ROS 플러그인 -->
         <plugin name="gazebo_ros_rear_camera" filename="libgazebo_ros_camera.so">
           <ros>
+            <!-- 네임스페이스 설정 -->
             <namespace>ssafy</namespace>
             <!-- 필요한 remapping 설정 -->
             <remapping>~/image_raw:=rear_camera/image_raw</remapping>
@@ -265,6 +268,7 @@
         <!-- Gazebo ROS GPS 플러그인 -->
         <plugin name="my_gps_plugin" filename="libgazebo_ros_gps_sensor.so">
           <ros>
+            <!-- 네임스페이스 설정 -->
             <namespace>ssafy</namespace>
             <remapping>~/out:=gps</remapping>
           </ros>
@@ -333,6 +337,7 @@
         </imu>
         <plugin name="turtlebot3_imu" filename="libgazebo_ros_imu_sensor.so">
           <ros>
+            <!-- 네임스페이스 설정 -->
             <namespace>ssafy</namespace>
             <remapping>~/out:=imu</remapping>
           </ros>
@@ -654,8 +659,10 @@
       <!-- limits -->
       <max_wheel_torque>20</max_wheel_torque>
       <max_wheel_acceleration>1.0</max_wheel_acceleration>
-
-      <command_topic>cmd_vel</command_topic>
+      
+      <!-- 네임스페이스 설정 -->
+      <namespace>ssafy</namespace>
+      <command_topic>/cmd_vel</command_topic>
 
       <!-- output -->
       <publish_odom>true</publish_odom>
