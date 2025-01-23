@@ -24,10 +24,10 @@ async def create_admin_user():
     if not await db.users.find_one({"username": "admin"}):
         admin_user = {
             "username": "admin",
-            "password": get_password_hash("admin"),
+            "hashedPassword": get_password_hash("admin"),
             "role": "admin",
-            "is_active": True,
-            "created_at": datetime.now()
+            "isActive": True,
+            "createdAt": datetime.now()
         }
         await db.users.insert_one(admin_user)
 
@@ -56,7 +56,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     # 사용자 확인
     user = await db.users.find_one({"username": form_data.username})
     
-    if not user or not verify_password(form_data.password, user["password"]):
+    if not user or not verify_password(form_data.password, user["hashedPassword"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -71,22 +71,22 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         data={"sub": user["username"]}
     )
 
-    # Refresh 토큰을 DB에 저장하고 last_login 업데이트
+    # Refresh 토큰을 DB에 저장하고 lastLogin 업데이트
     await db.users.update_one(
         {"username": user["username"]},
         {
             "$set": {
-                "refresh_token": refresh_token,
-                "last_login": datetime.now(),
-                "updated_at": datetime.now()
+                "refreshToken": refresh_token,
+                "lastLogin": datetime.now(),
+                "updatedAt": datetime.now()
             }
         }
     )
 
     return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "accessToken": access_token,
+        "refreshToken": refresh_token,
+        "tokenType": "bearer"
     }
 
 @router.post("/refresh", response_model=Token)
@@ -104,7 +104,7 @@ async def refresh_token(current_token: str):
 
         # DB에서 사용자의 refresh 토큰 확인
         user = await db.users.find_one({"username": username})
-        if not user or user.get("refresh_token") != current_token:
+        if not user or user.get("refreshToken") != current_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token"
@@ -113,7 +113,7 @@ async def refresh_token(current_token: str):
         # 기존 refresh token 삭제
         await db.users.update_one(
             {"username": username},
-            {"$set": {"refresh_token": None}}
+            {"$set": {"refreshToken": None}}
         )
 
         # 새로운 토큰 생성
@@ -125,16 +125,16 @@ async def refresh_token(current_token: str):
             {"username": username},
             {
                 "$set": {
-                    "refresh_token": new_refresh_token,
-                    "updated_at": datetime.now()
+                    "refreshToken": new_refresh_token,
+                    "updatedAt": datetime.now()
                 }
             }
         )
 
         return {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "bearer"
+            "accessToken": new_access_token,
+            "refreshToken": new_refresh_token,
+            "tokenType": "bearer"
         }
 
     except JWTError:
@@ -149,29 +149,29 @@ async def change_password(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        # 현재 비밀번호 확인
-        if not verify_password(password_data.current_password, current_user["password"]):
+        # 현재 비밀번호 확인 (current_user["hashedPassword"] 유지 - DB 필드명)
+        if not verify_password(password_data.currentPassword, current_user["hashedPassword"]):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="현재 비밀번호가 일치하지 않습니다."
             )
         
         # 새 비밀번호 확인
-        if password_data.new_password != password_data.confirm_password:
+        if password_data.newPassword != password_data.confirmPassword:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="새 비밀번호가 일치하지 않습니다."
             )
         
         # 비밀번호 업데이트
-        hashed_password = get_password_hash(password_data.new_password)
+        hashed_password = get_password_hash(password_data.newPassword)
         await db.users.update_one(
-            {"username": current_user["username"]},
+            {"username": current_user["username"]},  # username은 그대로 유지
             {
                 "$set": {
-                    "password": hashed_password,
-                    "is_default_password": False,
-                    "updated_at": datetime.now()
+                    "hashedPassword": hashed_password,     # password는 DB 필드명이므로 유지
+                    "isDefaultPassword": False,
+                    "updatedAt": datetime.now()
                 }
             }
         )
@@ -194,7 +194,7 @@ async def check_password_status(current_user: User = Depends(get_current_user)):
     return {
         "success": True,
         "data": {
-            "is_default_password": current_user["is_default_password"]
+            "isDefaultPassword": current_user["isDefaultPassword"]  # is_default_password -> isDefaultPassword
         }
     }
 
@@ -203,11 +203,11 @@ async def logout(current_user = Depends(get_current_user)):
     try:
         # 리프레시 토큰 무효화
         await db.users.update_one(
-            {"username": current_user["username"]},
+            {"username": current_user["username"]},  # username은 그대로 유지
             {
                 "$set": {
-                    "refresh_token": None,
-                    "last_logout": datetime.now()
+                    "refreshToken": None,
+                    "lastLogout": datetime.now()
                 }
             }
         )

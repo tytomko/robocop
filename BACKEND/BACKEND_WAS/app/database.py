@@ -7,8 +7,13 @@ from .models.schedule import Schedule
 from .config import get_settings
 import logging
 import certifi
+from os import environ
 
 settings = get_settings()
+
+# 로거 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # MongoDB 클라이언트 생성
 client = AsyncIOMotorClient(
@@ -50,31 +55,32 @@ async def init_db():
             await db.create_collection("counters")
             # 각종 ID 시퀀스 초기화
             await db.counters.insert_many([
-                {"_id": "robot_id", "seq": 0},
-                {"_id": "schedule_id", "seq": 0},
-                {"_id": "person_id", "seq": 0}
+                {"_id": "robotId", "seq": 0},
+                {"_id": "scheduleId", "seq": 0},
+                {"_id": "personId", "seq": 0}
             ])
         else:
             # 시퀀스 초기화
             await db.counters.update_many(
-                {"_id": {"$in": ["robot_id", "schedule_id", "person_id"]}},
+                {"_id": {"$in": ["robotId", "scheduleId", "personId"]}},
                 {"$set": {"seq": 0}}
             )
 
-        logging.info("Database initialized successfully")
+        logger.info("Database initialized successfully")
         return True
     except Exception as e:
-        logging.error(f"Error initializing database: {str(e)}")
+        logger.error(f"Error initializing database: {str(e)}")
         return False
 
+# test_connection과 test_db_connection 함수를 하나로 통합
 async def test_connection():
     try:
         await client.admin.command('ping')
-        print("MongoDB 연결 성공!")
+        logger.info("MongoDB connection test successful")
         # 데이터베이스 초기화
         if await init_db():
-            print("데이터베이스 구조 초기화 성공!")
+            logger.info("Database structure initialized successfully")
         return True
     except Exception as e:
-        print(f"MongoDB 연결 실패: {str(e)}")
+        logger.error(f"MongoDB connection test failed: {e}")
         return False 

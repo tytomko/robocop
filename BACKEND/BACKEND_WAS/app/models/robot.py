@@ -11,7 +11,7 @@ class Position(BaseModel):
 
 class BatteryStatus(BaseModel):
     level: float = 100.0
-    is_charging: bool = False
+    isCharging: bool = False
 
 class RobotStatus(str, Enum):
     IDLE = "idle"
@@ -21,25 +21,25 @@ class RobotStatus(str, Enum):
     EMERGENCY = "emergency"
 
 class RobotImage(BaseModel):
-    image_id: str
+    imageId: str
     url: str
-    created_at: datetime
+    createdAt: datetime
 
 class Robot(Document):
-    robot_id: int
+    robotId: int
     name: str
-    ip_address: str
+    ipAddress: str
     status: RobotStatus = RobotStatus.IDLE
     position: Position
     battery: BatteryStatus
     image: Optional[RobotImage] = None
-    last_active: datetime
-    created_at: datetime
+    lastActive: datetime
+    createdAt: datetime
 
     class Settings:
         name = "robots"
         indexes = [
-            "robot_id",
+            "robotId",
             "name",
             ("position.x", "position.y")
         ]
@@ -47,4 +47,4 @@ class Robot(Document):
 # Form 데이터로 받을 생성 모델
 class RobotCreate(BaseModel):
     name: str
-    ip_address: str 
+    ipAddress: str 

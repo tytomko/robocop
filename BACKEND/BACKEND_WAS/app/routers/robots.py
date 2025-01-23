@@ -138,9 +138,9 @@ async def create_robot(
                         buffer.write(content)
                     
                     robot_image = RobotImage(
-                        image_id=image_id,
+                        imageId=image_id,
                         url=f"/storage/robots/{image_id}",
-                        created_at=datetime.now()
+                        createdAt=datetime.now()
                     )
             except Exception as e:
                 if image_path and os.path.exists(image_path):
@@ -150,15 +150,15 @@ async def create_robot(
         
         # 로봇 생성
         robot = Robot(
-            robot_id=robot_id,
+            robotId=robot_id,
             name=name,
-            ip_address=ip_address,
+            ipAddress=ip_address,
             status=RobotStatus.IDLE,
             position=Position(),
             battery=BatteryStatus(),
             image=robot_image,
-            last_active=datetime.now(),
-            created_at=datetime.now()
+            lastActive=datetime.now(),
+            createdAt=datetime.now()
         )
         
         # 저장
@@ -356,7 +356,7 @@ async def get_logs(
 async def delete_robot(id: int = Path(..., description="로봇 ID")):
     try:
         # 로봇 존재 여부 확인
-        robot = await Robot.find_one(Robot.robot_id == id)
+        robot = await Robot.find_one(Robot.robotId == id)
         if not robot:
             raise HTTPException(
                 status_code=404,
@@ -364,8 +364,8 @@ async def delete_robot(id: int = Path(..., description="로봇 ID")):
             )
         
         # 로봇 이미지가 있다면 삭제
-        if robot.image and robot.image.image_id:
-            image_path = os.path.join(UPLOAD_DIR, robot.image.image_id)
+        if robot.image and robot.image.imageId:
+            image_path = os.path.join(UPLOAD_DIR, robot.image.imageId)
             if os.path.exists(image_path):
                 os.remove(image_path)
         
@@ -393,7 +393,7 @@ async def create_robot_schedule(
 ):
     try:
         # 로봇 존재 확인
-        robot = await Robot.find_one(Robot.robot_id == robot_id)
+        robot = await Robot.find_one(Robot.robotId == robot_id)
         if not robot:
             raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
         
@@ -407,13 +407,13 @@ async def create_robot_schedule(
         
         # 스케줄 생성
         new_schedule = Schedule(
-            schedule_id=counter["seq"],
-            robot_id=robot_id,
+            scheduleId=counter["seq"],
+            robotId=robot_id,
             title=schedule.title,
             description=schedule.description,
-            start_time=schedule.start_time,
-            end_time=schedule.end_time,
-            repeat_days=schedule.repeat_days,
+            startTime=schedule.start_time,
+            endTime=schedule.end_time,
+            repeatDays=schedule.repeat_days,
             locations=schedule.locations
         )
         
@@ -435,14 +435,14 @@ async def get_robot_schedules(
 ):
     try:
         # 로봇 존재 확인
-        robot = await Robot.find_one(Robot.robot_id == robot_id)
+        robot = await Robot.find_one(Robot.robotId == robot_id)
         if not robot:
             raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
         
         # 쿼리 조건 생성
-        query = {"robot_id": robot_id}
+        query = {"robotId": robot_id}
         if is_active is not None:
-            query["status.is_active"] = is_active
+            query["status.isActive"] = is_active
         
         # 스케줄 조회
         schedules = await Schedule.find(query).to_list()
@@ -463,7 +463,7 @@ async def get_robot_schedule(
 ):
     try:
         # 스케줄 조회
-        schedule = await Schedule.find_one({"robot_id": robot_id, "schedule_id": schedule_id})
+        schedule = await Schedule.find_one({"robotId": robot_id, "scheduleId": schedule_id})
         if not schedule:
             raise HTTPException(status_code=404, detail="스케줄을 찾을 수 없습니다")
         
@@ -486,7 +486,7 @@ async def update_robot_schedule(
 ):
     try:
         # 스케줄 존재 확인
-        schedule = await Schedule.find_one({"robot_id": robot_id, "schedule_id": schedule_id})
+        schedule = await Schedule.find_one({"robotId": robot_id, "scheduleId": schedule_id})
         if not schedule:
             raise HTTPException(status_code=404, detail="스케줄을 찾을 수 없습니다")
         
@@ -495,18 +495,18 @@ async def update_robot_schedule(
             schedule.title = update_data.title
         if update_data.description is not None:
             schedule.description = update_data.description
-        if update_data.start_time is not None:
-            schedule.start_time = update_data.start_time
-        if update_data.end_time is not None:
-            schedule.end_time = update_data.end_time
-        if update_data.repeat_days is not None:
-            schedule.repeat_days = update_data.repeat_days
+        if update_data.startTime is not None:
+            schedule.startTime = update_data.start_time
+        if update_data.endTime is not None:
+            schedule.endTime = update_data.end_time
+        if update_data.repeatDays is not None:
+            schedule.repeatDays = update_data.repeat_days
         if update_data.locations is not None:
             schedule.locations = update_data.locations
-        if update_data.is_active is not None:
-            schedule.status.is_active = update_data.is_active
+        if update_data.isActive is not None:
+            schedule.status.isActive = update_data.is_active
         
-        schedule.updated_at = datetime.now()
+        schedule.updatedAt = datetime.now()
         await schedule.save()
         
         return BaseResponse[Schedule](
@@ -527,7 +527,7 @@ async def delete_robot_schedule(
 ):
     try:
         # 스케줄 존재 확인
-        schedule = await Schedule.find_one({"robot_id": robot_id, "schedule_id": schedule_id})
+        schedule = await Schedule.find_one({"robotId": robot_id, "scheduleId": schedule_id})
         if not schedule:
             raise HTTPException(status_code=404, detail="스케줄을 찾을 수 없습니다")
         
