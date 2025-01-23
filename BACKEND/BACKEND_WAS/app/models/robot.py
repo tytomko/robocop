@@ -1,8 +1,8 @@
 from beanie import Document
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Position(BaseModel):
     x: float = 0.0
@@ -27,7 +27,7 @@ class RobotImage(BaseModel):
 
 class Robot(Document):
     robotId: int
-    name: str
+    name: str = Field(..., unique=True)
     ipAddress: str
     status: RobotStatus = RobotStatus.IDLE
     position: Position
@@ -39,12 +39,30 @@ class Robot(Document):
     class Settings:
         name = "robots"
         indexes = [
+            [("name", 1)],
             "robotId",
-            "name",
             ("position.x", "position.y")
         ]
 
-# Form 데이터로 받을 생성 모델
+# API 요청용 모델들
+class RobotIdentifier(BaseModel):
+    """로봇 식별을 위한 모델 - ID 또는 이름 사용 가능"""
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+    def get_query(self):
+        """쿼리 조건 생성"""
+        if self.id is not None:
+            return {"robotId": self.id}
+        if self.name is not None:
+            return {"name": self.name}
+        raise ValueError("Either id or name must be provided")
+
 class RobotCreate(BaseModel):
-    name: str
-    ipAddress: str 
+    name: str = Field(..., description="로봇의 고유 이름")
+    ipAddress: str
+
+class RobotUpdate(BaseModel):
+    name: Optional[str] = None
+    ipAddress: Optional[str] = None
+    status: Optional[RobotStatus] = None 

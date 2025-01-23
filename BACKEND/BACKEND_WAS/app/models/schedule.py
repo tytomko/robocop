@@ -1,8 +1,26 @@
-from beanie import Document, Link
+from beanie import Document
 from typing import Optional, List
-from datetime import datetime
-from pydantic import BaseModel
+from datetime import datetime, time
+from pydantic import BaseModel, Field
+from enum import Enum
 from .robot import Robot
+
+class DayOfWeek(str, Enum):
+    MONDAY = "MONDAY"
+    TUESDAY = "TUESDAY"
+    WEDNESDAY = "WEDNESDAY"
+    THURSDAY = "THURSDAY"
+    FRIDAY = "FRIDAY"
+    SATURDAY = "SATURDAY"
+    SUNDAY = "SUNDAY"
+
+class OperatingTime(BaseModel):
+    start_time: time  # HH:MM 형식
+    end_time: time    # HH:MM 형식
+    active_days: List[DayOfWeek] = Field(
+        default=[],
+        description="운영 요일 (예: ['SATURDAY', 'SUNDAY'])"
+    )
 
 class Location(BaseModel):
     x: float
@@ -17,12 +35,10 @@ class ScheduleStatus(BaseModel):
 
 class Schedule(Document):
     scheduleId: int
-    robotId: int  # 로봇 ID 직접 참조
+    robotId: Optional[int] = None  # None인 경우 모든 로봇에 적용
     title: str
     description: Optional[str] = None
-    startTime: datetime
-    endTime: datetime
-    repeatDays: List[int] = []  # 0: 월요일, 6: 일요일
+    operatingTime: OperatingTime
     locations: List[Location]
     status: ScheduleStatus = ScheduleStatus()
     createdAt: datetime = datetime.now()
@@ -33,8 +49,6 @@ class Schedule(Document):
         indexes = [
             "scheduleId",
             "robotId",
-            "startTime",
-            "endTime",
             "status.isActive",
             "status.isCompleted"
         ]
@@ -43,16 +57,20 @@ class Schedule(Document):
 class ScheduleCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    startTime: datetime
-    endTime: datetime
-    repeatDays: List[int] = []
+    start_time: time
+    end_time: time
+    active_days: List[DayOfWeek] = Field(
+        default=[],
+        description="운영 요일 (예: ['SATURDAY', 'SUNDAY'])"
+    )
     locations: List[Location]
+    apply_to_all_robots: bool = False
 
 class ScheduleUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    startTime: Optional[datetime] = None
-    endTime: Optional[datetime] = None
-    repeatDays: Optional[List[int]] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    active_days: Optional[List[DayOfWeek]] = None
     locations: Optional[List[Location]] = None
     isActive: Optional[bool] = None 

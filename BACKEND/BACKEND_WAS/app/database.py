@@ -33,11 +33,9 @@ schedules = db.schedules
 
 async def init_db():
     try:
-        # 기존 컬렉션 삭제 (초기화)
+        # # 기존 컬렉션 삭제 (초기화)
         collections = await db.list_collection_names()
-        for collection in collections:
-            if collection != "counters":  # counters 컬렉션은 유지
-                await db.drop_collection(collection)
+        # 컬렉션 삭제 로직 제거 - 기존 데이터 유지
         
         # Beanie 초기화 (자동으로 인덱스 생성)
         await init_beanie(
@@ -72,6 +70,21 @@ async def init_db():
         logger.error(f"Error initializing database: {str(e)}")
         return False
 
+async def create_admin_if_not_exists():
+    try:
+        from .routers.auth import create_admin_user
+        # admin 계정 존재 여부 확인
+        admin_user = await User.find_one({"username": "admin"})
+        
+        if not admin_user:
+            # auth.py의 create_admin_user 함수 사용
+            await create_admin_user()
+            logger.info("Admin account created successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error creating admin account: {str(e)}")
+        return False
+
 # test_connection과 test_db_connection 함수를 하나로 통합
 async def test_connection():
     try:
@@ -80,6 +93,8 @@ async def test_connection():
         # 데이터베이스 초기화
         if await init_db():
             logger.info("Database structure initialized successfully")
+            # admin 계정 확인 및 생성
+            await create_admin_if_not_exists()
         return True
     except Exception as e:
         logger.error(f"MongoDB connection test failed: {e}")
