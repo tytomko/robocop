@@ -1,0 +1,2 @@
+subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+        topic_name, 10, std::bind(&PathSaverNode::utmPoseCallback, this, std::placeholders::_1));
