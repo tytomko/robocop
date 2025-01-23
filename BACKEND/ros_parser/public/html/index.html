@@ -2,53 +2,169 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>ROS 웹 인터페이스</title>
+    <title>WebRTC Video Stream</title>
     <style>
-        #camera-canvas {
-            max-width: 100%;
+        #video {
+            max-width: 800px;
+            width: 100%;
+            margin: 20px auto;
+            display: block;
+        }
+        #debug {
+            margin: 20px;
+            padding: 10px;
             border: 1px solid #ccc;
+            white-space: pre-wrap;
+        }
+        #fps {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <h1>ROS 웹 인터페이스</h1>
-    <canvas id="camera-canvas"></canvas>
-
+    <div id="fps">FPS: 0.0</div>
+    <video id="video" autoplay playsinline></video>
+    <div id="debug"></div>
+    
     <script>
-        const ws = new WebSocket('ws://localhost:3000/ws');
-        const canvas = document.getElementById('camera-canvas');
-        const ctx = canvas.getContext('2d');
-
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.image) {
-                // Canvas 크기 설정
-                canvas.width = data.width;
-                canvas.height = data.height;
-
-                // Base64 디코딩
-                const binary = atob(data.image);
-                const array = new Uint8ClampedArray(binary.length);
-                for (let i = 0; i < binary.length; i++) {
-                    array[i] = binary.charCodeAt(i);
-                }
-
-                // ImageData 생성 및 캔버스에 그리기
-                const imageData = new ImageData(array, data.width, data.height);
-                ctx.putImageData(imageData, 0, 0);
-                
-                console.log('이미지 데이터 수신:', data.width, 'x', data.height);
+        const video = document.getElementById('video');
+        const debug = document.getElementById('debug');
+        const fpsDisplay = document.getElementById('fps');
+        
+        let frameCount = 0;
+        let lastTime = performance.now();
+        
+        // FPS 계산 및 표시
+        function calculateFPS() {
+            frameCount++;
+            const now = performance.now();
+            const elapsed = now - lastTime;
+            
+            if (elapsed >= 1000) { // 1초마다 FPS 업데이트
+                const fps = (frameCount * 1000) / elapsed;
+                fpsDisplay.textContent = `FPS: ${fps.toFixed(1)}`;
+                frameCount = 0;
+                lastTime = now;
             }
-        };
+            
+            requestAnimationFrame(calculateFPS);
+        }
+        
+        // 비디오 프레임 이벤트 리스너
+        video.addEventListener('play', () => {
+            log('비디오 재생 시작');
+            calculateFPS();
+        });
+        
+        function log(message) {
+            console.log(message);
+            debug.textContent += message + '\n';
+        }
+        
+        async function start() {
+            try {
+                log('WebRTC 연결 시작...');
+                
+                // ICE 서버 설정
+                const configuration = {
+                    iceServers: [
+                        {
+                            urls: [
+                                'stun:stun.l.google.com:19302',
+                                'stun:stun1.l.google.com:19302'
+                            ]
+                        },
+                        {
+                            urls: ['turn:numb.viagenie.ca'],
+                            username: 'webrtc@live.com',
+                            credential: 'muazkh'
+                        }
+                    ],
+                    iceTransportPolicy: 'all'
+                };
+                
+                log('PeerConnection 설정:', JSON.stringify(configuration));
+                const pc = new RTCPeerConnection(configuration);
+                
+                // ICE 상태 모니터링 추가
+                pc.oniceconnectionstatechange = () => {
+                    log('ICE 연결 상태:', pc.iceConnectionState);
+                    if (pc.iceConnectionState === 'failed') {
+                        log('ICE 연결 실패 - 재시도 필요');
+                    }
+                };
 
-        ws.onerror = function(error) {
-            console.error('WebSocket 에러:', error);
-        };
+                pc.onicegatheringstatechange = () => {
+                    log('ICE gathering 상태:', pc.iceGatheringState);
+                };
 
-        ws.onclose = function() {
-            console.log('WebSocket 연결이 종료되었습니다');
-        };
+                pc.onicecandidate = e => {
+                    if (e.candidate) {
+                        log('ICE candidate:', e.candidate.type);
+                    }
+                };
+                
+                // 2. 이벤트 핸들러 설정
+                pc.ontrack = function(event) {
+                    log('트랙 수신됨');
+                    if (event.track.kind === 'video') {
+                        log('비디오 트랙 설정');
+                        video.srcObject = event.streams[0];
+                    }
+                };
+                
+                // 3. Offer 생성
+                log('Offer 생성 중...');
+                const offer = await pc.createOffer({
+                    offerToReceiveVideo: true
+                });
+                
+                log('Local Description 설정 중...');
+                await pc.setLocalDescription(offer);
+                
+                // 4. 서버에 offer 전송
+                log('서버에 offer 전송 중...');
+                const response = await fetch('/offer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sdp: pc.localDescription.sdp,
+                        type: pc.localDescription.type
+                    })
+                });
+                
+                // 5. 응답 처리
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`서버 에러: ${response.status} - ${errorText}`);
+                }
+                
+                const answer = await response.json();
+                log('서버로부터 응답 수신');
+                log(`응답 type: ${answer.type}`);
+                
+                // 6. Remote Description 설정
+                log('Remote Description 설정 중...');
+                await pc.setRemoteDescription(answer);
+                log('WebRTC 연결 설정 완료');
+                
+            } catch (e) {
+                log('에러 발생:');
+                log(e.toString());
+                console.error(e);
+            }
+        }
+        
+        start();
     </script>
 </body>
 </html> 
