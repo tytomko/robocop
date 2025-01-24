@@ -1,11 +1,23 @@
 # 로봇의 고유 ID
 int32 id
 
-# 현재 상태를 나타내는 문자열
+# 로봇의 이름
+string name
+
+# 현재 상태를 나타내는 모드 /순찰중 /수동모드 /충전중
 string status
 
-# 로봇의 온도(섭씨)
-float32 temperature
+# 배터리 (더미)
+float32 battery
 
-# true면 동작 중, false면 정지
+# 로봇의 CPU온도(섭씨)(더미)
+float32 temperatures
+
+# 네트워크 상테 (더미)
+float32 network
+
+# 작동 시작시간
+string starttime
+
+# true면 ON, false면 OFF
 bool is_active
