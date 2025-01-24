@@ -53,3 +53,9 @@ c++ 파일 만들고 실행하려면 파이썬setup.py 수정하는것처럼 아
 sudo apt-get update
 sudo apt-get install libgeographic-dev
 ```
+
+```
+sudo pip3 install scikit-learn
+sudo pip3 install networkx
+pip install "numpy<1.25.0"
+```
