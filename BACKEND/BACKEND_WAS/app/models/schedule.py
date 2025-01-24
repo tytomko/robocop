@@ -1,8 +1,26 @@
-from beanie import Document, Link
+from beanie import Document
 from typing import Optional, List
-from datetime import datetime
-from pydantic import BaseModel
+from datetime import datetime, time
+from pydantic import BaseModel, Field
+from enum import Enum
 from .robot import Robot
+
+class DayOfWeek(str, Enum):
+    MONDAY = "MONDAY"
+    TUESDAY = "TUESDAY"
+    WEDNESDAY = "WEDNESDAY"
+    THURSDAY = "THURSDAY"
+    FRIDAY = "FRIDAY"
+    SATURDAY = "SATURDAY"
+    SUNDAY = "SUNDAY"
+
+class OperatingTime(BaseModel):
+    start_time: time  # HH:MM 형식
+    end_time: time    # HH:MM 형식
+    active_days: List[DayOfWeek] = Field(
+        default=[],
+        description="운영 요일 (예: ['SATURDAY', 'SUNDAY'])"
+    )
 
 class Location(BaseModel):
     x: float
@@ -10,49 +28,49 @@ class Location(BaseModel):
     theta: float = 0.0
 
 class ScheduleStatus(BaseModel):
-    is_active: bool = True
-    is_completed: bool = False
-    last_executed: Optional[datetime] = None
-    next_execution: Optional[datetime] = None
+    isActive: bool = True
+    isCompleted: bool = False
+    lastExecuted: Optional[datetime] = None
+    nextExecution: Optional[datetime] = None
 
 class Schedule(Document):
-    schedule_id: int
-    robot_id: int  # 로봇 ID 직접 참조
+    scheduleId: int
+    robotId: Optional[int] = None  # None인 경우 모든 로봇에 적용
     title: str
     description: Optional[str] = None
-    start_time: datetime
-    end_time: datetime
-    repeat_days: List[int] = []  # 0: 월요일, 6: 일요일
+    operatingTime: OperatingTime
     locations: List[Location]
     status: ScheduleStatus = ScheduleStatus()
-    created_at: datetime = datetime.now()
-    updated_at: Optional[datetime] = None
+    createdAt: datetime = datetime.now()
+    updatedAt: Optional[datetime] = None
 
     class Settings:
         name = "schedules"
         indexes = [
-            "schedule_id",
-            "robot_id",
-            "start_time",
-            "end_time",
-            "status.is_active",
-            "status.is_completed"
+            "scheduleId",
+            "robotId",
+            "status.isActive",
+            "status.isCompleted"
         ]
 
 # API 요청용 모델
 class ScheduleCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    start_time: datetime
-    end_time: datetime
-    repeat_days: List[int] = []
+    start_time: time
+    end_time: time
+    active_days: List[DayOfWeek] = Field(
+        default=[],
+        description="운영 요일 (예: ['SATURDAY', 'SUNDAY'])"
+    )
     locations: List[Location]
+    apply_to_all_robots: bool = False
 
 class ScheduleUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    repeat_days: Optional[List[int]] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    active_days: Optional[List[DayOfWeek]] = None
     locations: Optional[List[Location]] = None
-    is_active: Optional[bool] = None 
+    isActive: Optional[bool] = None 

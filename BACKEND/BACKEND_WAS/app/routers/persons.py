@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from ..schemas.responses import BaseResponse, ErrorDetail
-from ..database import db, persons  # persons 컬렉션 import
+from ..database import db, persons
 from ..models.person import Person, PersonCreate, ImageInfo
 import os
 import uuid
@@ -22,8 +22,8 @@ class PersonResponse(BaseModel):
     updatedAt: Optional[datetime] = None
 
 class PersonUpdate(BaseModel):
-    person_id: int
-    person_label: str
+    personId: int
+    personLabel: str
 
 @router.post("", response_model=BaseResponse[Person])
 async def create_person(
@@ -41,7 +41,7 @@ async def create_person(
                 detail="지원하지 않는 이미지 형식입니다."
             )
         
-        # person_id 생성
+        # personId 생성
         counter = await db.counters.find_one_and_update(
             {"_id": "person_id"},
             {"$inc": {"seq": 1}},
@@ -67,19 +67,18 @@ async def create_person(
         
         # Person 데이터 생성
         person_data = {
-            "person_id": person_id,
+            "personId": person_id,
             "name": name,
             "department": department,
             "position": position,
             "images": [image_info.dict()],
-            "created_at": datetime.now()
+            "createdAt": datetime.now()
         }
         
         # 데이터베이스에 저장
         result = await persons.insert_one(person_data)
         
         if not result.inserted_id:
-            # 저장 실패 시 이미지 삭제
             if os.path.exists(image_path):
                 os.remove(image_path)
             raise HTTPException(
@@ -95,7 +94,6 @@ async def create_person(
         )
         
     except Exception as e:
-        # 에러 발생 시 이미지 삭제
         if 'image_path' in locals() and os.path.exists(image_path):
             try:
                 os.remove(image_path)
@@ -112,14 +110,12 @@ async def get_persons(
     position: Optional[str] = None
 ):
     try:
-        # 필터 조건 설정
         filter_query = {}
         if department:
             filter_query["department"] = department
         if position:
             filter_query["position"] = position
             
-        # MongoDB에서 조회
         cursor = persons.find(filter_query)
         person_list = []
         async for doc in cursor:
@@ -144,7 +140,7 @@ async def add_person_image(
 ):
     try:
         # 사용자 존재 확인
-        person = await persons.find_one({"person_id": person_id})
+        person = await persons.find_one({"personId": person_id})
         if not person:
             raise HTTPException(
                 status_code=404,
@@ -176,10 +172,10 @@ async def add_person_image(
         
         # 데이터베이스 업데이트
         result = await persons.update_one(
-            {"person_id": person_id},
+            {"personId": person_id},
             {
                 "$push": {"images": image_info.dict()},
-                "$set": {"updated_at": datetime.now()}
+                "$set": {"updatedAt": datetime.now()}
             }
         )
         
@@ -192,7 +188,7 @@ async def add_person_image(
             )
         
         # 업데이트된 사용자 정보 조회
-        updated_person = await persons.find_one({"person_id": person_id})
+        updated_person = await persons.find_one({"personId": person_id})
         
         return BaseResponse[Person](
             status=200,
@@ -202,7 +198,6 @@ async def add_person_image(
         )
         
     except Exception as e:
-        # 에러 발생 시 이미지 삭제
         if 'image_path' in locals() and os.path.exists(image_path):
             try:
                 os.remove(image_path)

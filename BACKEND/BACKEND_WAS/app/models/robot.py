@@ -1,8 +1,8 @@
 from beanie import Document
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Position(BaseModel):
     x: float = 0.0
@@ -11,7 +11,7 @@ class Position(BaseModel):
 
 class BatteryStatus(BaseModel):
     level: float = 100.0
-    is_charging: bool = False
+    isCharging: bool = False
 
 class RobotStatus(str, Enum):
     IDLE = "idle"
@@ -21,30 +21,48 @@ class RobotStatus(str, Enum):
     EMERGENCY = "emergency"
 
 class RobotImage(BaseModel):
-    image_id: str
+    imageId: str
     url: str
-    created_at: datetime
+    createdAt: datetime
 
 class Robot(Document):
-    robot_id: int
-    name: str
-    ip_address: str
+    robotId: int
+    name: str = Field(..., unique=True)
+    ipAddress: str
     status: RobotStatus = RobotStatus.IDLE
     position: Position
     battery: BatteryStatus
     image: Optional[RobotImage] = None
-    last_active: datetime
-    created_at: datetime
+    lastActive: datetime
+    createdAt: datetime
 
     class Settings:
         name = "robots"
         indexes = [
-            "robot_id",
-            "name",
+            [("name", 1)],
+            "robotId",
             ("position.x", "position.y")
         ]
 
-# Form 데이터로 받을 생성 모델
+# API 요청용 모델들
+class RobotIdentifier(BaseModel):
+    """로봇 식별을 위한 모델 - ID 또는 이름 사용 가능"""
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+    def get_query(self):
+        """쿼리 조건 생성"""
+        if self.id is not None:
+            return {"robotId": self.id}
+        if self.name is not None:
+            return {"name": self.name}
+        raise ValueError("Either id or name must be provided")
+
 class RobotCreate(BaseModel):
-    name: str
-    ip_address: str 
+    name: str = Field(..., description="로봇의 고유 이름")
+    ipAddress: str
+
+class RobotUpdate(BaseModel):
+    name: Optional[str] = None
+    ipAddress: Optional[str] = None
+    status: Optional[RobotStatus] = None 

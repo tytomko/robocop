@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, robots, persons
-from .database import init_db
+from .database import init_db, test_connection
 import uvicorn
 import os
+import logging
 
+logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # CORS 설정
@@ -23,8 +25,10 @@ app.include_router(persons.router, tags=["persons"])
 
 @app.on_event("startup")
 async def startup_event():
+    logger.info("Starting up application...")
     await init_db()
     await auth.create_admin_user()
+    await test_connection()
 
 @app.get("/")
 async def root():
