@@ -1,33 +1,31 @@
+// robot_status_publisher 패키지의 노드 구현
+// - IMU, GPS 데이터 수신 및 처리
+// - UTM 좌표 변환
+// - Heading 발행
+// - Status 메시지 발행
+
 #include <chrono>
-#include <string> // std::string, std::to_string 사용 시 필요한 경우
+#include <string>
+#include <iomanip>
+#include <sstream>
+#include <random>
 #include "rclcpp/rclcpp.hpp"
 #include "robot_custom_interfaces/msg/status.hpp"
-
-// 새로 추가된 헤더들
 #include <GeographicLib/UTMUPS.hpp>
-#include <sensor_msgs/msg/imu.hpp>       
+#include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <tf2/LinearMath/Quaternion.h>   
-#include <tf2/LinearMath/Matrix3x3.h>    
-#include <std_msgs/msg/float32.hpp>      
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <std_msgs/msg/float32.hpp>
 
 using namespace std::chrono_literals;
 
 class RobotStatusPublisher : public rclcpp::Node
 {
-
 public:
-    //전역 변수 선언
-    std::string robot_name;
-    int robot_num;
-    //로그 타이머용
-    std::chrono::steady_clock::time_point last_imu_log_time_;
-    std::chrono::steady_clock::time_point last_gps_log_time_;
-    std::chrono::steady_clock::time_point last_status_log_time_;
-
     RobotStatusPublisher()
-    : Node("robot_status_pub_node")
+        : Node("robot_status_pub_node")
     {
         // 1) 파라미터 선언
         this->declare_parameter<std::string>("robot_name", "not_defined");
@@ -36,153 +34,136 @@ public:
         robot_name = this->get_parameter("robot_name").as_string();
         robot_num = this->get_parameter("robot_number").as_int();
 
-        // 2) 구독 토픽 결정
+        // 시작 시간 설정 (문자열 변환)
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        std::ostringstream oss;
+        oss << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S");
+        status_message.starttime = oss.str(); // 시작 시간 문자열로 저장
+
+        status_message.name = robot_name;
+        status_message.battery = 75.0f;  // 초기 배터리 값
+        status_message.temperatures = {55.0f};  // 초기 온도 값
+        status_message.network = 100.0f;  // 초기 네트워크 상태 값
+
+        // 토픽 설정
         std::string imu_topic = "/" + robot_name + "/imu";
         std::string gps_topic = "/" + robot_name + "/gps";
-
-        // 3) 발행 토픽 결정
-        //    예) robot_num = 3 --> /robot_3/heading
         std::string heading_topic = "/robot_" + std::to_string(robot_num) + "/heading";
         std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
-        // 디버그용 로그
-        RCLCPP_INFO(
-            this->get_logger(),
-            "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\nNode initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨",
-            robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str(), status_topic.c_str(), gps_topic.c_str()
-        );
 
+        RCLCPP_INFO(this->get_logger(),
+            "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n",
+            robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str(), status_topic.c_str(), gps_topic.c_str());
 
-        // IMU 구독
+        // 구독 및 발행 설정
         subscription_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            imu_topic,
-            10,
-            std::bind(&RobotStatusPublisher::imu_callback, this, std::placeholders::_1)
-        );
+            imu_topic, 10, std::bind(&RobotStatusPublisher::imu_callback, this, std::placeholders::_1));
 
-        // GPS 구독
         subscription_gps_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-            gps_topic,
-            10,
-            std::bind(&RobotStatusPublisher::gps_callback, this, std::placeholders::_1)
-        );
+            gps_topic, 10, std::bind(&RobotStatusPublisher::gps_callback, this, std::placeholders::_1));
 
-        // UTM 좌표 퍼블리셔
         publisher_utm_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-            "/robot_" + std::to_string(robot_num) + "/utm_pose",
-            10
-        );
-        // Heading 발행
+            "/robot_" + std::to_string(robot_num) + "/utm_pose", 10);
+
         publisher_heading_ = this->create_publisher<std_msgs::msg::Float32>(
-            heading_topic,
-            10
-        );
+            heading_topic, 10);
 
-        // 기존 로봇 상태 퍼블리셔
         publisher_status_ = this->create_publisher<robot_custom_interfaces::msg::Status>(
-            status_topic, 
-            10
-        );
+            status_topic, 10);
 
-        // 기존 타이머(500ms)
         status_timer_ = this->create_wall_timer(
-            100ms,
-            std::bind(&RobotStatusPublisher::publish_status, this)
-        );
+            100ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
 
 private:
+    std::string robot_name;
+    int robot_num;
+    robot_custom_interfaces::msg::Status status_message;
+
+    std::chrono::steady_clock::time_point last_imu_log_time_;
+    std::chrono::steady_clock::time_point last_gps_log_time_;
+    std::chrono::steady_clock::time_point last_status_log_time_;
+    std::chrono::steady_clock::time_point last_battery_update_time_;
+
+    std::random_device rd;
+    std::mt19937 gen{rd()};
+    std::uniform_real_distribution<float> temp_dist{50.0f, 80.0f};  // 온도 랜덤
+    std::uniform_int_distribution<int> network_dist{0, 100};  // 네트워크 상태 랜덤
+
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
     {
-        tf2::Quaternion q(
-            msg->orientation.x,
-            msg->orientation.y,
-            msg->orientation.z,
-            msg->orientation.w
-        );
+        // IMU에서 받은 쿼터니언 데이터를 TF2 객체로 변환
+        tf2::Quaternion q(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
         tf2::Matrix3x3 m(q);
 
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
 
-        // yaw(heading)만 발행
-        auto heading_msg = std_msgs::msg::Float32();
-        heading_msg.data = static_cast<float>(yaw);
+        // Yaw 값을 -π ~ π 범위로 제한 (누적 오차 방지)
+        yaw = std::fmod(yaw + M_PI, 2 * M_PI) - M_PI;
 
+        // 로우패스 필터 적용 (0.95의 계수를 적용하여 부드러운 yaw 값 유지)
+        static float filtered_yaw = yaw;  // 초기값 설정
+        float alpha = 0.95;  // 필터 계수 (0~1, 1에 가까울수록 반응 속도 감소)
+
+        filtered_yaw = alpha * filtered_yaw + (1 - alpha) * yaw;
+
+        auto heading_msg = std_msgs::msg::Float32();
+        heading_msg.data = filtered_yaw;
+
+        // 일정 주기마다 로그 출력
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(now - last_imu_log_time_).count() >= 2) {
-            RCLCPP_INFO(this->get_logger(), "IMU received. Yaw (heading): %.2f (rad)", yaw);
-            last_imu_log_time_ = now;  // 마지막 로그 시간 업데이트
+            RCLCPP_INFO(this->get_logger(), "IMU received. Filtered Yaw (heading): %.2f (rad)", filtered_yaw);
+            last_imu_log_time_ = now;
         }
 
         publisher_heading_->publish(heading_msg);
     }
 
+
+
     void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
     {
-        double lat = msg->latitude;
-        double lon = msg->longitude;
-        double alt = msg->altitude;
+        double lat = msg->latitude, lon = msg->longitude, alt = msg->altitude;
+        int zone;
+        bool northp;
+        double x, y;
 
-        // GeographicLib에서 필요한 변수
-        int zone;      // 1~60
-        // zone = 52;   // 예: 서울 경도에 해당하는 UTM zone
-        bool northp;   // 북반구(true) / 남반구(false)
-        // 서울은 북반구
-        double x, y;   // Easting, Northing (단위: 미터)
-
-        // (1) 위경도 -> UTM 자동 변환
-        // zone 자동 계산
         GeographicLib::UTMUPS::Forward(lat, lon, zone, northp, x, y);
 
-        // (2) PoseStamped 메시지 생성
         geometry_msgs::msg::PoseStamped utm_msg;
         utm_msg.header.stamp = msg->header.stamp;
-        utm_msg.header.frame_id = "map";  // 예: 지도 좌표계 프레임
-
-        // UTM 좌표 대입
+        utm_msg.header.frame_id = "map";
         utm_msg.pose.position.x = x;
         utm_msg.pose.position.y = y;
         utm_msg.pose.position.z = alt;
 
-        // (3) 로깅
-        // Zone + (N/S) 문자열 만들기
-        std::string utm_zone_str = std::to_string(zone) + (northp ? "N" : "S");
-
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_gps_log_time_).count() >= 2) {
-            std::string utm_zone_str = std::to_string(zone) + (northp ? "N" : "S");
-            RCLCPP_INFO(this->get_logger(), "GPS received. Latitude: %.6f, Longitude: %.6f, Altitude: %.2f", lat, lon, alt);
-            RCLCPP_INFO(this->get_logger(), "Converted to UTM: X=%.2f, Y=%.2f, Zone=%s", x, y, utm_zone_str.c_str());
-            last_gps_log_time_ = now;  // 마지막 로그 시간 업데이트
-        }
-
-        // (4) 퍼블리시
         publisher_utm_->publish(utm_msg);
     }
 
     void publish_status()
     {
-        auto message = robot_custom_interfaces::msg::Status();
-        message.id = static_cast<int32_t>(robot_num); 
-        message.status = "operational";
-        message.temperature = 36.5f; 
-        message.is_active = true;
-
         auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_status_log_time_).count() >= 2) {
-            RCLCPP_INFO(
-            this->get_logger(),
-            "Publishing: ID=%d, Status=%s, Temperature=%.2f, Active=%s",
-            message.id,
-            message.status.c_str(),
-            message.temperature,
-            message.is_active ? "true" : "false");
-            last_status_log_time_ = now;  // 마지막 로그 시간 업데이트
+
+        // 배터리 감소
+        if (std::chrono::duration_cast<std::chrono::minutes>(now - last_battery_update_time_).count() >= 1) {
+            if (status_message.battery > 0.0f) {
+                status_message.battery -= 1.0f;
+            }
+            last_battery_update_time_ = now;
         }
-        publisher_status_->publish(message);
+
+        // 랜덤 온도 및 네트워크 상태 업데이트
+        status_message.temperatures = {temp_dist(gen)};
+        status_message.network = static_cast<float>(network_dist(gen));
+        status_message.status = "operational";
+        status_message.is_active = true;
+
+        publisher_status_->publish(status_message);
     }
 
-    // 멤버 변수
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subscription_imu_;
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr subscription_gps_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_heading_;

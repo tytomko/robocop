@@ -3,7 +3,7 @@
 ## 스태이터스 실행 파라미터 포함 명령어
 
 ```bash
-ros2 run robot_status_publisher one_robot_stat --ros-args -p robot_name:=ssafy -p robot_number:=1
+ros2 run robot_status_publisher robot_status_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
 ## 맵 생성기(점 개수, 점좌표 입력하면 직선으로 잇는 csv파일 맵 생성)
