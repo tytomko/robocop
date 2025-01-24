@@ -1,4 +1,0 @@
-Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description -- -j12 -l12
-Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description -- -j12 -l12
-Invoking command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description
-Invoked command in '/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/ubuntu/GAZEBO_SIM/ssafy_ws/build/turtlebot3_description

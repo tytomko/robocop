@@ -1,9 +1,0 @@
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/uninstall.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/velodyne_simulator_uninstall.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/test.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/edit_cache.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/rebuild_cache.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/list_install_components.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/install.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/install/local.dir
-/home/ubuntu/GAZEBO_SIM/ssafy_ws/build/velodyne_simulator/CMakeFiles/install/strip.dir

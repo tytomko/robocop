@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>path_saver</name>
+  <version>0.1.0</version>
+  <description>Path Saver package for saving UTM pose data to CSV files.</description>
+
+  <maintainer email="your_email@example.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <!-- 의존성 선언 -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+   <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+  <!-- 실행 의존성은 별도로 선언하지 않아도 됨 -->
+</package>
