@@ -13,12 +13,12 @@
 // 경로 설정
 const std::string PATROL_PATH_FILE = "map/patrol_path1.csv";
 // 수정해야하는 파라미터
-constexpr double LOOKAHEAD_DISTANCE = 0.5;  // 수정된 탐색 거리 미터단위
+constexpr double LOOKAHEAD_DISTANCE = 1.5;  // 수정된 탐색 거리 미터단위
 constexpr double MAX_LINEAR_SPEED = 2.0;    // 수정된 최대 선속도
 constexpr double MAX_ANGULAR_SPEED = 1.5;   // 수정된 최대 각속도
 constexpr double ACCEL_STEP = 0.05;
 // 각변화 수치 계수
-constexpr double ANGLE_STEP = 0.05;
+constexpr double ANGLE_STEP = 0.10;
 // 마찰계수
 constexpr double FRICTION_FACTOR_LINEAR = 0.98;
 constexpr double FRICTION_FACTOR_ANGULAR = 0.95;
