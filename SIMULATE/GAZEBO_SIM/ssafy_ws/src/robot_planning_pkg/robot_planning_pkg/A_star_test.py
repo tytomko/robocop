@@ -9,7 +9,7 @@ import os
 import sys
 
 global_path = 'map/global_path.json'
-temp_goal = (304411.36942054343, 3892844.762739455)
+temp_goal = (304409.2328420065,3892847.2911352627)
 class GlobalPathPlanner(Node):
     def __init__(self):
         super().__init__('global_path_planner')
