@@ -34,8 +34,8 @@ import time
 
 matplotlib.use('TkAgg')
 
-SEGMENT_DIST = 0.5           # 노드 간격(등간격 노드 생성용)
-EDGE_CONNECTION_DISTANCE = 0.7  # 노드끼리 연결할 최대 거리
+SEGMENT_DIST = 0.3           # 노드 간격(등간격 노드 생성용)
+EDGE_CONNECTION_DISTANCE = 1.0  # 노드끼리 연결할 최대 거리
 POSITION_TOLERANCE = 0.1        # 연속 포인트 최소 간격
 
 class PathMaker(Node):
