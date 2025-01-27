@@ -9,7 +9,8 @@ import os
 import sys
 
 global_path = 'map/global_path.json'
-temp_goal = (304409.2328420065,3892847.2911352627)
+temp_goal = (                304412.92687916575,
+                3892844.1526765698)
 class GlobalPathPlanner(Node):
     def __init__(self):
         super().__init__('global_path_planner')
@@ -99,6 +100,25 @@ class GlobalPathPlanner(Node):
             return None
 
     def visualize_path(self, path):
+        """
+        Visualizes the path using Matplotlib.
+        This function visualizes the global path and the shortest path on a 2D plot.
+        It also marks the current position and the goal position.
+        Args:
+            path (list of tuples): The shortest path to be visualized, where each tuple represents a node (x, y).
+        Notes:
+            - 'ro-' in plt.plot(x_path, y_path, 'ro-', label='Shortest Path') means:
+                'r': red color for the line and markers
+                'o': circle markers
+                '-': solid line style
+            - Other marker styles include:
+                'b' : blue color
+                'g' : green color
+                'x' : x markers
+                '--': dashed line style
+                '-.' : dash-dot line style
+                ':' : dotted line style
+        """
         """Matplotlib을 사용한 경로 시각화"""
         plt.figure(figsize=(10, 8))
 
@@ -111,11 +131,13 @@ class GlobalPathPlanner(Node):
         # 최단 경로 시각화
         x_path = [node[0] for node in path]
         y_path = [node[1] for node in path]
-        plt.plot(x_path, y_path, 'ro-', label='Shortest Path')
+        
+        plt.plot(x_path, y_path, 'ro-', label='Shortest Path', alpha=0.8)
 
         # 현재 위치 및 목적지 표시
-        plt.scatter(self.current_pos[0], self.current_pos[1], c='blue', label='Current Position')
-        plt.scatter(self.goal_pos[0], self.goal_pos[1], c='green', label='Goal Position')
+        
+        plt.scatter(self.current_pos[0], self.current_pos[1], c='blue', label='Current Position', s=100)
+        plt.scatter(self.goal_pos[0], self.goal_pos[1], c='green', label='Goal Position', s=100)
 
         plt.legend()
         plt.xlabel('X')
