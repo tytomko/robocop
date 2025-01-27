@@ -59,3 +59,9 @@ sudo pip3 install scikit-learn
 sudo pip3 install networkx
 pip install "numpy<1.25.0"
 ```
+
+## 할일 
+
+완성된 JSON파일을 가지고 목적지 등록시
+현재위치로부터 목적지까지 경로를 따라가 가는 경로 matplot으로띄우기
+A*알고리즘

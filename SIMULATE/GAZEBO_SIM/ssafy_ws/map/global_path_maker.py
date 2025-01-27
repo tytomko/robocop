@@ -34,7 +34,7 @@ import time
 
 matplotlib.use('TkAgg')
 
-SEGMENT_DIST = 0.5           # 노드 간격(등간격 노드 생성용)
+SEGMENT_DIST = 0.3           # 노드 간격(등간격 노드 생성용)
 EDGE_CONNECTION_DISTANCE = 0.6  # 노드끼리 연결할 최대 거리
 POSITION_TOLERANCE = 0.1        # 연속 포인트 최소 간격
 
@@ -123,7 +123,7 @@ class PathMaker(Node):
         # 최종 그래프 시각화
         self.plot_final_graph()
 
-    def generate_fixed_distance_nodes(self, segment_dist=0.5):
+    def generate_fixed_distance_nodes(self, segment_dist):
         """
         positions를 segment_dist 간격으로 나누어 각 구간의 평균 위치를 노드로 삼음
         """
@@ -200,7 +200,7 @@ class PathMaker(Node):
             self.get_logger().info('No nodes in graph. Skip saving.')
 
     def plot_final_graph(self):
-        """최종 그래프(원본 경로 + 노드 + 에지) 시각화"""
+        """최종 그래프(원본 경로 제외, 노드 + 에지) 시각화"""
         if len(self.positions) == 0:
             return
 
@@ -208,11 +208,11 @@ class PathMaker(Node):
         fig_final, ax_final = plt.subplots()
         fig_final.canvas.manager.set_window_title("Final Path Visualization")
 
-        # 원본 경로
-        arr = np.array(self.positions)
-        ax_final.plot(arr[:, 0], arr[:, 1], 'b.-', label='Final Path')
+        # [원본 경로 표시 부분 제거]
+        #arr = np.array(self.positions)
+        #ax_final.plot(arr[:, 0], arr[:, 1], 'b.-', label='Final Path')
 
-        # 노드
+        # 노드만 표시
         if hasattr(self, 'cluster_centers') and self.cluster_centers:
             centers = np.array(list(self.cluster_centers.values()))
             ax_final.scatter(
@@ -220,20 +220,20 @@ class PathMaker(Node):
                 c='red', marker='x', s=100, label='Nodes'
             )
 
-            # 에지 시각화
+            # 에지 시각화 alpha is thickness
             for edge in self.graph.edges(data=True):
-                # edge = ( (x1,y1), (x2,y2), { 'cost': ... } )
                 p1, p2, attr = edge
-                ax_final.plot([p1[0], p2[0]], [p1[1], p2[1]], 'g--', alpha=0.5)
-                # 필요 시 cost 정보 표시 가능 (중간에 텍스트로 표기 등)
+                ax_final.plot([p1[0], p2[0]], [p1[1], p2[1]], 'g--', alpha=1.0)
+
 
         ax_final.set_xlabel('X (UTM)')
         ax_final.set_ylabel('Y (UTM)')
-        ax_final.set_title('Final Path Visualization')
+        ax_final.set_title('Final Graph Only (No Original Path)')
         ax_final.legend()
         ax_final.grid(True)
 
         plt.show()
+
 
 def main(args=None):
     rclpy.init(args=args)
