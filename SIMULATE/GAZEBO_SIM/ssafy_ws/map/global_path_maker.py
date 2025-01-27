@@ -35,7 +35,7 @@ import time
 matplotlib.use('TkAgg')
 
 SEGMENT_DIST = 0.3           # 노드 간격(등간격 노드 생성용)
-EDGE_CONNECTION_DISTANCE = 1.0  # 노드끼리 연결할 최대 거리
+EDGE_CONNECTION_DISTANCE = 0.6  # 노드끼리 연결할 최대 거리
 POSITION_TOLERANCE = 0.1        # 연속 포인트 최소 간격
 
 class PathMaker(Node):
@@ -123,7 +123,7 @@ class PathMaker(Node):
         # 최종 그래프 시각화
         self.plot_final_graph()
 
-    def generate_fixed_distance_nodes(self, segment_dist=0.5):
+    def generate_fixed_distance_nodes(self, segment_dist):
         """
         positions를 segment_dist 간격으로 나누어 각 구간의 평균 위치를 노드로 삼음
         """
@@ -220,10 +220,11 @@ class PathMaker(Node):
                 c='red', marker='x', s=100, label='Nodes'
             )
 
-            # 에지 시각화
+            # 에지 시각화 alpha is thickness
             for edge in self.graph.edges(data=True):
                 p1, p2, attr = edge
-                ax_final.plot([p1[0], p2[0]], [p1[1], p2[1]], 'g--', alpha=0.5)
+                ax_final.plot([p1[0], p2[0]], [p1[1], p2[1]], 'g--', alpha=1.0)
+
 
         ax_final.set_xlabel('X (UTM)')
         ax_final.set_ylabel('Y (UTM)')
