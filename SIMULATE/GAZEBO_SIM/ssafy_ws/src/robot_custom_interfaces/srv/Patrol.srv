@@ -1,7 +1,6 @@
-float64 x1
-float64 y1
-float64 x2
-float64 y2
+# 여러개를 받고자 배열로...
+float64[] x
+float64[] y
 ---
 bool success
 string message
