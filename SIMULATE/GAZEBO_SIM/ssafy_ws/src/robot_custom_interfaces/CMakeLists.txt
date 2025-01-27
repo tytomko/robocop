@@ -18,6 +18,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Homing.srv"
   "srv/Navigate.srv"
   "srv/Patrol.srv"
+  "srv/Estop.srv"
+  "srv/Resume.srv"
   # "srv/Control.srv"
   DEPENDENCIES builtin_interfaces sensor_msgs
 )
