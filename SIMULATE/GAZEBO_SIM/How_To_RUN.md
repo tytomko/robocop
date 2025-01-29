@@ -30,3 +30,19 @@ ros2 run middle_teleop middle_teleop_node --ros-args -p robot_name:=ssafy -p rob
 ```bash
 ros2 run keyboard_input key_publisher  --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
+
+# 3. 서비스 콜 하기
+
+## ssafy_ws 진입
+
+빌드 후 아래 명령어 실행
+
+### 호밍서비스
+```bash
+ros2 service call /robot_1/homing robot_custom_interfaces/srv/Homing
+```
+
+### 네비게이트서비스
+```bash
+ros2 service call /robot_1/navigate robot_custom_interfaces/srv/Navigate "{x: 304412.94040598295, y: 3892840.5655467883}"
+```
