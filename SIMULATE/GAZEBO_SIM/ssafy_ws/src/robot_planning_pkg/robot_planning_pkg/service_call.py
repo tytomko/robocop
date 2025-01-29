@@ -11,7 +11,8 @@ import os
 import sys  # 종료를 명확히 하기 위해 추가
 import matplotlib.pyplot as plt  # 플롯 추가
 
-global_map = 'map/global_path.json'
+# 250129 global_path에서 global_map으로 변경(이름 중복 방지)
+global_map = 'map/global_map.json'
 home_pose = (304412.92687916575, 3892844.1526765698)  # UTM 좌표
 
 class GlobalPathPlanner(Node):
