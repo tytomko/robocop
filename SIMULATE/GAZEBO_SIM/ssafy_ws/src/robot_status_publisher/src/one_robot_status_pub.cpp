@@ -10,7 +10,10 @@
 #include <sstream>
 #include <random>
 #include "rclcpp/rclcpp.hpp"
+//Custom message, service
 #include "robot_custom_interfaces/msg/status.hpp"
+#include "robot_custom_interfaces/srv/estop.hpp"
+
 #include <GeographicLib/UTMUPS.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
@@ -45,12 +48,15 @@ public:
         status_message.battery = 75.0f;  // 초기 배터리 값
         status_message.temperatures = {55.0f};  // 초기 온도 값
         status_message.network = 100.0f;  // 초기 네트워크 상태 값
-
+        status_message.status = "operational";
+        status_message.is_active = true;
         // 토픽 설정
         std::string imu_topic = "/" + robot_name + "/imu";
         std::string gps_topic = "/" + robot_name + "/gps";
         std::string heading_topic = "/robot_" + std::to_string(robot_num) + "/heading";
         std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
+        std::string stop_service = "/robot_" + std::to_string(robot_num) + "/stop";
+        std::string resume_service = "/robot_" + std::to_string(robot_num) + "/resume";
 
         RCLCPP_INFO(this->get_logger(),
             "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n",
@@ -72,6 +78,12 @@ public:
         publisher_status_ = this->create_publisher<robot_custom_interfaces::msg::Status>(
             status_topic, 10);
 
+        stop_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
+            stop_service, std::bind(&RobotStatusPublisher::stop_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
+        resume_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
+            resume_service, std::bind(&RobotStatusPublisher::resume_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
         status_timer_ = this->create_wall_timer(
             100ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
@@ -90,6 +102,7 @@ private:
     std::mt19937 gen{rd()};
     std::uniform_real_distribution<float> temp_dist{50.0f, 80.0f};  // 온도 랜덤
     std::uniform_int_distribution<int> network_dist{0, 100};  // 네트워크 상태 랜덤
+
 
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
     {
@@ -158,10 +171,36 @@ private:
         // 랜덤 온도 및 네트워크 상태 업데이트
         status_message.temperatures = {temp_dist(gen)};
         status_message.network = static_cast<float>(network_dist(gen));
-        status_message.status = "operational";
-        status_message.is_active = true;
+        
 
         publisher_status_->publish(status_message);
+    }
+
+    void stop_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
+                               std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
+    {
+        status_message.status = "emergency stop";
+        status_message.is_active = false;
+        publisher_status_->publish(status_message);
+        
+        response->success = true;
+    }
+
+    void resume_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
+                                 std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
+    {
+        if (status_message.status == "emergency stop") {
+            RCLCPP_INFO(this->get_logger(), "[RESUME] Returning to operational mode.");
+            
+            status_message.status = "operational";
+            status_message.is_active = true;
+            publisher_status_->publish(status_message);
+            
+            response->success = true;
+        } else {
+            RCLCPP_WARN(this->get_logger(), "[RESUME] Robot is already operational.");
+            response->success = false;
+        }
     }
 
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subscription_imu_;
@@ -169,6 +208,8 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_heading_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_utm_;
     rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
+    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr stop_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr resume_srv;
     rclcpp::TimerBase::SharedPtr status_timer_;
 };
 
