@@ -46,3 +46,13 @@ ros2 service call /robot_1/homing robot_custom_interfaces/srv/Homing
 ```bash
 ros2 service call /robot_1/navigate robot_custom_interfaces/srv/Navigate "{x: 304412.94040598295, y: 3892840.5655467883}"
 ```
+
+### Estop 서비스
+```bash
+ros2 service call /robot_1/stop robot_custom_interfaces/srv/Estop
+```
+
+### Resume 서비스
+```bash
+ros2 service call /robot_1/resume robot_custom_interfaces/srv/Resume
+```
