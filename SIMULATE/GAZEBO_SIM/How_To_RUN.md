@@ -28,10 +28,17 @@ ros2 run middle_teleop middle_teleop_node --ros-args -p robot_name:=ssafy -p rob
 
 ### 키보드 입력을 이동명령어로 바꾸는 코드
 ```bash
-ros2 run keyboard_input key_publisher  --ros-args -p robot_name:=ssafy -p robot_number:=1
+ros2 run keyboard_input key_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
-# 3. 서비스 콜 하기
+# 3. 플래닝 패키지 실행
+
+```bash
+ros2 run robot_planning_pkg testservice --ros-args -p robot_name:=ssafy -p robot_number:=1
+```
+
+
+# 4. 서비스 콜 하기
 
 ## ssafy_ws 진입
 
