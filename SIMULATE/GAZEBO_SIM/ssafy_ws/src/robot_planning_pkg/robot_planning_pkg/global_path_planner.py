@@ -1,16 +1,20 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose2D  # (선택) 명시적으로 사용하고 싶다면 추가
 from nav_msgs.msg import Path
-from robot_custom_interfaces.srv import Homing  # 커스텀 서비스 import
-from robot_custom_interfaces.srv import Navigate  # 커스텀 서비스 import
-from robot_custom_interfaces.srv import Patrol  # 커스텀 서비스 import
+
+# 커스텀 서비스들
+from robot_custom_interfaces.srv import Homing
+from robot_custom_interfaces.srv import Navigate
+from robot_custom_interfaces.srv import Patrol
+
 import json
 import networkx as nx
 import numpy as np
 import os
-import sys  # 종료를 명확히 하기 위해 추가
-import matplotlib.pyplot as plt  # 플롯 추가
+import sys
+import matplotlib.pyplot as plt
 
 # 250129 global_path에서 global_map으로 변경(이름 중복 방지)
 global_map = 'map/global_map.json'
@@ -21,7 +25,7 @@ class GlobalPathPlanner(Node):
         super().__init__('global_path_planner')
 
         # 플롯 활성화 여부 (True = 활성화, False = 비활성화)
-        self.enable_plot = True  # 필요하면 False로 설정 가능
+        self.enable_plot = True
 
         # 파라미터 선언 및 가져오기
         self.declare_parameter('robot_number', 1)
@@ -46,7 +50,9 @@ class GlobalPathPlanner(Node):
         # Navigate 서비스 서버 생성
         self.nav_srv = self.create_service(Navigate, navigate_service, self.navigate_callback)
 
+        # Patrol 서비스 서버 생성
         self.patrol_srv = self.create_service(Patrol, patrol_service, self.patrol_callback)
+
         # 경로 발행을 위한 퍼블리셔 생성
         self.path_pub = self.create_publisher(Path, global_path_topic, 10)
 
@@ -56,16 +62,16 @@ class GlobalPathPlanner(Node):
         # 그래프 로드 실패 시 종료
         if self.graph is None:
             self.get_logger().error("Failed to load the global path graph. Exiting...")
-            sys.exit(1)  # 프로그램 종료
+            sys.exit(1)
 
         # 목적지 설정 (초기값 없음)
         self.goal_pos = None
         self.current_pos = None
-        self.origin = None  # 기준점을 최초 위치로 설정 가능
+        self.origin = None  # 기준점을 최초 위치로 설정
 
         self.get_logger().info(f"Subscribed to {pose_topic}")
         self.get_logger().info(f"Global path will be published on {global_path_topic}")
-        self.get_logger().info("Homing & Navigate service servers ready")
+        self.get_logger().info("Homing & Navigate & Patrol service servers ready")
 
     def pose_callback(self, msg):
         """현재 위치 콜백"""
@@ -76,21 +82,24 @@ class GlobalPathPlanner(Node):
             self.origin = self.current_pos
 
     def homing_callback(self, request, response):
-        """🚀 Homing 서비스 요청 처리 (request, response 추가)"""
+        """🚀 Homing 서비스 요청 처리"""
         self.goal_pos = home_pose  # 홈 포즈로 이동
         self.get_logger().info(f"Received Homing request: Goal -> {self.goal_pos}")
-
         return self.process_navigation_request(response)
 
     def navigate_callback(self, request, response):
-        """🚀 Navigate 서비스 요청 처리"""
-        self.goal_pos = (request.goals.x, request.goals.y)  # 요청된 좌표로 이동
+        """🚀 Navigate 서비스 요청 처리
+           => .srv가 geometry_msgs/Pose2D goal 필드를 가지므로 request.goal.x / request.goal.y 로 접근
+        """
+        self.goal_pos = (request.goal.x, request.goal.y)
         self.get_logger().info(f"Received Navigate request: Goal -> {self.goal_pos}")
 
         return self.process_navigation_request(response)
 
-    def patrol_callback(self, request, response):   
-        """🚀 Patrol 서비스 요청 처리"""
+    def patrol_callback(self, request, response):
+        """🚀 Patrol 서비스 요청 처리
+           => .srv가 geometry_msgs/Pose2D[] goals 필드를 가지므로 for goal in request.goals 로 접근
+        """
         self.get_logger().info(f"Received Patrol request: Goals -> {request.goals}")
         success = True
 
@@ -102,9 +111,11 @@ class GlobalPathPlanner(Node):
                 break
 
         response.success = success
-        response.message = "All goals reached successfully." if success else "Failed to reach one or more goals."
+        response.message = (
+            "All goals reached successfully." if success
+            else "Failed to reach one or more goals."
+        )
         return response
-
 
     def process_navigation_request(self, response):
         """🚀 A* 경로 생성 및 발행을 처리하는 공통 함수"""
@@ -112,11 +123,8 @@ class GlobalPathPlanner(Node):
             path = self.find_shortest_path(self.current_pos, self.goal_pos)
             if path:
                 self.publish_path(path)
-
-                # 플롯 활성화 시 경로 시각화
                 if self.enable_plot:
                     self.visualize_path(path)
-
                 response.success = True
                 response.message = "Path calculated and published successfully."
             else:
@@ -125,7 +133,6 @@ class GlobalPathPlanner(Node):
         else:
             response.success = False
             response.message = "Current position is unknown."
-        
         return response
 
     def load_graph(self, file_path):
@@ -187,18 +194,18 @@ class GlobalPathPlanner(Node):
             return
 
         path_msg = Path()
-        path_msg.header.frame_id = "map"  # 좌표계 설정
+        path_msg.header.frame_id = "map"
         path_msg.header.stamp = self.get_clock().now().to_msg()
 
         for node in path:
             pose = PoseStamped()
             pose.header.frame_id = "map"
 
-            # UTM 좌표 → 상대 좌표 변환 가능 (필요시 사용)
+            # UTM 좌표 -> origin 기준 상대좌표 (필요 시)
             pose.pose.position.x = node[0] - self.origin[0]
             pose.pose.position.y = node[1] - self.origin[1]
             pose.pose.position.z = 0.0
-            
+
             path_msg.poses.append(pose)
 
         self.path_pub.publish(path_msg)
@@ -214,8 +221,12 @@ class GlobalPathPlanner(Node):
         plt.plot(x_path, y_path, 'ro-', label='A* Path')
 
         # 현재 위치 및 목표 위치 표시
-        plt.scatter(self.current_pos[0], self.current_pos[1], c='blue', label='Current Position', s=100)
-        plt.scatter(self.goal_pos[0], self.goal_pos[1], c='green', label='Goal Position', s=100)
+        if self.current_pos:
+            plt.scatter(self.current_pos[0], self.current_pos[1],
+                        c='blue', label='Current Position', s=100)
+        if self.goal_pos:
+            plt.scatter(self.goal_pos[0], self.goal_pos[1],
+                        c='green', label='Goal Position', s=100)
 
         plt.xlabel("X")
         plt.ylabel("Y")
