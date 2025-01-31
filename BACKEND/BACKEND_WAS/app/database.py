@@ -8,6 +8,9 @@ from .config import get_settings
 import logging
 import certifi
 from os import environ
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 settings = get_settings()
 
@@ -25,6 +28,16 @@ client = AsyncIOMotorClient(
 # 데이터베이스 선택
 db = client[settings.DATABASE_NAME]
 
+# SQLAlchemy 설정 (비디오 녹화를 위한 관계형 DB)
+SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"  # SQLite 사용
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+
 # 컬렉션 정의
 robots = db.robots
 persons = db.persons
@@ -33,9 +46,8 @@ schedules = db.schedules
 
 async def init_db():
     try:
-        # # 기존 컬렉션 삭제 (초기화)
+        # 기존 컬렉션 삭제 (초기화)
         collections = await db.list_collection_names()
-        # 컬렉션 삭제 로직 제거 - 기존 데이터 유지
         
         # Beanie 초기화 (자동으로 인덱스 생성)
         await init_beanie(
