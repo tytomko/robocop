@@ -1,12 +1,17 @@
+from typing import Optional, ClassVar
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import secrets
 import os
+from pydantic import Field
 
 class Settings(BaseSettings):
     # MongoDB 설정
-    MONGO_URL: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "robocop_db")
+    MONGO_URL: str = Field(
+        alias="MONGODB_URL",
+        default="mongodb+srv://maybecold:OBK7Z5K3UYqTiEUp@cluster0.5idlh.mongodb.net/"
+    )
+    DATABASE_NAME: str = "robocop_db"
     
     # JWT 설정
     SECRET_KEY: str = os.getenv("SECRET_KEY", secrets.token_hex(32))
@@ -21,8 +26,17 @@ class Settings(BaseSettings):
     # 스토리지 설정
     STORAGE_PATH: str = os.getenv("STORAGE_PATH", "storage")
     
-    class Config:
-        env_file = ".env"
+    # 기존 설정에 추가
+    VIDEO_STORAGE_PATH: str = "storage/videos"
+    FRAME_STORAGE_PATH: str = "storage/video_frames"
+    
+    # 다른 설정들도 타입 어노테이션 필요
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/robocop"
+    
+    model_config = {
+        "env_file": ".env",
+        "extra": "allow"
+    }
 
 @lru_cache()
 def get_settings():
