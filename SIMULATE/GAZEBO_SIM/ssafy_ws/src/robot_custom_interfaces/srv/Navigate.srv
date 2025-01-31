@@ -1,5 +1,5 @@
-float64 x
-float64 y
+# goals.x goals.y goals.theta
+geometry_msgs/Pose2D goals
 ---
 bool success
 string message
