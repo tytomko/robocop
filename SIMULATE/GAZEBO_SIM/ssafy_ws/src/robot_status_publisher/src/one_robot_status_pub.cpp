@@ -48,7 +48,7 @@ public:
         status_message.battery = 75.0f;  // 초기 배터리 값
         status_message.temperatures = {55.0f};  // 초기 온도 값
         status_message.network = 100.0f;  // 초기 네트워크 상태 값
-        status_message.status = "operational";
+        status_message.mode = "operational";
         status_message.is_active = true;
         // 토픽 설정
         std::string imu_topic = "/" + robot_name + "/imu";
@@ -179,7 +179,7 @@ private:
     void stop_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
                                std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
-        status_message.status = "emergency stop";
+        status_message.mode = "emergency stop";
         status_message.is_active = false;
         publisher_status_->publish(status_message);
         
@@ -189,10 +189,10 @@ private:
     void resume_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
                                  std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
-        if (status_message.status == "emergency stop") {
+        if (status_message.mode == "emergency stop") {
             RCLCPP_INFO(this->get_logger(), "[RESUME] Returning to operational mode.");
             
-            status_message.status = "operational";
+            status_message.mode = "operational";
             status_message.is_active = true;
             publisher_status_->publish(status_message);
             

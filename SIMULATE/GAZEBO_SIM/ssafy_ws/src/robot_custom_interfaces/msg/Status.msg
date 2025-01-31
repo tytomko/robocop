@@ -5,7 +5,7 @@ int32 id
 string name
 
 # 현재 상태를 나타내는 모드 /순찰중 /수동모드 /충전중
-string status
+string mode
 
 # 배터리 (더미)
 float32 battery
