@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             "astar = robot_planning_pkg.A_star_test:main",
             "testservice = robot_planning_pkg.service_call:main",
+            "global_path_planner = robot_planning_pkg.global_path_planner:main",
         ],
     },
 )
