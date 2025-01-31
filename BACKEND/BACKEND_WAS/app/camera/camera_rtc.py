@@ -42,63 +42,74 @@ class CameraRTC:
     async def connect_ros(self):
         """ROS 브릿지 연결 및 토픽 구독"""
         try:
+            print(f"\n=== [{self.camera_name}] ROS 연결 시작 ===")
             self.ros_client = roslibpy.Ros(
                 host=self.ros_bridge_host, 
                 port=self.ros_bridge_port
             )
             self.ros_client.run()
+            print(f"[{self.camera_name}] ROS 브릿지 연결 성공")
             
-            # 토픽 구독 - 메시지 타입 수정
+            # 토픽 구독 전 연결 상태 확인
+            if not self.ros_client.is_connected:
+                print(f"[{self.camera_name}] ROS 브릿지 연결 실패")
+                return False
+
+            # 토픽 구독
             self.topic_subscriber = roslibpy.Topic(
                 self.ros_client,
                 self.camera_topic,
-                'sensor_msgs/CompressedImage'  # ROS2 메시지 타입을 ROS1 형식으로 변경
+                'sensor_msgs/CompressedImage',
+                queue_size=1  # 큐 사이즈 추가
             )
             
+            # throttle_rate 제거하고 직접 구독
             self.topic_subscriber.subscribe(self._handle_image_message)
             print(f"[{self.camera_name}] ROS 토픽 구독 시작: {self.camera_topic}")
             return True
             
         except Exception as e:
             print(f"ROS 연결 에러 ({self.camera_name}): {str(e)}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def _handle_image_message(self, message):
         """카메라 이미지 메시지 처리"""
         try:
+            print(f"\n=== [{self.camera_name}] 메시지 수신 ===")
             if 'data' not in message:
                 print(f"[{self.camera_name}] 에러: 메시지에 'data' 필드가 없음")
+                print(f"메시지 내용: {message}")
                 return
                 
             raw_data = message['data']
-            print(f"[{self.camera_name}] 이미지 메시지 수신: {len(raw_data)} bytes")  # 데이터 크기 로깅
+            print(f"[{self.camera_name}] 이미지 데이터 수신 성공: {len(raw_data)} bytes")
             
-            # 활성 트랙 확인 및 업데이트
             active_tracks = [track for track in self.video_tracks if not track.stopped]
-            print(f"\n=== [{self.camera_name}] 트랙 상태 ===")
-            print(f"전체 트랙 수: {len(self.video_tracks)}")
             print(f"활성 트랙 수: {len(active_tracks)}")
             
-            if len(active_tracks) == 0:
-                print(f"[{self.camera_name}] 활성 트랙 없음, 메시지 무시")
+            if not active_tracks:
+                print(f"[{self.camera_name}] 활성 트랙 없음")
                 return
                 
             for track in active_tracks:
-                track.update_frame(raw_data)
+                try:
+                    track.update_frame(raw_data)
+                    print(f"[{self.camera_name}] 프레임 업데이트 성공")
+                except Exception as e:
+                    print(f"[{self.camera_name}] 트랙 업데이트 실패: {str(e)}")
+                    traceback.print_exc()
                 
         except Exception as e:
-            print(f"[{self.camera_name}] 이미지 처리 에러: {str(e)}")
-            import traceback
+            print(f"[{self.camera_name}] 메시지 처리 에러: {str(e)}")
             traceback.print_exc()
 
     async def create_peer_connection(self, offer_sdp):
         """WebRTC 피어 연결 생성"""
         try:
             print(f"\n=== [{self.camera_name}] WebRTC 연결 시작 ===")
-            
-            # 기존 트랙 정리
             print(f"[{self.camera_name}] 기존 트랙 수: {len(self.video_tracks)}")
-            self.video_tracks.clear()  # 이 부분이 문제일 수 있음 - 제거
             
             config = RTCConfiguration([
                 RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
@@ -110,10 +121,20 @@ class CameraRTC:
             
             # 비디오 트랙 생성 및 추가
             video_track = self.CameraVideoTrack(self.camera_name)
-            self.video_tracks.add(video_track)  # 먼저 set에 추가
-            pc.addTrack(video_track)  # 그 다음 PeerConnection에 추가
-            print(f"[{self.camera_name}] 비디오 트랙 추가됨")
+            self.video_tracks.add(video_track)
+            pc.addTrack(video_track)
+            print(f"[{self.camera_name}] 비디오 트랙 추가됨 (ID: {id(video_track)})")
             print(f"[{self.camera_name}] 현재 트랙 수: {len(self.video_tracks)}")
+            
+            # 데이터 채널 생성
+            channel = pc.createDataChannel("stats")
+            
+            @channel.on("open")
+            def on_open():
+                print(f"[{self.camera_name}] 데이터 채널 열림")
+            
+            # CameraVideoTrack에 데이터 채널 전달
+            video_track.set_data_channel(channel)
             
             # 연결 상태 모니터링
             @pc.on("connectionstatechange")
@@ -163,14 +184,13 @@ class CameraRTC:
             self.pts_time = 0
             self._started = True
             self._stopped = False
-            self._last_frame_time = 0  # 마지막 프레임 시간 추적
-            self.target_fps = 30  # 목표 FPS
-            self.frame_interval = 1.0 / self.target_fps  # 프레임 간 간격 (초)
-            print(f"[{camera_name}] 비디오 트랙 초기화 (목표 FPS: {self.target_fps})")
+            self._start_time = time.time()  # 시작 시간 기록
+            print(f"[{camera_name}] 비디오 트랙 초기화")
             
             # recording 관련 초기화는 선택적으로
             self.recording = True
             self.current_session = datetime.now().strftime(f"{camera_name}_%Y%m%d_%H%M%S")
+            self.data_channel = None
             
             try:
                 self.frame_dir = Path(settings.FRAME_STORAGE_PATH) / self.current_session
@@ -210,17 +230,14 @@ class CameraRTC:
             self.latest_frame = None
             return frame
 
+        def set_data_channel(self, channel):
+            self.data_channel = channel
+
         def update_frame(self, image_data):
             if self._stopped:
-                print(f"[{self.camera_name}] 트랙이 중지됨, 프레임 업데이트 무시")
                 return
                 
             try:
-                current_time = time.time()
-                # FPS 제한을 위한 시간 체크
-                if (current_time - self._last_frame_time) < self.frame_interval:
-                    return  # 아직 다음 프레임 시간이 되지 않았으면 스킵
-                    
                 print(f"[{self.camera_name}] 프레임 업데이트 시작")
                 
                 # Base64 디코딩 및 이미지 처리
@@ -240,16 +257,28 @@ class CameraRTC:
                 
                 # VideoFrame 생성
                 video_frame = av.VideoFrame.from_ndarray(frame, format='bgr24')
-                video_frame.time_base = fractions.Fraction(1, self.target_fps)  # FPS에 맞춰 time_base 설정
+                video_frame.time_base = fractions.Fraction(1, 30)
                 self.pts_time += 1
                 video_frame.pts = self.pts_time
                 
                 self.latest_frame = video_frame
                 self.frame_count += 1
-                self._last_frame_time = current_time  # 프레임 시간 업데이트
                 
-                if self.frame_count % self.target_fps == 0:  # 1초마다 로그
-                    print(f"[{self.camera_name}] 누적 프레임 수: {self.frame_count}, FPS: {1.0/(current_time - self._last_frame_time):.1f}")
+                current_time = time.time()
+                elapsed_time = current_time - self._start_time
+                
+                # FPS 계산 및 전송 (매 프레임마다)
+                fps = min(30, self.frame_count / elapsed_time)  # 30fps로 제한
+                if self.data_channel and self.data_channel.readyState == "open":
+                    try:
+                        self.data_channel.send(json.dumps({
+                            "type": "stats",
+                            "fps": round(fps, 1),
+                            "frameCount": self.frame_count
+                        }))
+                        print(f"[{self.camera_name}] FPS 데이터 전송: {round(fps, 1)}")
+                    except Exception as e:
+                        print(f"[{self.camera_name}] FPS 데이터 전송 실패: {str(e)}")
                 
                 # 프레임 저장
                 if self.recording:
