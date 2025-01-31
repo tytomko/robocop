@@ -1,0 +1,6 @@
+# 여러개를 받고자 배열로...
+float64[] x
+float64[] y
+---
+bool success
+string message

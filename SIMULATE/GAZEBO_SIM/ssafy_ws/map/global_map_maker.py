@@ -192,7 +192,7 @@ class PathMaker(Node):
         """NetworkX 그래프 => JSON(node_link_data) 저장"""
         if len(self.graph.nodes) > 0:
             data = nx.node_link_data(self.graph)
-            filename = f'global_path_{datetime.now().strftime("%Y%m%d%H%M%S")}.json'
+            filename = f'global_map_{datetime.now().strftime("%Y%m%d%H%M%S")}.json'
             with open(filename, 'w') as f:
                 json.dump(data, f, indent=4)
             self.get_logger().info(f'Graph saved to {filename}')

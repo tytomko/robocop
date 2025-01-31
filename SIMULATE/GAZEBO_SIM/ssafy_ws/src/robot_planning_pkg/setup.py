@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             "astar = robot_planning_pkg.A_star_test:main",
+            "testservice = robot_planning_pkg.service_call:main",
         ],
     },
 )
