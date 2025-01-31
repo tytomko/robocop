@@ -15,7 +15,9 @@ import fractions
 import socket
 
 # ROS 클라이언트 설정
-ros_client = roslibpy.Ros(host='192.168.100.104', port=9090)
+# HOST = '192.168.100.104'
+LOCAL_HOST = '127.0.0.1'
+ros_client = roslibpy.Ros(host=LOCAL_HOST, port=9090)
 connected_clients = set()
 
 # 전역 변수로 이벤트 루프 저장
@@ -63,7 +65,7 @@ async def init_ros():
         print("\nROS Bridge 연결 시도 중...")
         
         # ROS Bridge 서버 정보
-        ROS_BRIDGE_HOST = '192.168.100.104'  # 실제 ROS Bridge가 실행 중인 IP
+        ROS_BRIDGE_HOST = LOCAL_HOST  # 실제 ROS Bridge가 실행 중인 IP
         ROS_BRIDGE_PORT = 9090
         
         print(f"ROS Bridge 서버: {ROS_BRIDGE_HOST}:{ROS_BRIDGE_PORT}")
@@ -106,7 +108,7 @@ async def init_ros():
         # 토픽 구독 설정
         image_topic = roslibpy.Topic(
             ros_client,
-            '/ssafy/tb3_camera/image_raw/compressed',
+            '/ssafy/tb3_front_camera/image_raw/compressed',
             'sensor_msgs/CompressedImage'
         )
         
