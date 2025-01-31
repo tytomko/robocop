@@ -1,266 +1,229 @@
-import asyncio
-import json
-import base64
-import os
+import asyncio  # 비동기 작업을 위한 라이브러리
+import websockets  # 웹소켓 통신을 위한 라이브러리
+import json  # JSON 데이터 처리
+import logging  # 로깅 기능
+import math  # 수학 연산
+import base64  # base64 인코딩/디코딩
+import struct  # 바이너리 데이터 구조 처리
+import time  # 시간 관련 기능
+from http import HTTPStatus
+import pathlib
 from aiohttp import web
+import aiohttp
 import roslibpy
-import numpy as np
-import cv2
-import av
-import glob
-import websockets
-import fractions
-import socket
-from datetime import datetime
+import threading
+import queue
 
-# ROS 클라이언트 설정
-# HOST = '192.168.100.104'
-LOCAL_HOST = '127.0.0.1'
-ros_client = roslibpy.Ros(host=LOCAL_HOST, port=9090)
-connected_clients = set()
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# 전역 변수로 이벤트 루프 저장
-main_loop = None
+HOST = "127.0.0.1"
+PORT = 3000
 
-# static 폴더가 없다면 생성
-if not os.path.exists('static'):
-    os.makedirs('static')
+class LidarSubscriber:
+    def __init__(self, ros_host="localhost", ros_port=9090):
+        self.ros_host = ros_host
+        self.ros_port = ros_port
+        self.clients = set()
+        self.last_process_time = 0
+        self.ros_client = None
+        self.ros_thread = None
+        self.point_queue = queue.Queue()
+        
+    def start_ros_thread(self):
+        """ROS 클라이언트를 별도의 스레드에서 실행"""
+        self.ros_thread = threading.Thread(target=self._run_ros_client)
+        self.ros_thread.daemon = True
+        self.ros_thread.start()
+        
+    def _run_ros_client(self):
+        """ROS 클라이언트 실행 및 토픽 구독"""
+        try:
+            self.ros_client = roslibpy.Ros(host=self.ros_host, port=self.ros_port)
+            self.ros_client.run()
+            logger.info("ROS 클라이언트가 연결되었습니다.")
+            
+            # 라이다 토픽 구독
+            listener = roslibpy.Topic(self.ros_client, 
+                                    '/ssafy/velodyne_points', 
+                                    'sensor_msgs/PointCloud2')
+            
+            def callback(message):
+                current_time = time.time()
+                if current_time - self.last_process_time >= 1.0:
+                    points = self.convert_scan_to_points(message)
+                    self.point_queue.put(points)
+                    self.last_process_time = current_time
+            
+            listener.subscribe(callback)
+            logger.info("velodyne_points 토픽 구독을 시작합니다.")
+            
+        except Exception as e:
+            logger.error(f"ROS 연결 중 오류 발생: {str(e)}")
+    
+    async def connect(self):
+        """ROS 연결 시작"""
+        self.start_ros_thread()
+        
+        while True:
+            try:
+                # 큐에서 포인트 데이터를 확인
+                if not self.point_queue.empty():
+                    points = self.point_queue.get_nowait()
+                    await self.broadcast(points)
+            except queue.Empty:
+                pass
+            except Exception as e:
+                logger.error(f"데이터 처리 중 오류 발생: {str(e)}")
+            
+            await asyncio.sleep(0.1)  # 짧은 대기 시간으로 CPU 사용량 조절
+    
+    def convert_scan_to_points(self, point_cloud_data):
+        """PointCloud2 데이터를 Three.js에서 사용할 수 있는 포인트 배열로 변환"""
+        try:
+            # base64로 인코딩된 포인트 클라우드 데이터를 디코딩
+            binary_data = base64.b64decode(point_cloud_data.get('data', ''))
+            point_step = point_cloud_data.get('point_step', 22)  # 각 포인트의 바이트 크기
+            
+            # 디버깅을 위한 데이터 크기 로깅
+            logger.info(f"Binary data length: {len(binary_data)}")
+            logger.info(f"Point step: {point_step}")
+            
+            points = []
+            max_points = 10000  # 포인트 수 제한 (최대 10000개)
+
+            # 데이터 처리 시 샘플링 간격 지정 (적어도 1의 간격으로 샘플링)
+            step = max(1, len(binary_data) // point_step // max_points)
+            
+            # 바이너리 데이터를 포인트로 변환
+            for i in range(0, len(binary_data), point_step * step):
+                if i + 22 <= len(binary_data):
+                    try:
+                        # 4개의 float32 값(x, y, z, intensity)을 읽음
+                        x, y, z, intensity = struct.unpack_from('ffff', binary_data, i)
+                        
+                        # 유효한 포인트만 추가 (0에 가까운 값 제외)
+                        if not (abs(x) < 0.001 and abs(y) < 0.001 and abs(z) < 0.001):
+                            # ROS2 좌표계를 Three.js 좌표계로 변환
+                            three_x = -y  # ROS의 y축을 Three.js의 -x축으로
+                            three_y = z   # ROS의 z축을 Three.js의 y축으로
+                            three_z = x   # ROS의 x축을 Three.js의 z축으로
+                            
+                            points.append({
+                                "x": three_x,
+                                "y": three_y,
+                                "z": three_z,
+                                "intensity": intensity
+                            })
+                    except struct.error as e:
+                        logger.error(f"Error unpacking point at index {i}: {str(e)}")
+                        continue
+                    
+                    # 처리 진행 상황 로깅 (1000개마다)
+                    if len(points) % 1000 == 0:
+                        logger.info(f"Processed {len(points)} points")
+            
+            # 최종 처리된 포인트 수와 샘플 데이터 로깅
+            logger.info(f"Final points count: {len(points)}")
+            if points:
+                logger.info(f"Sample point: {points[0]}")
+            
+            return points
+            
+        except Exception as e:
+            logger.error(f"Error parsing point cloud data: {str(e)}")
+            logger.exception(e)
+            return []
+    
+    async def register_client(self, websocket):
+        """새로운 웹 클라이언트 연결을 등록"""
+        self.clients.add(websocket)  # 웹소켓 연결 수락 제거
+        logger.info(f"새로운 클라이언트가 연결되었습니다. 현재 클라이언트 수: {len(self.clients)}")
+    
+    async def unregister_client(self, websocket):
+        """웹 클라이언트 연결 해제"""
+        self.clients.remove(websocket)  # 클라이언트 목록에서 제거
+        logger.info(f"클라이언트가 연결 해제되었습니다. 현재 클라이언트 수: {len(self.clients)}")
+    
+    async def broadcast(self, points):
+        """모든 연결된 클라이언트에게 포인트 클라우드 데이터 전송"""
+        if not self.clients:
+            return
+            
+        # 전송할 메시지 생성
+        message = {
+            "type": "lidar_points",
+            "points": points,
+            "timestamp": time.time()
+        }
+        
+        logger.info(f"Broadcasting {len(points)} points")
+        
+        # 모든 클라이언트에게 데이터 전송
+        for client in self.clients.copy():
+            try:
+                await client.send_json(message)
+            except Exception as e:
+                logger.error(f"클라이언트 전송 실패: {str(e)}")
+                await self.unregister_client(client)
 
 async def handle_index(request):
-    """html 파일 루트 경로 처리"""
-    print("Lidar 페이지 요청")
-    return web.FileResponse('public/html/lidar_page.html')
+    """HTML 파일 제공"""
+    try:
+        with open('public/html/lidar_page.html', 'r', encoding='utf-8') as f:
+            return web.Response(text=f.read(), content_type='text/html')
+    except Exception as e:
+        logger.error(f"HTML 파일 제공 중 오류: {str(e)}")
+        return web.Response(status=404)
 
-async def broadcast_to_clients(data):
-    if connected_clients:
-        message = json.dumps(data)
-        await asyncio.gather(
-            *[client.send_str(message) for client in connected_clients]
-        )
-
-async def handle_websocket(request):
+async def websocket_handler(request):
+    """웹소켓 연결 처리"""
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     
-    print('WebSocket 클라이언트 연결됨')
-    connected_clients.add(ws)
-
     try:
+        await lidar_subscriber.register_client(ws)
         async for msg in ws:
             if msg.type == web.WSMsgType.ERROR:
-                print(f'WebSocket 에러: {ws.exception()}')
+                logger.error(f'웹소켓 에러: {ws.exception()}')
     finally:
-        connected_clients.remove(ws)
-        print('WebSocket 클라이언트 연결 해제')
+        await lidar_subscriber.unregister_client(ws)
     
     return ws
 
-async def init_ros():
-    global ros_client
-    try:
-        print("\nROS Bridge 연결 시도 중...")
-        
-        # ROS Bridge 서버 정보
-        ROS_BRIDGE_HOST = LOCAL_HOST  # 실제 ROS Bridge가 실행 중인 IP
-        ROS_BRIDGE_PORT = 9090
-        
-        print(f"ROS Bridge 서버: {ROS_BRIDGE_HOST}:{ROS_BRIDGE_PORT}")
-        
-        # 호스트 연결 가능 여부 확인
-        try:
-            socket.gethostbyname(ROS_BRIDGE_HOST)
-            print("호스트 확인 성공")
-        except socket.gaierror as e:
-            print(f"호스트 확인 실패: {e}")
-            raise
-        
-        # ROS Bridge 연결
-        ros_client = roslibpy.Ros(host=ROS_BRIDGE_HOST, port=ROS_BRIDGE_PORT)
-        
-        # 연결 시도
-        try:
-            ros_client.run()
-            print("ROS Bridge 연결 시도 중...")
-            
-            # 연결 상태 확인
-            retry_count = 0
-            max_retries = 5
-            while not ros_client.is_connected and retry_count < max_retries:
-                print(f'연결 대기 중... ({retry_count + 1}/{max_retries})')
-                await asyncio.sleep(1)
-                retry_count += 1
-                
-            if not ros_client.is_connected:
-                raise Exception("ROS Bridge 연결 시간 초과")
-                
-            print('ROS Bridge 연결 성공')
-            
-        except Exception as e:
-            print(f"ROS Bridge 연결 실패: {e}")
-            if ros_client:
-                ros_client.terminate()
-            raise
-        
-        # 토픽 구독 설정
-        lidar_topic = roslibpy.Topic(
-            ros_client,
-            '/ssafy/velodyne_points',
-            'sensor_msgs/PointCloud2'
-        )
-        
-        def topic_callback(msg):
-            try:
-                print("\n=== 라이다 메시지 수신 ===")
-                print(f"토픽: {lidar_topic.name}")
-                handle_lidar_message(msg)
-            except Exception as e:
-                print(f"콜백 에러: {e}")
-                import traceback
-                traceback.print_exc()
-        
-        # 구독 시작
-        lidar_topic.subscribe(topic_callback)
-        print(f"\n토픽 구독 시작: {lidar_topic.name}")
-        
-    except Exception as e:
-        print(f'\n=== ROS 연결 에러 ===')
-        print(f'에러 타입: {type(e).__name__}')
-        print(f'에러 메시지: {str(e)}')
-        if ros_client and ros_client.is_connected:
-            print("연결 종료...")
-            ros_client.terminate()
-        raise
-
-def handle_lidar_message(message):
-    try:
-        print("\n=== 라이다 메시지 처리 ===")
-        
-        # 데이터 구조 확인을 위한 로깅
-        print("Fields:", message.get('fields', []))
-        print("Point Step:", message.get('point_step', 0))
-        print("Data type:", type(message.get('data', [])))
-        print("Data length:", len(message.get('data', [])))
-        
-        # 문자열을 바이트로 변환
-        if isinstance(message['data'], str):
-            data_bytes = message['data'].encode('latin1')
-        else:
-            data_bytes = message['data']
-            
-        # 바이트 데이터를 numpy array로 변환
-        data_buffer = np.frombuffer(data_bytes, dtype=np.uint8)
-        
-        # point_step에 따라 데이터 재구성
-        point_step = message.get('point_step', 0)
-        if point_step > 0:
-            # 전체 데이터 크기가 point_step으로 나누어 떨어지는지 확인
-            num_points = len(data_buffer) // point_step
-            total_size = num_points * point_step
-            
-            # 실제 사용할 데이터만 선택
-            data_buffer = data_buffer[:total_size]
-            points_data = data_buffer.reshape(num_points, point_step)
-            
-            # fields 정보를 이용하여 x, y, z 오프셋 찾기
-            fields = message.get('fields', [])
-            offsets = {field['name']: field['offset'] for field in fields}
-            
-            # float32 타입으로 변환 (x, y, z 좌표)
-            x_data = points_data[:, offsets['x']:offsets['x']+4].view(np.float32).reshape(-1)
-            y_data = points_data[:, offsets['y']:offsets['y']+4].view(np.float32).reshape(-1)
-            z_data = points_data[:, offsets['z']:offsets['z']+4].view(np.float32).reshape(-1)
-            
-            # 디버깅을 위한 출력
-            print(f"Number of points: {num_points}")
-            print(f"Point data shape: {points_data.shape}")
-            print(f"X data shape: {x_data.shape}")
-            print(f"Y data shape: {y_data.shape}")
-            print(f"Z data shape: {z_data.shape}")
-            
-            # x, y, z 좌표를 하나의 배열로 결합
-            points_xyz = np.column_stack((x_data, y_data, z_data))
-            
-            # 웹소켓으로 전송할 데이터 준비
-            lidar_data = {
-                'header': {
-                    'seq': message.get('header', {}).get('seq', 0),
-                    'stamp': message.get('header', {}).get('stamp', 0),
-                    'frame_id': message.get('header', {}).get('frame_id', '')
-                },
-                'height': message.get('height', 0),
-                'width': message.get('width', 0),
-                'fields': message.get('fields', []),
-                'point_step': point_step,
-                'row_step': message.get('row_step', 0),
-                'is_dense': message.get('is_dense', False),
-                'data_size': len(points_xyz),
-                'points': points_xyz.tolist(),  # numpy array를 list로 변환
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            # 메인 이벤트 루프를 통해 비동기 작업 실행
-            if main_loop is not None:
-                main_loop.call_soon_threadsafe(
-                    lambda: asyncio.create_task(broadcast_to_clients(lidar_data))
-                )
-            
-    except Exception as e:
-        print(f"라이다 처리 에러: {e}")
-        import traceback
-        traceback.print_exc()
-
-
 async def main():
-    try:
-        print("\n=== 서버 시작 ===")
-        global main_loop
-        main_loop = asyncio.get_running_loop()
-        
-        # ROS 초기화 (더 긴 타임아웃 설정)
-        try:
-            await asyncio.wait_for(init_ros(), timeout=10.0)
-        except asyncio.TimeoutError:
-            print("ROS 초기화 시간 초과")
-            raise
-        
-        # 웹 앱 설정
-        app = web.Application()
-        
-        # 라우트 설정
-        app.router.add_get('/', handle_index)
-        app.router.add_get('/ws', handle_websocket)
-        
-        # 정적 파일 설정
-        app.router.add_static('/static', 'static')
-        app.router.add_static('/public', 'public')
-        
-        # 서버 디렉토리 구조 확인
-        print("\n=== 서버 디렉토리 구조 ===")
-        print("현재 작업 디렉토리:", os.getcwd())
-        print("public/html/lidar_page.html 존재 여부:", os.path.exists('public/html/index.html'))
-        
-        # 서버 실행
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, 'localhost', 3000)
-        print("\n서버 시작...")
-        await site.start()
-        print("서버가 http://localhost:3000 에서 실행 중")
-        
-        await asyncio.Event().wait()
-        
-    except Exception as e:
-        print(f"\n=== 서버 시작 중 에러 발생 ===")
-        print(f"에러 타입: {type(e).__name__}")
-        print(f"에러 메시지: {str(e)}")
-        if ros_client and ros_client.is_connected:
-            ros_client.terminate()
-        raise
+    # 라이다 구독자 시작
+    lidar_task = asyncio.create_task(lidar_subscriber.connect())
+    
+    # aiohttp 앱 설정
+    app = web.Application()
+    app.router.add_get('/', handle_index)
+    app.router.add_get('/ws', websocket_handler)
+    app.router.add_static('/public', 'public')
+    
+    # 서버 실행
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, HOST, PORT)
+    await site.start()
+    
+    logger.info(f"서버가 시작되었습니다. http://{HOST}:{PORT}")
+    
+    # 서버 실행 유지
+    await asyncio.gather(
+        lidar_task,
+        asyncio.Event().wait()  # 서버를 계속 실행 상태로 유지
+    )
+
+# 전역 LidarSubscriber 인스턴스 생성
+lidar_subscriber = LidarSubscriber()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n서버 종료")
-        if ros_client and ros_client.is_connected:
-            ros_client.terminate() 
+        logger.info("프로그램을 종료합니다.")
+    except Exception as e:
+        logger.error(f"예기치 않은 오류 발생: {str(e)}")
+        logger.exception(e)
