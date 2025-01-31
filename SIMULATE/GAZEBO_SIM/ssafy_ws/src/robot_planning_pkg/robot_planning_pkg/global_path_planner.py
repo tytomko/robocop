@@ -93,16 +93,18 @@ class GlobalPathPlanner(Node):
           - ...
           - goals[n-2] -> goals[n-1]
           모든 구간 경로를 순차적으로 찾아서 이어붙이고, 한 번에 발행
+
+          +++ 변경점 +++
+          최종적으로 플롯을 그릴 때, request.goals 배열에 들어있는
+          중간 목표 지점들도 함께 표시하도록 goals(웨이포인트 목록)를 넘김
         """
         self.get_logger().info(f"[Patrol] Received multi-goals: {request.goals}")
 
-        # 1) 현재 위치가 유효한지 확인
         if not self.current_pos:
             response.success = False
             response.message = "Current position is unknown."
             return response
 
-        # 2) 시작 노드: 로봇의 현재위치에 가장 가까운 노드
         start_node = self.find_nearest_node(self.current_pos)
         if start_node is None:
             self.get_logger().error("Cannot find nearest node to current position.")
@@ -110,8 +112,7 @@ class GlobalPathPlanner(Node):
             response.message = "Failed to find start node."
             return response
 
-        # 3) 순차적으로 목표 지점의 노드를 찾아 경로를 연결
-        full_path_nodes = []  # (x, y) 노드들을 저장할 리스트
+        full_path_nodes = []  # (x, y) 누적 경로
         prev_node = start_node
 
         for idx, goal in enumerate(request.goals):
@@ -123,7 +124,6 @@ class GlobalPathPlanner(Node):
                 response.message = f"Failed to find node for goal {idx}."
                 return response
 
-            # A*로 경로 찾기
             self.get_logger().info(f"Finding path from {prev_node} to {goal_node} (goal {idx})")
             sub_path = self.find_shortest_path_nodes(prev_node, goal_node)
             if not sub_path:
@@ -131,16 +131,14 @@ class GlobalPathPlanner(Node):
                 response.message = f"Failed to find valid path for goal {idx}."
                 return response
 
-            # 첫 구간은 통째로, 이후 구간은 중복(첫 노드) 제거 후 이어붙이기
             if idx == 0:
                 full_path_nodes += sub_path
             else:
+                # 첫 노드 중복 제거
                 full_path_nodes += sub_path[1:]
 
-            # 다음 구간의 시작점 업데이트
             prev_node = goal_node
-        
-        # 4) 모든 목표 연결 경로가 완성되었는지 확인
+
         if len(full_path_nodes) <= 1:
             response.success = False
             response.message = "No valid multi-goal path found."
@@ -148,12 +146,17 @@ class GlobalPathPlanner(Node):
 
         self.get_logger().info(f"Multi-goal path node count: {len(full_path_nodes)}")
 
-        # 5) 단일 경로로 발행
+        # 로컬 변수에 최종 경로 저장 (시각화용)
+        # self.goal_pos는 "마지막 목표"만 저장
+        last_goal = request.goals[-1]
+        self.goal_pos = (last_goal.x, last_goal.y)  # 마지막 목표
+
+        # 1) 경로 발행
         self.publish_path(full_path_nodes)
 
-        # (옵션) 시각화
+        # 2) 시각화 (중간 목표점도 표시하기 위해 goals=request.goals 전달)
         if self.enable_plot:
-            self.visualize_path(full_path_nodes, multi_goal=True)
+            self.visualize_path(full_path_nodes, multi_goal=True, goals=request.goals)
 
         response.success = True
         response.message = "Multi-goal path calculated and published successfully."
@@ -276,10 +279,13 @@ class GlobalPathPlanner(Node):
         self.path_pub.publish(path_msg)
         self.get_logger().info(f"Published global path with {len(path)} nodes")
 
-    def visualize_path(self, path, multi_goal=False):
+    def visualize_path(self, path, multi_goal=False, goals=None):
         """
         path: (x,y) 리스트
         Matplotlib으로 시각화
+
+        +++ 변경점 +++
+        - goals: Patrol 시 여러 웨이포인트(geometry_msgs/Pose2D[])를 표시
         """
         plt.figure(figsize=(8, 6))
 
@@ -289,14 +295,27 @@ class GlobalPathPlanner(Node):
         # 경로 표시
         plt.plot(x_path, y_path, 'ro-', label='Path')
 
-        # 현재 위치(파란색), 목표 위치(초록색) 표시
+        # 현재 위치(파란색 점)
         if self.current_pos:
             plt.scatter(self.current_pos[0], self.current_pos[1],
                         c='blue', label='Current Position', s=100)
+
+        # (단일 목표) Navigate/Homing만 초록색 점
         if self.goal_pos and not multi_goal:
-            # 단일 목표 (Navigate/Homing) 시에만 점 하나 표시
             plt.scatter(self.goal_pos[0], self.goal_pos[1],
                         c='green', label='Goal Position', s=100)
+
+        # (다중 목표) Patrol: request.goals 목록도 표시
+        if multi_goal and goals:
+            for i, g in enumerate(goals):
+                # 실제 좌표 (UTM): g.x, g.y
+                # 중복 라벨 방지
+                label_str = 'Goals' if i == 0 else None
+                plt.scatter(g.x, g.y,
+                            marker='*', c='purple', s=150,
+                            label=label_str)
+                # 각 점에 순번 표시
+                plt.text(g.x, g.y, f'{i+1}', color='black', fontsize=12)
 
         plt.xlabel("X")
         plt.ylabel("Y")
@@ -305,6 +324,7 @@ class GlobalPathPlanner(Node):
         plt.legend()
         plt.grid()
         plt.show()
+
 
 def main(args=None):
     rclpy.init(args=args)
