@@ -1,8 +1,8 @@
 <template>
-  <div class="camera-view">
     <div class="camera-header">
       <div class="camera-status-info">
         <div class="status-item">
+          <span class="camera-label">{{ cameraName }}</span>
           <span class="status-label">상태:</span>
           <span :class="['status-value', cameraStatus === '스트리밍 중' ? 'status-active' : '']">
             {{ cameraStatus }}
@@ -16,54 +16,27 @@
     </div>
     
     <div class="camera-container">
-      <div ref="fps" class="fps-display">FPS: 0.0</div>
-      <video ref="videoElement" autoplay playsinline></video>
-      <div class="debug-container" :class="{ 'debug-hidden': !showDebug }">
-        <div class="debug-header">
-          <button class="debug-toggle" @click="toggleDebug">
-            {{ showDebug ? '로그 숨기기' : '로그 보기' }}
-          </button>
-        </div>
-        <div ref="debug" class="debug-overlay" v-show="showDebug"></div>
+      <div v-if="!hasPermission" class="permission-request">
+        <p>카메라 접근 권한이 필요합니다</p>
+        <button @click="requestPermission" class="permission-button">
+          카메라 권한 요청
+        </button>
       </div>
-      <div v-if="currentSession" class="recording-status">
-        녹화 중... (세션 ID: {{ currentSession }})
+      <div v-else-if="errorMessage" class="error-display">
+        <p>{{ errorMessage }}</p>
+        <button @click="retryConnection" class="retry-button">
+          다시 시도
+        </button>
+      </div>
+      <video v-else-if="hasPermission" ref="videoElement" autoplay playsinline></video>
+      <div v-else class="loading">
+        카메라 연결 중...
       </div>
     </div>
-
-    <div class="camera-controls">
-      <button 
-        :class="['record-button', isRecording ? 'recording' : '']"
-        @click="toggleRecording"
-      >
-        {{ isRecording ? '녹화 중지' : '녹화 시작' }}
-      </button>
-    </div>
-  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-
-const props = defineProps({
-  robotId: {
-    type: String,
-    required: true
-  },
-  cameraType: {
-    type: String,
-    required: true,
-    validator: (value) => ['front', 'rear'].includes(value)
-  },
-  rosHost: {
-    type: String,
-    default: '192.168.100.104'
-  },
-  rosPort: {
-    type: Number,
-    default: 9090
-  }
-});
 
 const ws = ref(null);
 const videoElement = ref(null);
@@ -73,322 +46,274 @@ const errorMessage = ref('');
 const hasPermission = ref(false);
 const stream = ref(null);
 const streamInfo = ref(null);
-const video = ref(null);
-const debug = ref(null);
-const fps = ref(null);
-const showDebug = ref(false);
-const isRecording = ref(false);
-const currentSession = ref(null);
-let frameCount = 0;
-let lastTime = performance.now();
+const props = defineProps({
+  cameraName: {
+    type: String,
+    required: true,
+    default: '카메라',
+  },
+  cameraStatus: {
+    type: String,
+    required: true,
+    default: '연결 대기 중',
+  },
+  streamInfo: {
+    type: Object,
+    required: false,
+    default: null,
+  },
+})
 
-function calculateFPS() {
-  frameCount++;
-  const now = performance.now();
-  const elapsed = now - lastTime;
-  
-  if (elapsed >= 1000) {
-    const currentFps = (frameCount * 1000) / elapsed;
-    if (fps.value) {
-      fps.value.textContent = `FPS: ${currentFps.toFixed(1)}`;
-    }
-    frameCount = 0;
-    lastTime = now;
-  }
-  
-  requestAnimationFrame(calculateFPS);
-}
-
-if (videoElement.value) {
-  videoElement.value.addEventListener('play', () => {
-    console.log('비디오 재생 시작');
-    calculateFPS();
-  });
-}
-
-function log(message) {
-  console.log(message);
-  if (debug.value) {
-    debug.value.textContent += message + '\n';
-  }
-}
-
-async function start() {
+const requestPermission = async () => {
   try {
-    log('WebRTC 연결 시작...');
-
-    const configuration = {
-      iceServers: [
-        {
-            urls: [
-                'stun:stun.l.google.com:19302',
-                'stun:stun1.l.google.com:19302'
-            ]
-        },
-        {
-            urls: ['turn:numb.viagenie.ca'],
-            username: 'webrtc@live.com',
-            credential: 'muazkh'
-        }
-      ],
-      iceTransportPolicy: 'all'
-    };
-    log('PeerConnection 설정:', JSON.stringify(configuration));
-    const pc = new RTCPeerConnection(configuration);
-    
-    // ICE 상태 모니터링 추가
-    pc.oniceconnectionstatechange = () => {
-        log('ICE 연결 상태:', pc.iceConnectionState);
-        if (pc.iceConnectionState === 'failed') {
-            log('ICE 연결 실패 - 재시도 필요');
-        }
-    };
-
-    pc.onicegatheringstatechange = () => {
-        log('ICE gathering 상태:', pc.iceGatheringState);
-    };
-
-    pc.onicecandidate = e => {
-        if (e.candidate) {
-            log('ICE candidate:', e.candidate.type);
-        }
-    };
-    
-    // 2. 이벤트 핸들러 설정
-    pc.ontrack = function(event) {
-        log('트랙 수신됨');
-        log('트랙 종류: ' + event.track.kind);
-        log('스트림 개수: ' + event.streams.length);
-        if (event.track.kind === 'video') {
-            log('비디오 트랙 설정 시도');
-            if (videoElement.value) {
-                try {
-                    videoElement.value.srcObject = event.streams[0];
-                    cameraStatus.value = '스트리밍 중';
-                    fetchCurrentSession();
-                    log('비디오 스트림 설정 완료');
-                } catch (error) {
-                    log('비디오 스트림 설정 실패: ' + error.message);
-                }
-            } else {
-                log('videoElement가 null입니다');
-            }
-        }
-    };
-    
-    // 3. Offer 생성
-    log('Offer 생성 중...');
-    const offer = await pc.createOffer({
-        offerToReceiveVideo: true
-    });
-    
-    log('Local Description 설정 중...');
-    await pc.setLocalDescription(offer);
-    
-    // 4. 서버에 offer 전송
-    log('서버에 offer 전송 중...');
-    const response = await fetch(`http://localhost:8000/webrtc/${props.robotId}/${props.cameraType}/offer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        sdp: pc.localDescription.sdp,
-        type: pc.localDescription.type
-      })
-    });
-    
-    // 디버깅을 위한 로그 추가
-    console.log('Request URL:', `http://localhost:8000/webrtc/${props.robotId}/${props.cameraType}/offer`);
-    console.log('robotId:', props.robotId);
-    console.log('cameraType:', props.cameraType);
-    
-    // 5. 응답 처리
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`서버 에러: ${response.status} - ${errorText}`);
+    if (!navigator.mediaDevices) {
+      throw new Error('이 브라우저는 카메라 접근을 지원하지 않습니다.');
     }
-    
-    const answer = await response.json();
-    log('서버로부터 응답 수신');
-    log(`응답 type: ${answer.type}`);
-    
-    // 6. Remote Description 설정
-    log('Remote Description 설정 중...');
-    await pc.setRemoteDescription(answer);
-    log('WebRTC 연결 설정 완료');
 
-  } catch (e) {
-    log('에러 발생:');
-    log(e.toString());
-    log('에러 상세: ' + JSON.stringify(e));
-    console.error(e);
-    cameraStatus.value = '연결 실패';
+    // 기존 스트림이 있다면 정리
+    if (stream.value) {
+      stream.value.getTracks().forEach(track => {
+        track.stop();
+      });
+    }
+
+    // 카메라 스트림 요청
+    stream.value = await navigator.mediaDevices.getUserMedia({ 
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        frameRate: { ideal: 30 }
+      }
+    });
+    
+    if (!stream.value) {
+      throw new Error('카메라 스트림을 가져올 수 없습니다.');
+    }
+
+    // 비디오 엘리먼트에 스트림 연결
+    if (videoElement.value) {
+      videoElement.value.srcObject = stream.value;
+      hasPermission.value = true;
+      errorMessage.value = '';
+    }
+
+    // 스트림 정보 저장
+    const videoTrack = stream.value.getVideoTracks()[0];
+    if (videoTrack) {
+      const settings = videoTrack.getSettings();
+      streamInfo.value = {
+        width: settings.width || 640,
+        height: settings.height || 480
+      };
+    }
+
+  } catch (error) {
+    console.error('카메라 권한 에러:', error);
+    hasPermission.value = false;
+    errorMessage.value = error.name === 'NotAllowedError' 
+      ? '카메라 접근이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.'
+      : '카메라 연결 중 오류가 발생했습니다.';
   }
-}
-
-start();
-
-const toggleDebug = () => {
-  showDebug.value = !showDebug.value;
 };
 
-async function toggleRecording() {
+const connectWebSocket = () => {
+  if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+    console.log('이미 WebSocket이 연결되어 있습니다.');
+    return;
+  }
+
   try {
-    const action = isRecording.value ? 'stop' : 'start';
-    const response = await fetch('http://localhost:8000/recording', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ action })
-    });
+    const wsUrl = 'ws://localhost:8080';
+    ws.value = new WebSocket(`${wsUrl}/ws/camera/ROBOT_001`);
+    console.log('WebSocket 연결 시도:', `${wsUrl}/ws/camera/ROBOT_001`);
     
-    const result = await response.json();
-    
-    if (action === 'start') {
-      isRecording.value = true;
-      currentSession.value = result.session_id;
-    } else {
-      isRecording.value = false;
-      currentSession.value = null;
-    }
-    
-    log(`녹화 ${action}: ${result.session_id}`);
-  } catch (error) {
-    log('녹화 제어 에러: ' + error.message);
-  }
-}
+    ws.value.onopen = () => {
+      console.log('카메라 WebSocket 연결됨');
+      cameraStatus.value = '연결됨';
+      errorMessage.value = '';
+      
+      // 연결 성공 시 카메라 스트림 시작 요청
+      try {
+        ws.value.send(JSON.stringify({ 
+          action: 'start_stream',
+          resolution: streamInfo.value ? {
+            width: streamInfo.value.width,
+            height: streamInfo.value.height
+          } : null
+        }));
+      } catch (error) {
+        console.error('스트림 시작 요청 실패:', error);
+      }
+    };
 
-// 현재 세션 ID를 가져오는 함수 추가
-async function fetchCurrentSession() {
-    try {
-        const response = await fetch('http://localhost:8000/recording/current-session');
-        const result = await response.json();
-        if (result.session_id) {
-            currentSession.value = result.session_id;
+    ws.value.onmessage = (event) => {
+      try {
+        // 바이너리 데이터 처리
+        if (event.data instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const base64data = reader.result.split(',')[1];
+              imageData.value = base64data;
+              cameraStatus.value = '스트리밍 중';
+              errorMessage.value = ''; // 성공적인 프레임 수신 시 에러 메시지 초기화
+            } catch (error) {
+              console.error('프레임 데이터 처리 실패:', error);
+            }
+          };
+          reader.onerror = (error) => {
+            console.error('프레임 읽기 실패:', error);
+          };
+          reader.readAsDataURL(event.data);
+          return;
         }
-    } catch (error) {
-        log('세션 ID 조회 에러: ' + error.message);
-    }
-}
 
-onMounted(() => {
-  if (videoElement.value) {
-    videoElement.value.addEventListener('play', () => {
-      log('비디오 재생 시작');
-      calculateFPS();
-    });
-    
-    videoElement.value.addEventListener('error', (e) => {
-      log('비디오 에러 발생: ' + e.target.error.message);
-    });
-    
-    videoElement.value.addEventListener('loadedmetadata', () => {
-      log('비디오 메타데이터 로드됨');
-      log(`비디오 크기: ${videoElement.value.videoWidth}x${videoElement.value.videoHeight}`);
-    });
+        // JSON 메시지 처리
+        const data = JSON.parse(event.data);
+        console.log('수신된 메시지:', data);
+        
+        if (data.error) {
+          throw new Error(data.error);
+        } else if (data.status) {
+          cameraStatus.value = data.status;
+          if (data.status === 'error') {
+            errorMessage.value = data.message || '카메라 스트리밍 오류가 발생했습니다.';
+          }
+        }
+      } catch (error) {
+        console.error('메시지 처리 중 에러:', error);
+        handleError(error);
+      }
+    };
+
+    ws.value.onerror = (error) => {
+      console.error('WebSocket 에러:', error);
+      handleError(error);
+    };
+
+    ws.value.onclose = (event) => {
+      console.log('WebSocket 연결 종료:', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      });
+      
+      // 정상적인 종료가 아닌 경우에만 재연결 시도
+      if (!event.wasClean) {
+        handleReconnect(event);
+      } else {
+        cameraStatus.value = '연결 종료';
+      }
+    };
+  } catch (error) {
+    console.error('WebSocket 연결 실패:', error);
+    handleError(error);
   }
-  start();
+};
+
+const retryConnection = () => {
+  errorMessage.value = '';
+  connectWebSocket();
+};
+
+// 에러 처리 함수
+const handleError = (error) => {
+  console.error('카메라 에러 발생:', error);
+  errorMessage.value = error.message || '카메라 연결 중 오류가 발생했습니다.';
+  cameraStatus.value = '에러';
+};
+
+// 재연결 처리 함수
+const handleReconnect = (event) => {
+  const maxRetries = 3;
+  const retryDelay = 3000;
+  let retryCount = 0;
+
+  const tryReconnect = () => {
+    if (retryCount < maxRetries) {
+      retryCount++;
+      console.log(`재연결 시도 ${retryCount}/${maxRetries}`);
+      cameraStatus.value = `재연결 시도 중 (${retryCount}/${maxRetries})`;
+      
+      // 기존 연결 정리
+      if (ws.value) {
+        try {
+          ws.value.close();
+        } catch (error) {
+          console.error('WebSocket 정리 중 에러:', error);
+        }
+      }
+      
+      setTimeout(() => {
+        connectWebSocket();
+      }, retryDelay);
+    } else {
+      cameraStatus.value = '연결 실패';
+      errorMessage.value = '연결을 설정할 수 없습니다. 페이지를 새로고침하여 다시 시도해주세요.';
+    }
+  };
+
+  tryReconnect();
+};
+
+onMounted(async () => {
+  console.log('카메라 컴포넌트 마운트됨');
+  try {
+    await requestPermission();
+  } catch (error) {
+    console.error('카메라 초기화 실패:', error);
+    handleError(error);
+  }
+});
+
+onUnmounted(() => {
+  console.log('카메라 컴포넌트 언마운트: 리소스 정리 시작');
+  
+  // WebSocket 연결 정리
+  if (ws.value) {
+    try {
+      ws.value.close(1000, '사용자가 페이지를 떠났습니다');
+      console.log('WebSocket 연결 정상 종료됨');
+    } catch (error) {
+      console.error('WebSocket 정리 중 에러:', error);
+    }
+  }
+  
+  // 카메라 스트림 정리
+  if (stream.value) {
+    try {
+      stream.value.getTracks().forEach(track => {
+        track.stop();
+        console.log(`카메라 트랙 정리됨: ${track.kind}`);
+      });
+    } catch (error) {
+      console.error('카메라 스트림 정리 중 에러:', error);
+    }
+  }
+  
+  console.log('카메라 컴포넌트 언마운트: 리소스 정리 완료');
 });
 </script>
 
 <style scoped>
-.camera-view {
-  width: 100%;
-  max-width: 1200px; /* 최대 너비 설정 */
-  margin: 0 auto;
-  padding: 1rem;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
-
 .camera-header {
-  margin-bottom: 1rem;
-}
-
-.camera-container {
-  position: relative;
-  width: 100%;
-  height: 0;
-  padding-bottom: 75%; /* 4:3 비율 유지 (480/640 = 0.75) */
-  background: #000;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.camera-container video {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* 비디오 비율 유지 */
-}
-
-.fps-display {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-family: monospace;
-  z-index: 2;
-}
-
-.debug-container {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  right: 10px;
-  z-index: 2;
-}
-
-.debug-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 5px;
-}
-
-.debug-toggle {
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.3s;
-}
-
-.debug-toggle:hover {
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.debug-overlay {
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 10px;
-  font-size: 12px;
-  font-family: monospace;
-  max-height: 150px;
-  overflow-y: auto;
-  border-radius: 5px;
-  transition: opacity 0.3s;
-}
-
-.debug-hidden .debug-overlay {
-  display: none;
+  margin-bottom: 0.5rem;
 }
 
 .camera-status-info {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
   font-size: 0.9rem;
-  color: white;
+}
+
+.camera-label {
+  font-size: 0.9rem;
+  font-weight: bold; /* Bold 처리 */
+  background-color: #000; /* 검은 배경 */
+  color: #fff; /* 흰 글씨 */
+  padding: 0.2rem 0.5rem; /* 텍스트 주위 여백 */
+  border-radius: 4px; /* 모서리 둥글게 */
 }
 
 .status-item {
@@ -398,16 +323,34 @@ onMounted(() => {
 }
 
 .status-label {
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
 }
 
 .status-value {
   font-weight: 500;
-  color: white;
 }
 
 .status-active {
-  color: #4CAF50;
+  color: #28a745;
+}
+
+.camera-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.camera-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .permission-request, .error-display {
@@ -434,45 +377,5 @@ onMounted(() => {
 .loading {
   color: #fff;
   font-size: 1.1rem;
-}
-
-.camera-controls {
-  margin-top: 1rem;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.record-button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #dc3545;
-  color: white;
-  font-weight: 500;
-}
-
-.record-button.recording {
-  background: #28a745;
-  animation: pulse 2s infinite;
-}
-
-.recording-status {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(220, 53, 69, 0.8);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 0.9rem;
-  z-index: 2;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
 }
 </style> 

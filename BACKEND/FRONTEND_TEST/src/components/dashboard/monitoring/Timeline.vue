@@ -110,7 +110,7 @@ const fetchEvents = async () => {
 // 웹소켓 설정
 const setupWebSocket = async () => {
   try {
-    await webSocketService.connect('ws://localhost:8000/ws')
+    await webSocketService.connect('ws://localhost:8000/api/v1/robots/ws')
     
     // 이벤트 구독
     webSocketService.subscribe('timeline/events', (data) => {
@@ -121,7 +121,7 @@ const setupWebSocket = async () => {
         id: Date.now(),
         ...data
       })
-    })
+    }, '/api/v1/robots/ws')
   } catch (error) {
     console.error('웹소켓 연결 실패:', error)
   }

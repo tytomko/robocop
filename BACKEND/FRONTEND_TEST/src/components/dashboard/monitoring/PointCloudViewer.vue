@@ -24,10 +24,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import webSocketService from '@/services/webSocketService'
 
 const container = ref(null)
 const selectedRobot = ref('')
 const loading = ref(false)
+const isConnected = ref(false)
 
 // Three.js 변수
 let scene, camera, renderer, controls
@@ -42,26 +44,21 @@ const robots = ref([
 // 전역 변수 선언
 let ws = null  // 웹소켓 연결 객체를 전역으로 관리
 const connectWebSocket = () => {
-  // 기존 웹소켓이 있다면 연결 종료
-  if (ws) {
-    ws.close()
-  }
-  
-  // 새로운 웹소켓 연결 생성
-  ws = new WebSocket('ws://localhost:8000/ws')
-  
-  // 웹소켓으로 메시지 수신 시 실행되는 핸들러
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data)  // 수신된 JSON 문자열을 객체로 파싱
-      // 라이다 포인트 데이터가 있고 유효한 경우에만 처리
-      if (data.type === 'lidar_points' && data.points && data.points.length > 0) {
-        console.log('Received points:', data.points.length)  // 수신된 포인트 수 로깅
-        updatePointCloud(data.points)  // 포인트 클라우드 업데이트
-      }
-    } catch (error) {
-      console.error('Error processing message:', error)
-    }
+  try {
+    webSocketService.connect('ws://localhost:8000/api/v1/lidar/ws')
+    .then(() => {
+      webSocketService.subscribe('lidar_points', (data) => {
+        if (data && data.points && data.points.length > 0) {
+          console.log('Received points:', data.points.length)
+          updatePointCloud(data.points)
+        }
+      }, '/api/v1/lidar/ws')
+    })
+    .catch(error => {
+      console.error('라이다 웹소켓 연결 실패:', error)
+    })
+  } catch (error) {
+    console.error('라이다 웹소켓 연결 에러:', error)
   }
 }
 
@@ -166,9 +163,13 @@ const handleResize = () => {
 }
 
 onMounted(() => {
-  initThree()
-  connectWebSocket()
-  window.addEventListener('resize', handleResize)
+  try {
+    initThree()
+    connectWebSocket()
+    window.addEventListener('resize', handleResize)
+  } catch (error) {
+    console.error('라이다 뷰어 초기화 에러:', error);
+  }
 })
 
 onUnmounted(() => {

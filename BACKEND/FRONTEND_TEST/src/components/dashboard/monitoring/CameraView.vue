@@ -57,7 +57,7 @@ const props = defineProps({
   },
   rosHost: {
     type: String,
-    default: '192.168.100.104'
+    default: '172.30.1.78'
   },
   rosPort: {
     type: Number,
@@ -116,70 +116,83 @@ function log(message) {
 async function start() {
   try {
     log('WebRTC 연결 시작...');
+    log(`카메라 연결 시도 - robotId: ${props.robotId}, type: ${props.cameraType}`);
+
+    // 먼저 카메라 상태 확인
+    const statusResponse = await fetch(`http://localhost:8000/api/v1/cameras/status/${props.robotId}_${props.cameraType}`, {
+      credentials: 'include'
+    });
+    
+    const statusResult = await statusResponse.json();
+    if (!statusResult.success || statusResult.data.status === 'disconnected') {
+      cameraStatus.value = '카메라 연결 안됨';
+      log('카메라가 연결되어 있지 않습니다. WebRTC 연결을 시도하지 않습니다.');
+      return;
+    }
 
     const configuration = {
       iceServers: [
         {
-            urls: [
-                'stun:stun.l.google.com:19302',
-                'stun:stun1.l.google.com:19302'
-            ]
-        },
-        {
-            urls: ['turn:numb.viagenie.ca'],
-            username: 'webrtc@live.com',
-            credential: 'muazkh'
+          urls: [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302'
+          ]
         }
       ],
       iceTransportPolicy: 'all'
     };
+    
     log('PeerConnection 설정:', JSON.stringify(configuration));
     const pc = new RTCPeerConnection(configuration);
     
     // ICE 상태 모니터링 추가
     pc.oniceconnectionstatechange = () => {
-        log('ICE 연결 상태:', pc.iceConnectionState);
-        if (pc.iceConnectionState === 'failed') {
-            log('ICE 연결 실패 - 재시도 필요');
-        }
+      log('ICE 연결 상태:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'failed') {
+        log('ICE 연결 실패 - 재시도 필요');
+        cameraStatus.value = 'ICE 연결 실패';
+      } else if (pc.iceConnectionState === 'connected') {
+        log('ICE 연결 성공');
+        cameraStatus.value = '스트리밍 중';
+      }
     };
 
     pc.onicegatheringstatechange = () => {
-        log('ICE gathering 상태:', pc.iceGatheringState);
+      log('ICE gathering 상태:', pc.iceGatheringState);
     };
 
     pc.onicecandidate = e => {
-        if (e.candidate) {
-            log('ICE candidate:', e.candidate.type);
-        }
+      if (e.candidate) {
+        log('ICE candidate:', e.candidate.type);
+      }
     };
     
     // 2. 이벤트 핸들러 설정
     pc.ontrack = function(event) {
-        log('트랙 수신됨');
-        log('트랙 종류: ' + event.track.kind);
-        log('스트림 개수: ' + event.streams.length);
-        if (event.track.kind === 'video') {
-            log('비디오 트랙 설정 시도');
-            if (videoElement.value) {
-                try {
-                    videoElement.value.srcObject = event.streams[0];
-                    cameraStatus.value = '스트리밍 중';
-                    fetchCurrentSession();
-                    log('비디오 스트림 설정 완료');
-                } catch (error) {
-                    log('비디오 스트림 설정 실패: ' + error.message);
-                }
-            } else {
-                log('videoElement가 null입니다');
-            }
+      log('트랙 수신됨');
+      log('트랙 종류: ' + event.track.kind);
+      log('스트림 개수: ' + event.streams.length);
+      if (event.track.kind === 'video') {
+        log('비디오 트랙 설정 시도');
+        if (videoElement.value) {
+          try {
+            videoElement.value.srcObject = event.streams[0];
+            cameraStatus.value = '스트리밍 중';
+            fetchCurrentSession();
+            log('비디오 스트림 설정 완료');
+          } catch (error) {
+            log('비디오 스트림 설정 실패: ' + error.message);
+          }
+        } else {
+          log('videoElement가 null입니다');
         }
+      }
     };
     
     // 3. Offer 생성
     log('Offer 생성 중...');
     const offer = await pc.createOffer({
-        offerToReceiveVideo: true
+      offerToReceiveVideo: true
     });
     
     log('Local Description 설정 중...');
@@ -187,7 +200,7 @@ async function start() {
     
     // 4. 서버에 offer 전송
     log('서버에 offer 전송 중...');
-    const response = await fetch(`http://localhost:8000/webrtc/${props.robotId}/${props.cameraType}/offer`, {
+    const response = await fetch(`http://localhost:8000/api/v1/cameras/webrtc/${props.robotId}/${props.cameraType}/offer`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -199,24 +212,31 @@ async function start() {
       })
     });
     
-    // 디버깅을 위한 로그 추가
-    console.log('Request URL:', `http://localhost:8000/webrtc/${props.robotId}/${props.cameraType}/offer`);
-    console.log('robotId:', props.robotId);
-    console.log('cameraType:', props.cameraType);
-    
-    // 5. 응답 처리
     if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`서버 에러: ${response.status} - ${errorText}`);
+      const errorText = await response.text();
+      throw new Error(`서버 에러: ${response.status} - ${errorText}`);
     }
     
-    const answer = await response.json();
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || '카메라 연결 실패');
+    }
+
+    const answer = result.data;
     log('서버로부터 응답 수신');
     log(`응답 type: ${answer.type}`);
+
+    if (answer.type === 'disconnected') {
+      cameraStatus.value = '연결 끊김';
+      throw new Error('카메라가 연결되지 않았습니다.');
+    }
     
     // 6. Remote Description 설정
     log('Remote Description 설정 중...');
-    await pc.setRemoteDescription(answer);
+    await pc.setRemoteDescription(new RTCSessionDescription({
+      sdp: answer.sdp,
+      type: answer.type
+    }));
     log('WebRTC 연결 설정 완료');
 
   } catch (e) {

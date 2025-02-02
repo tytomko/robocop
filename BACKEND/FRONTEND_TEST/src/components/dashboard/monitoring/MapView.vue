@@ -213,13 +213,13 @@ const drawRobot = (ctx, x, y) => {
 // WebSocket 연결 설정
 const setupWebSocket = async () => {
   try {
-    await webSocketService.connect('ws://localhost:8000/ws')
+    await webSocketService.connect('ws://localhost:8000/api/v1/robots/ws')
     
     // 로봇 위치 구독
     webSocketService.subscribe('robot/position', (data) => {
       console.log('로봇 위치 업데이트:', data)
       drawMap()
-    })
+    }, '/api/v1/robots/ws')
 
   } catch (error) {
     console.error('WebSocket 연결 실패:', error)

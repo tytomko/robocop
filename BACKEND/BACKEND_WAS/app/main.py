@@ -1,103 +1,133 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, robots, persons
-from .database import init_db, test_connection, Base, engine
+from .domain.auth.controller.auth_controller import router as auth_router, create_admin_user
+from .domain.robot.controller.robot_controller import router as robot_router
+from .domain.camera.controller.camera_controller import router as camera_router, initialize_camera
+from .domain.lidar.controller.lidar_controller import router as lidar_router
+# from .domain.person.controller.person_controller import router as person_router
+from .common.config.manager import get_settings
+from .common.exceptions.base import AppException
+from .common.exceptions.handlers import (
+    app_exception_handler,
+    validation_exception_handler,
+    internal_exception_handler
+)
+from .common.middleware.logging import RequestLoggingMiddleware
+from .common.models.responses import BaseResponse
+from .domain.camera.models.camera_models import CameraConfig
+from .domain.lidar.controller.lidar_controller import start_lidar_subscriber
+from .infrastructure.database.connection import DatabaseConnection
 import uvicorn
 import os
 import logging
 import asyncio
-from app.lidarsub import websocket_endpoint, start_lidar_subscriber
-from app.camera.camera_rtc import CameraRTC
-from fastapi import HTTPException
-from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
-app = FastAPI()
+settings = get_settings()
 
-# CORS 설정 수정
+# FastAPI 앱 생성
+app = FastAPI(
+    title="Robot Management System API",
+    description="로봇 관리 시스템 API",
+    version="1.0.0",
+    debug=settings.base.DEBUG
+)
+
+# CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 프론트엔드 주소 명시
+    allow_origins=settings.security.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"]
+    allow_methods=settings.security.CORS_METHODS,
+    allow_headers=settings.security.CORS_HEADERS,
 )
+
+# 로깅 미들웨어 추가
+app.add_middleware(RequestLoggingMiddleware)
+
+# 예외 핸들러 등록
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(ValueError, validation_exception_handler)
+app.add_exception_handler(Exception, internal_exception_handler)
 
 # 라우터 등록
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(robots.router, prefix="/api/v1/robots", tags=["robots"])
-app.include_router(persons.router, tags=["persons"])
-
-# 웹소켓 엔드포인트 추가
-@app.websocket("/ws")
-async def lidar_websocket(websocket: WebSocket):
-    await websocket_endpoint(websocket)
-
-# 카메라 인스턴스 생성
-robot1_front_camera = CameraRTC(
-    camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
-    camera_name='robot1',
-    ros_bridge_host='192.168.100.104',
-    ros_bridge_port=9090
-)
-
-robot1_rear_camera = CameraRTC(
-    camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
-    camera_name='robot1',
-    ros_bridge_host='192.168.100.104',
-    ros_bridge_port=9090
-)
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(robot_router, prefix="/api/v1/robots", tags=["robots"])
+app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
+app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
+# app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 
 @app.on_event("startup")
 async def startup_event():
+    """애플리케이션 시작 시 실행되는 이벤트 핸들러"""
     logger.info("Starting up application...")
-    # SQLAlchemy 테이블 생성
-    Base.metadata.create_all(bind=engine)
     
-    await init_db()
-    await auth.create_admin_user()
-    await test_connection()
-    asyncio.create_task(start_lidar_subscriber())
-    
-    # 각 로봇의 카메라 ROS 연결
-    await robot1_front_camera.connect_ros()
-    await robot1_rear_camera.connect_ros()
-
-@app.get("/")
-async def root():
-    return {"message": "Robot Management API"}
-
-@app.post("/webrtc/{robot_id}/{camera_type}/offer")
-async def camera_offer(robot_id: str, camera_type: str, params: dict):
     try:
-        print(f"Received offer request - robot_id: {robot_id}, camera_type: {camera_type}")
+        # 데이터베이스 초기화
+        await DatabaseConnection.connect()
+        await DatabaseConnection.init_collections()
+        if not await DatabaseConnection.test_connection():
+            logger.error("데이터베이스 연결 실패")
+            raise Exception("데이터베이스 연결 실패")
         
-        cameras = {
-            "robot1": {
-                "front": robot1_front_camera,
-                "rear": robot1_rear_camera
-            }
-        }
+        # 관리자 계정 생성
+        await create_admin_user()
         
-        camera = cameras.get(robot_id, {}).get(camera_type)
-        print(f"Selected camera: {camera}")
+        # 라이다 서비스 시작
+        try:
+            asyncio.create_task(start_lidar_subscriber())
+            logger.info("라이다 서비스가 시작되었습니다.")
+        except Exception as e:
+            logger.warning(f"라이다 서비스 시작 실패: {str(e)}")
         
-        if not camera:
-            raise HTTPException(status_code=404, detail=f"Camera not found for robot_id: {robot_id}, camera_type: {camera_type}")
-            
-        return await camera.create_peer_connection(params)
-    except Exception as e:
-        print(f"Camera offer error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # 카메라 초기화
+        camera_configs = [
+            CameraConfig(
+                camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
+                camera_name='robot1_front',
+                ros_bridge_host='172.30.1.78',
+                ros_bridge_port=9090
+            ),
+            CameraConfig(
+                camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
+                camera_name='robot1_rear',
+                ros_bridge_host='172.30.1.78',
+                ros_bridge_port=9090
+            )
+        ]
+        
+        for config in camera_configs:
+            try:
+                success = await initialize_camera(config)
+                if success:
+                    logger.info(f"카메라 초기화 성공: {config.camera_name}")
+                else:
+                    logger.warning(f"카메라 초기화 실패: {config.camera_name}")
+            except Exception as e:
+                logger.warning(f"카메라 초기화 실패 ({config.camera_name}): {str(e)}")
+                logger.warning("카메라 기능이 비활성화된 상태로 실행됩니다.")
 
-# 에러 핸들링 추가
-@app.exception_handler(500)
-async def internal_error_handler(request, exc):
-    print(f"서버 에러 발생: {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc)}
+        logger.info("모든 초기화 작업이 완료되었습니다.")
+    except Exception as e:
+        logger.error(f"애플리케이션 시작 중 오류 발생: {str(e)}")
+        raise e
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """애플리케이션 종료 시 실행되는 이벤트 핸들러"""
+    logger.info("Shutting down application...")
+    await DatabaseConnection.disconnect()
+
+@app.get("/", response_model=BaseResponse)
+async def root():
+    """루트 엔드포인트"""
+    return BaseResponse(
+        success=True,
+        message="Welcome to the Robot Management System API",
+        data={
+            "version": "1.0.0",
+            "environment": settings.base.ENV
+        }
     )
 
 if __name__ == "__main__":

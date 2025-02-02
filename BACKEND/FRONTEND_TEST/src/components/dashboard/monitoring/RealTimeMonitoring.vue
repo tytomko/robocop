@@ -227,18 +227,18 @@ const emergencyStop = (robot) => {
 // WebSocket 연결 설정
 const setupWebSocket = async () => {
   try {
-    await webSocketService.connect('ws://localhost:8000/ws')
+    await webSocketService.connect('ws://localhost:8000/api/v1/robots/ws')
     
     // 로봇 상태 구독
     webSocketService.subscribe('monitoring/robots', (data) => {
       console.log('로봇 상태 업데이트:', data)
       updateRobotStatus(data)
-    })
+    }, '/api/v1/robots/ws')
 
     // 알림 구독
     webSocketService.subscribe('monitoring/alerts', (data) => {
       addAlert(data)
-    })
+    }, '/api/v1/robots/ws')
 
   } catch (error) {
     console.error('WebSocket 연결 실패:', error)
