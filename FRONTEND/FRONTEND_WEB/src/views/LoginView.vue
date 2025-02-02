@@ -1,10 +1,5 @@
 <template>
-  <div class="login-container" :class="{ 'dark-mode': isDarkMode }">
-    <div class="theme-toggle">
-      <button @click="toggleTheme" class="theme-button">
-        {{ isDarkMode ? '🌞' : '🌙' }}
-      </button>
-    </div>
+  <div class="login-container">
     <div class="left-column">
       <img src="@/assets/logo.png" alt="Robocop Logo" class="logo">
       <div class="slogan">
@@ -13,96 +8,89 @@
         <h2>ROBOCOP이 만들어갑니다!</h2>
       </div>
     </div>
-    <div class="right-column">
-      <div class="login-form">
-        <h3>아이디</h3>
-        <input type="text" v-model="loginForm.username" placeholder="ID를 입력해주세요">
-        <h3>비밀번호</h3>
-        <input type="password" v-model="loginForm.password" placeholder="비밀번호">
-        <input type="text" v-model="loginForm.captcha" placeholder="캡스워드를 입력해주세요">
-        <button @click="handleLogin" class="login-button">로그인</button>
+    <form @submit.prevent="handleLogin">
+      <div class="right-column">
+        <div class="login-form">
+          <h3>아이디</h3>
+          <input 
+          v-model="loginForm.username" 
+          type="text" 
+          placeholder="ID를 입력해주세요">
+          <h3>비밀번호</h3>
+          <input 
+          v-model="loginForm.password" 
+          type="password"
+          placeholder="비밀번호">
+          <button type="submit" class="login-button">로그인</button>
+        </div>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const router = useRouter()
 const loginForm = ref({
   username: '',
   password: '',
-  captcha: ''
-})
-
-const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
-
-const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value
-  localStorage.setItem('darkMode', isDarkMode.value)
-}
-
-onMounted(() => {
-  // 페이지 로드 시 저장된 테마 설정 적용
-  const savedTheme = localStorage.getItem('darkMode')
-  if (savedTheme !== null) {
-    isDarkMode.value = savedTheme === 'true'
-  }
 })
 
 const handleLogin = async () => {
   try {
-    // TODO: 실제 로그인 API 호출로 대체
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 로그인 성공 처리
-    localStorage.setItem('isAuthenticated', 'true')
-    
-    // 대시보드(모니터링)로 이동
-    router.push({ name: 'monitoring' })
+    // FormData 객체 생성
+    const formData = new FormData();
+    formData.append('username', loginForm.value.username);
+    formData.append('password', loginForm.value.password);
+
+    // URLSearchParams 사용
+    const params = new URLSearchParams();
+    params.append('username', loginForm.value.username);
+    params.append('password', loginForm.value.password);
+
+    const response = await axios.post('https://robocop-backend-app.fly.dev/api/v1/auth/login', 
+      params,  // FormData 대신 URLSearchParams 사용
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    const { accessToken, refreshToken } = response.data;
+
+    // 토큰 저장
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
+    // 로그인 성공 시 대시보드로 이동
+    router.push({ name: 'monitoring' });
+    console.log(accessToken, refreshToken)
   } catch (error) {
-    console.error('로그인 실패:', error)
-    alert('로그인에 실패했습니다. 다시 시도해주세요.')
+    console.error('로그인 실패:', error);
+    alert('로그인에 실패했습니다. 다시 시도해주세요.');
   }
-}
+};
 </script>
 
 <style scoped>
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* 스크롤 방지 */
+}
+
 .login-container {
   display: flex;
-  height: 100vh;
-  min-width: fit-content;
+  height: 100%; /* 부모 높이에 맞춤 */
+  width: 100%; /* 전체 너비 차지 */
   position: relative;
   background-color: #ffffff;
   transition: all 0.3s ease;
-}
-
-.login-container.dark-mode {
-  background-color: #1a1a1a;
-  color: #ffffff;
-}
-
-.theme-toggle {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-}
-
-.theme-button {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: background-color 0.3s ease;
-}
-
-.theme-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .left-column {
@@ -118,10 +106,6 @@ const handleLogin = async () => {
   transition: background-color 0.3s ease;
 }
 
-.dark-mode .left-column {
-  background-color: #2a2a2a;
-}
-
 .logo {
   width: 200px;
   margin-bottom: 2rem;
@@ -131,10 +115,6 @@ const handleLogin = async () => {
   text-align: center;
   color: #333;
   transition: color 0.3s ease;
-}
-
-.dark-mode .slogan {
-  color: #ffffff;
 }
 
 .slogan h2 {
@@ -152,15 +132,13 @@ const handleLogin = async () => {
   padding: 2rem;
   background-color: #ffffff;
   transition: background-color 0.3s ease;
-}
-
-.dark-mode .right-column {
-  background-color: #1a1a1a;
+  height: 89vh; /* 높이를 화면 전체로 설정 */
 }
 
 .login-form {
   width: 80%;
   max-width: 400px;
+  margin: auto; /* 중앙 정렬 유지 */
 }
 
 .login-form h3 {
@@ -169,12 +147,8 @@ const handleLogin = async () => {
   transition: color 0.3s ease;
 }
 
-.dark-mode .login-form h3 {
-  color: #ffffff;
-}
-
 .login-form input {
-  width: 100%;
+  width: 93%;
   padding: 0.8rem;
   margin-bottom: 1rem;
   border: 1px solid #ddd;
@@ -182,16 +156,6 @@ const handleLogin = async () => {
   background-color: #ffffff;
   color: #333;
   transition: all 0.3s ease;
-}
-
-.dark-mode .login-form input {
-  background-color: #2a2a2a;
-  border-color: #444;
-  color: #ffffff;
-}
-
-.dark-mode .login-form input::placeholder {
-  color: #888;
 }
 
 .login-button {
@@ -206,93 +170,8 @@ const handleLogin = async () => {
   transition: background-color 0.3s ease;
 }
 
-.dark-mode .login-button {
-  background-color: #007bff;
-}
-
 .login-button:hover {
   background-color: #333;
 }
 
-.dark-mode .login-button:hover {
-  background-color: #0056b3;
-}
-
-/* 태블릿 크기 */
-@media (max-width: 1024px) {
-  .slogan h2 {
-    font-size: 1.2rem;
-  }
-  
-  .logo {
-    width: 150px;
-  }
-  
-  .login-form {
-    width: 90%;
-  }
-}
-
-/* 모바일 크기 */
-@media (max-width: 768px) {
-  .login-container {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
-  
-  .left-column, .right-column {
-    width: 100%;
-    min-width: 0;
-    flex: none;
-  }
-  
-  .left-column {
-    padding: 2rem 1rem;
-  }
-  
-  .logo {
-    width: 120px;
-    margin-bottom: 1rem;
-  }
-  
-  .slogan h2 {
-    font-size: 1rem;
-  }
-  
-  .right-column {
-    padding: 1rem;
-  }
-  
-  .login-form {
-    width: 100%;
-  }
-  
-  .login-form input {
-    padding: 0.6rem;
-  }
-  
-  .login-button {
-    padding: 0.8rem;
-  }
-}
-
-/* 스크롤바 스타일링 */
-.dark-mode ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.dark-mode ::-webkit-scrollbar-track {
-  background: #2a2a2a;
-}
-
-.dark-mode ::-webkit-scrollbar-thumb {
-  background: #666;
-  border-radius: 4px;
-}
-
-.dark-mode ::-webkit-scrollbar-thumb:hover {
-  background: #888;
-}
 </style> 

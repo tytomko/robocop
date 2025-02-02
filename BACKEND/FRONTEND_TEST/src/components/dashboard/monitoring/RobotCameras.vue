@@ -3,7 +3,7 @@
     <div class="camera-wrapper">
       <h3>전방 카메라</h3>
       <CameraView 
-        :robotId="robotId"
+        robotId="robot1"
         cameraType="front"
         :rosHost="rosHost"
         :rosPort="rosPort"
@@ -12,7 +12,7 @@
     <div class="camera-wrapper">
       <h3>후방 카메라</h3>
       <CameraView 
-        :robotId="robotId"
+        robotId="robot1"
         cameraType="rear"
         :rosHost="rosHost"
         :rosPort="rosPort"
@@ -25,14 +25,7 @@
 import { ref } from 'vue';
 import CameraView from './CameraView.vue';
 
-const props = defineProps({
-  robotId: {
-    type: String,
-    required: true
-  }
-});
-
-const rosHost = ref('192.168.100.104');
+const rosHost = ref('172.30.1.78');
 const rosPort = ref(9090);
 </script>
 
