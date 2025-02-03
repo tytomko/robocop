@@ -7,8 +7,9 @@ app = "robocop-backend-app"
 primary_region = "nrt"
 
 [build]
-  builder = "paketobuildpacks/builder:base"
-  buildpacks = ["gcr.io/paketo-buildpacks/python"]
+
+[build.args]
+  BP_APT_PKGS = "libgl1-mesa-glx libglib2.0-0"
 
 [deploy]
   strategy = 'immediate'
@@ -17,7 +18,7 @@ primary_region = "nrt"
   HOST = '0.0.0.0'
   PORT = "8000"
   STORAGE_PATH = "/data/storage"
-  MONGODB_URL = "mongodb+srv://maybecold:OBK7Z5K3UYqTiEUp@cluster0.5idlh.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
+  MONGODB_URL = "mongodb+srv://power:FMX7HnqTPV7trmPU@cluster0.5idlh.mongodb.net/?retryWrites=true&w=majority"
   DATABASE_NAME = "robocop_db"
 
 [mounts]

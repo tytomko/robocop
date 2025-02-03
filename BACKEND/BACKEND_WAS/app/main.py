@@ -36,10 +36,10 @@ app = FastAPI(
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.security.CORS_ORIGINS,
+    allow_origins=["*"],  # 실제 운영 환경에서는 구체적인 origin으로 변경
     allow_credentials=True,
-    allow_methods=settings.security.CORS_METHODS,
-    allow_headers=settings.security.CORS_HEADERS,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 로깅 미들웨어 추가
@@ -51,8 +51,18 @@ app.add_exception_handler(ValueError, validation_exception_handler)
 app.add_exception_handler(Exception, internal_exception_handler)
 
 # 라우터 등록
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(robot_router, prefix="/api/v1/robots", tags=["robots"])
+app.include_router(
+    robot_router,
+    prefix="/api/v1/robots",
+    tags=["robots"]
+)
+
+app.include_router(
+    auth_router,
+    prefix="/api/v1/auth",
+    tags=["auth"]
+)
+
 app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
 app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
 # app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
@@ -65,10 +75,37 @@ async def startup_event():
     try:
         # 데이터베이스 초기화
         await DatabaseConnection.connect()
-        await DatabaseConnection.init_collections()
-        if not await DatabaseConnection.test_connection():
-            logger.error("데이터베이스 연결 실패")
+        logger.info("데이터베이스 연결 성공")
+        
+        # DB 연결 테스트
+        db = await DatabaseConnection.get_db()
+        if db is None:
+            logger.error("데이터베이스 객체를 가져올 수 없습니다.")
             raise Exception("데이터베이스 연결 실패")
+            
+        # 연결 테스트를 위한 간단한 쿼리 실행
+        try:
+            await db.command("ping")
+            logger.info("데이터베이스 연결 테스트 성공")
+        except Exception as e:
+            logger.error(f"데이터베이스 연결 테스트 실패: {str(e)}")
+            raise
+            
+        # counters 컬렉션 초기화
+        try:
+            counter = await db.counters.find_one({"_id": "robot_id"})
+            if counter is None:
+                await db.counters.insert_one({
+                    "_id": "robot_id",
+                    "seq": 0
+                })
+                logger.info("Robot ID 시퀀스가 초기화되었습니다.")
+        except Exception as e:
+            logger.error(f"시퀀스 초기화 실패: {str(e)}")
+            raise
+        
+        # 컬렉션 인덱스 초기화
+        await DatabaseConnection.init_collections()
         
         # 관리자 계정 생성
         await create_admin_user()

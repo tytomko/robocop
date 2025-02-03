@@ -94,3 +94,22 @@ async def get_camera_status(camera_name: str):
     except Exception as e:
         logger.error(f"카메라 상태 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket 연결을 처리하는 엔드포인트"""
+    try:
+        await websocket.accept()
+        
+        while True:
+            data = await websocket.receive_text()
+            # 필요한 WebSocket 로직 처리
+            await websocket.send_text(f"Message received: {data}")
+            
+    except Exception as e:
+        logger.error(f"WebSocket 에러: {str(e)}")
+    finally:
+        try:
+            await websocket.close()
+        except:
+            pass

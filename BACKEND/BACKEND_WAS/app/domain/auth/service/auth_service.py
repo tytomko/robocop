@@ -59,40 +59,27 @@ class AuthService:
             )
         return user
 
-    async def create_tokens(self, username: str):
-        access_token = security_service.create_access_token(data={"sub": username})
-        refresh_token = security_service.create_refresh_token(data={"sub": username})
-        await self.repository.update_user_refresh_token(username, refresh_token)
-        return {
-            "accessToken": access_token,
-            "refreshToken": refresh_token,
-            "tokenType": "bearer"
-        }
+    async def create_tokens(self, username: str) -> Token:
+        """액세스 토큰과 리프레시 토큰을 생성합니다."""
+        access_token = security_service.create_access_token({"sub": username})
+        refresh_token = security_service.create_refresh_token({"sub": username})
+        
+        return Token(
+            accessToken=access_token,
+            refreshToken=refresh_token,
+            tokenType="bearer"
+        )
 
-    async def refresh_tokens(self, current_token: str):
-        try:
-            payload = jwt.decode(current_token, security_service.SECRET_KEY, algorithms=[security_service.ALGORITHM])
-            username = payload.get("sub")
-            if username is None:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid refresh token"
-                )
-
-            user = await self.repository.find_user_by_username(username)
-            if not user or user.get("refreshToken") != current_token:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid refresh token"
-                )
-
-            return await self.create_tokens(username)
-
-        except JWTError:
+    async def refresh_tokens(self, refresh_token: str) -> Token:
+        """리프레시 토큰을 사용하여 새로운 토큰 쌍을 생성합니다."""
+        token_data = security_service.verify_token(refresh_token)
+        if not token_data:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token"
             )
+        
+        return await self.create_tokens(token_data.username)
 
     async def change_password(self, username: str, current_password: str, new_password: str, confirm_password: str):
         user = await self.repository.find_user_by_username(username)

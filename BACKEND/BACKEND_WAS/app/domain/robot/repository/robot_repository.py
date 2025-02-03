@@ -4,31 +4,49 @@ from datetime import datetime
 from typing import List, Optional
 from ....infrastructure.database.connection import DatabaseConnection
 from ..models.robot_models import Robot, RobotImage
+from fastapi import HTTPException
 
 UPLOAD_DIR = "storage/robots"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 class RobotRepository:
     def __init__(self):
-        self.db = DatabaseConnection.get_db()
+        self.db = None
+
+    async def initialize(self):
+        if self.db is None:
+            try:
+                self.db = await DatabaseConnection.get_db()
+                if self.db is None:
+                    raise Exception("데이터베이스 연결을 가져올 수 없습니다.")
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"데이터베이스 초기화 실패: {str(e)}"
+                )
 
     async def create_robot(self, robot: Robot) -> Robot:
+        await self.initialize()  # DB 연결 확인
         await self.db.robots.insert_one(robot.dict())
         return robot
 
     async def find_all_robots(self) -> List[Robot]:
+        await self.initialize()  # DB 연결 확인
         robots = await self.db.robots.find().to_list(length=None)
         return [Robot(**robot) for robot in robots]
 
     async def find_robot_by_id(self, robot_id: int) -> Optional[Robot]:
+        await self.initialize()  # DB 연결 확인
         robot = await self.db.robots.find_one({"robotId": robot_id})
         return Robot(**robot) if robot else None
 
     async def find_robot_by_name(self, name: str) -> Optional[Robot]:
+        await self.initialize()  # DB 연결 확인
         robot = await self.db.robots.find_one({"name": name})
         return Robot(**robot) if robot else None
 
     async def update_robot(self, robot_id: int, update_data: dict) -> Optional[Robot]:
+        await self.initialize()  # DB 연결 확인
         update_data["updatedAt"] = datetime.now()
         result = await self.db.robots.find_one_and_update(
             {"robotId": robot_id},
@@ -38,10 +56,12 @@ class RobotRepository:
         return Robot(**result) if result else None
     #소프트딜리트 처리 필요
     async def delete_robot(self, robot_id: int) -> bool:
+        await self.initialize()  # DB 연결 확인
         result = await self.db.robots.delete_one({"robotId": robot_id})
         return result.deleted_count > 0
 
     async def get_next_robot_id(self) -> int:
+        await self.initialize()  # DB 연결 확인
         counter = await self.db.counters.find_one_and_update(
             {"_id": "robot_id"},
             {"$inc": {"seq": 1}},
