@@ -22,7 +22,7 @@ class GlobalPathPlanner(Node):
         super().__init__('global_path_planner')
 
         # (옵션) 플롯 활성화 여부
-        self.enable_plot = True
+        self.enable_plot = False
 
         # 파라미터: robot_number
         self.declare_parameter('robot_number', 1)
@@ -31,6 +31,7 @@ class GlobalPathPlanner(Node):
         # Topic / Service 명 지정
         pose_topic = f"/robot_{robot_number}/utm_pose"
         global_path_topic = f"/robot_{robot_number}/global_path"
+        approach_path_topic = f"/robot_{robot_number}/approach_path"
         homing_service = f"/robot_{robot_number}/homing"
         navigate_service = f"/robot_{robot_number}/navigate"
         patrol_service = f"/robot_{robot_number}/patrol"
@@ -43,7 +44,9 @@ class GlobalPathPlanner(Node):
         self.nav_srv = self.create_service(Navigate, navigate_service, self.navigate_callback)
         self.patrol_srv = self.create_service(Patrol, patrol_service, self.patrol_callback)
 
-        self.path_pub = self.create_publisher(Path, global_path_topic, 10)
+        # 퍼블리셔 분리: 글로벌 패트롤 경로와 접근 경로를 각각 발행
+        self.global_path_pub = self.create_publisher(Path, global_path_topic, 10)
+        self.approach_path_pub = self.create_publisher(Path, approach_path_topic, 10)
 
         # 그래프(지도) 로드
         self.graph = self.load_graph(global_map)
@@ -68,8 +71,7 @@ class GlobalPathPlanner(Node):
     def pose_callback(self, msg: PoseStamped):
         """로봇의 현재 UTM 위치를 수신"""
         self.current_pos = (msg.pose.position.x, msg.pose.position.y)
-        if self.origin is None:  # 최초 위치를 기준점으로 설정
-            self.origin = self.current_pos
+        # self.origin = ...  # 이 부분은 제거
 
     def homing_callback(self, request, response):
         """Homing 서비스: 현재 위치 -> home_pose 경로를 찾아서 발행"""
@@ -87,10 +89,10 @@ class GlobalPathPlanner(Node):
         """
         Patrol 서비스:
         1. 사용자가 전달한 각 점들을 이용해 Global Path를 생성  
-        - 각 목표점 사이를 Global_map에서 A* 알고리즘을 이용해 최단 경로로 연결  
+           - 각 목표점 사이를 Global_map에서 A* 알고리즘을 이용해 최단 경로로 연결  
         2. 현재 위치에서 Patrol Path(사용자가 준 모든 목표 지점을 포함하는 글로벌 경로)까지
-        실제 이동 경로(내비게이션 경로 길이)를 A* 알고리즘으로 계산하여, 가장 짧은 경로를 Approach Path로 생성  
-        수신 측은 Approach Path를 따라 이동한 후, Patrol Path를 따라 순찰을 수행한다.
+           실제 이동 경로(내비게이션 경로 길이)를 A* 알고리즘으로 계산하여, 가장 짧은 경로를 Approach Path로 생성  
+           수신 측은 Approach Path를 따라 이동한 후, Patrol Path를 따라 순찰을 수행한다.
         """
         self.get_logger().info(f"[Patrol] Received multi-goals: {request.goals}")
 
@@ -101,7 +103,7 @@ class GlobalPathPlanner(Node):
             return response
 
         # --- Step 1: Global Path 생성 (목표점 간 경로 계산) ---
-        global_path_nodes = []  # Global path에 해당하는 노드들의 리스트
+        global_path_nodes = []  # Global Path에 해당하는 노드들의 리스트
         prev_goal_node = None
 
         for idx, goal in enumerate(request.goals):
@@ -138,7 +140,6 @@ class GlobalPathPlanner(Node):
         self.get_logger().info(f"Global path node count: {len(global_path_nodes)}")
 
         # --- 헬퍼 함수: 경로 길이 계산 ---
-        # 연속된 두 노드 사이의 유클리드 거리를 합산하여 경로 길이를 계산합니다.
         def compute_path_length(path):
             length = 0.0
             for i in range(len(path) - 1):
@@ -153,8 +154,7 @@ class GlobalPathPlanner(Node):
             response.message = "Failed to find current position node."
             return response
 
-        # 현재 위치와 global_path_nodes(=Patrol Path) 상의 각 노드 사이의
-        # 실제 내비게이션 경로 길이를 A* 알고리즘으로 계산하여 가장 짧은 경로 선택
+        # 현재 위치와 global_path_nodes(=Patrol Path) 상의 각 노드 사이의 실제 내비게이션 경로 길이를 A* 알고리즘으로 계산하여 가장 짧은 경로 선택
         min_length = float('inf')
         chosen_index = None
         approach_path = None
@@ -190,10 +190,11 @@ class GlobalPathPlanner(Node):
         # --- Step 3: 경로 발행 및 시각화 ---
         # 1) Approach Path 발행 (필요한 경우)
         if approach_path:
-            self.publish_path(approach_path)
+            self.publish_approach_path(approach_path)
 
-        # 2) Patrol Path는 사용자가 준 모든 목표 지점을 포함한 글로벌 경로 그대로 사용
+        # 2) Global Patrol Path는 사용자가 준 모든 목표 지점을 포함한 글로벌 경로 그대로 사용
         self.global_patrol_path = global_path_nodes
+        self.publish_global_path(self.global_patrol_path)
 
         # 3) 시각화 (두 경로 모두 표시)
         if self.enable_plot:
@@ -215,7 +216,7 @@ class GlobalPathPlanner(Node):
 
         path = self.find_shortest_path(self.current_pos, self.goal_pos)
         if path:
-            self.publish_path(path)
+            self.publish_global_path(path)
             if self.enable_plot:
                 self.visualize_path(path)
             response.success = True
@@ -262,9 +263,6 @@ class GlobalPathPlanner(Node):
         """2D 유클리드 거리 계산"""
         return np.linalg.norm(np.array(point1) - np.array(point2))
 
-    # 기존 코드 => for문을 사용해 모든 노드와의 거리 계산
-    # 현재 코드 => numpy 배열을 이용해 한 번에 모든 노드와의 거리 계산
-    # → 노드 수가 많아질수록 성능 차이가 크게 난다.
     def find_nearest_node(self, position):
         """
         주어진 (x,y)에 가장 가까운 노드(그래프 상 key)를 벡터화된 방식으로 찾는다.
@@ -296,18 +294,10 @@ class GlobalPathPlanner(Node):
             return None
 
     # ------------------------------------------------------------------------- #
-    #                      경로 발행 및 시각화 (nav_msgs/Path)                #
+    #               경로 메시지 생성 및 퍼블리셔를 통한 발행 함수              #
     # ------------------------------------------------------------------------- #
 
-    def publish_path(self, path):
-        """
-        path: (x,y) 튜플의 리스트
-        /robot_{robot_number}/global_path 토픽으로 발행
-        """
-        if self.origin is None:
-            self.get_logger().error("Origin is not set yet.")
-            return
-
+    def create_path_msg(self, path):
         path_msg = Path()
         path_msg.header.frame_id = "map"
         path_msg.header.stamp = self.get_clock().now().to_msg()
@@ -315,14 +305,25 @@ class GlobalPathPlanner(Node):
         for node in path:
             pose = PoseStamped()
             pose.header.frame_id = "map"
-            # UTM → origin 기준 상대 좌표 변환
-            pose.pose.position.x = node[0] - self.origin[0]
-            pose.pose.position.y = node[1] - self.origin[1]
+            # -- 절대 좌표 그대로 반영 --
+            pose.pose.position.x = node[0]
+            pose.pose.position.y = node[1]
             pose.pose.position.z = 0.0
             path_msg.poses.append(pose)
 
-        self.path_pub.publish(path_msg)
+        return path_msg
+
+    def publish_global_path(self, path):
+        # origin 사용 제거
+        path_msg = self.create_path_msg(path)
+        self.global_path_pub.publish(path_msg)
         self.get_logger().info(f"Published global path with {len(path)} nodes")
+
+    def publish_approach_path(self, path):
+        # origin 사용 제거
+        path_msg = self.create_path_msg(path)
+        self.approach_path_pub.publish(path_msg)
+        self.get_logger().info(f"Published approach path with {len(path)} nodes")
 
     def visualize_path(self, path, multi_goal=False, goals=None, patrol_path=None):
         """
@@ -333,11 +334,11 @@ class GlobalPathPlanner(Node):
         """
         plt.figure(figsize=(8, 6))
 
-        x_path = [p[0] for p in path]
-        y_path = [p[1] for p in path]
-
-        # Approach Path 또는 단일 경로 표시
-        plt.plot(x_path, y_path, 'ro-', label='Approach Path' if patrol_path else 'Path')
+        if path:
+            x_path = [p[0] for p in path]
+            y_path = [p[1] for p in path]
+            # Approach Path 또는 단일 경로 표시
+            plt.plot(x_path, y_path, 'ro-', label='Approach Path' if patrol_path else 'Path')
 
         # 현재 위치 (파란색)
         if self.current_pos:

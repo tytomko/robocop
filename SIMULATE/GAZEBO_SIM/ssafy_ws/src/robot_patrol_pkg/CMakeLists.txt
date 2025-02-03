@@ -11,6 +11,8 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(robot_custom_interfaces REQUIRED)
 
 # 실행파일
 add_executable(robot_patrol src/robot_patrol.cpp)
@@ -18,7 +20,9 @@ ament_target_dependencies(robot_patrol
   rclcpp
   std_msgs
   sensor_msgs
+  nav_msgs
   geometry_msgs
+  robot_custom_interfaces
 )
 
 install(TARGETS
