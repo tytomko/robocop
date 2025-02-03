@@ -118,31 +118,31 @@ async def startup_event():
             logger.warning(f"라이다 서비스 시작 실패: {str(e)}")
         
         # 카메라 초기화
-        camera_configs = [
-            CameraConfig(
-                camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
-                camera_name='robot1_front',
-                ros_bridge_host='172.30.1.78',
-                ros_bridge_port=9090
-            ),
-            CameraConfig(
-                camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
-                camera_name='robot1_rear',
-                ros_bridge_host='172.30.1.78',
-                ros_bridge_port=9090
-            )
-        ]
+        # camera_configs = [
+        #     CameraConfig(
+        #         camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
+        #         camera_name='robot1_front',
+        #         ros_bridge_host='172.30.1.78',
+        #         ros_bridge_port=9090
+        #     ),
+        #     CameraConfig(
+        #         camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
+        #         camera_name='robot1_rear',
+        #         ros_bridge_host='172.30.1.78',
+        #         ros_bridge_port=9090
+        #     )
+        # ]
         
-        for config in camera_configs:
-            try:
-                success = await initialize_camera(config)
-                if success:
-                    logger.info(f"카메라 초기화 성공: {config.camera_name}")
-                else:
-                    logger.warning(f"카메라 초기화 실패: {config.camera_name}")
-            except Exception as e:
-                logger.warning(f"카메라 초기화 실패 ({config.camera_name}): {str(e)}")
-                logger.warning("카메라 기능이 비활성화된 상태로 실행됩니다.")
+        # for config in camera_configs:
+        #     try:
+        #         success = await initialize_camera(config)
+        #         if success:
+        #             logger.info(f"카메라 초기화 성공: {config.camera_name}")
+        #         else:
+        #             logger.warning(f"카메라 초기화 실패: {config.camera_name}")
+        #     except Exception as e:
+        #         logger.warning(f"카메라 초기화 실패 ({config.camera_name}): {str(e)}")
+        #         logger.warning("카메라 기능이 비활성화된 상태로 실행됩니다.")
 
         logger.info("모든 초기화 작업이 완료되었습니다.")
     except Exception as e:

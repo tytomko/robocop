@@ -1,70 +1,78 @@
 class WebSocketService {
     constructor() {
-        this.ws = null;
-        this.isConnected = false;
-        this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 5;
+        this.socket = null;
+        this.subscribers = new Map();
     }
 
-    connect(url) {
+    async connect(url) {
         return new Promise((resolve, reject) => {
             try {
-                this.ws = new WebSocket(url);
-
-                this.ws.onopen = () => {
+                this.socket = new WebSocket(url);
+                
+                this.socket.onopen = () => {
                     console.log('WebSocket 연결됨');
-                    this.isConnected = true;
-                    this.reconnectAttempts = 0;
                     resolve();
                 };
 
-                this.ws.onclose = () => {
-                    console.log('WebSocket 연결 끊김');
-                    this.isConnected = false;
-                    this.tryReconnect();
+                this.socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('받은 데이터:', data);  // 디버깅용
+                        this.subscribers.forEach((callbacks, topic) => {
+                            callbacks.forEach(callback => callback(data));
+                        });
+                    } catch (error) {
+                        console.error('메시지 처리 중 에러:', error);
+                    }
                 };
 
-                this.ws.onerror = (error) => {
+                this.socket.onerror = (error) => {
                     console.error('WebSocket 에러:', error);
                     reject(error);
                 };
 
+                this.socket.onclose = () => {
+                    console.log('WebSocket 연결 종료');
+                    this.subscribers.clear();
+                };
+
             } catch (error) {
-                console.error('WebSocket 연결 실패:', error);
                 reject(error);
             }
         });
     }
 
-    tryReconnect() {
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++;
-            console.log(`재연결 시도 ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-            setTimeout(() => this.connect(), 3000);
+    subscribe(topic, callback) {
+        console.log('구독 시도:', topic);  // 디버깅용
+        if (!this.socket) {
+            throw new Error('웹소켓이 연결되지 않았습니다.');
         }
-    }
-
-    send(data) {
-        if (this.isConnected && this.ws) {
-            this.ws.send(JSON.stringify(data));
+        
+        if (!this.subscribers.has(topic)) {
+            this.subscribers.set(topic, new Set());
         }
-    }
-
-    onMessage(callback) {
-        if (this.ws) {
-            this.ws.onmessage = (event) => {
-                callback(event.data);
-            };
-        }
+        this.subscribers.get(topic).add(callback);
+        
+        return () => {
+            const callbacks = this.subscribers.get(topic);
+            if (callbacks) {
+                callbacks.delete(callback);
+                if (callbacks.size === 0) {
+                    this.subscribers.delete(topic);
+                }
+            }
+        };
     }
 
     disconnect() {
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-            this.isConnected = false;
+        if (this.socket) {
+            this.socket.close();
+            this.socket = null;
+            this.subscribers.clear();
         }
     }
 }
 
-export default new WebSocketService(); 
+// 싱글톤 인스턴스 생성 및 내보내기
+const webSocketService = new WebSocketService();
+export default webSocketService; 
