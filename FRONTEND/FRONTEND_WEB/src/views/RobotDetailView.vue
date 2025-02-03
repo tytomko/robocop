@@ -48,7 +48,7 @@
   import { ref, computed, onMounted, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { useRobotsStore } from '@/stores/robots';
-  import CameraView from '@/components/dashboard/monitoring/CameraView.vue'
+  import CameraView from '@/components/dashboard/CameraView.vue'
 
   const route = useRoute();
   const router = useRouter();
