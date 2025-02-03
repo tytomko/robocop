@@ -37,9 +37,12 @@ ros2 run keyboard_input key_publisher --ros-args -p robot_name:=ssafy -p robot_n
 ```bash
 ros2 run robot_planning_pkg global_path_planner --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
+# 4. patrol_pkg 
+```bash
+ros2 run robot_patrol_pkg robot_patrol --ros-args -p robot_name:=ssafy -p robot_number:=1
+```
 
-
-# 4. 서비스 콜 하기
+# 5. 서비스 콜 하기
 
 ## ssafy_ws 진입
 
