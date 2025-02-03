@@ -87,10 +87,10 @@ class GlobalPathPlanner(Node):
         """
         Patrol 서비스:
         1. 사용자가 전달한 각 점들을 이용해 Global Path를 생성  
-           - 각 목표점 사이를 Global_map에서 A* 알고리즘을 이용해 최단 경로로 연결  
-        2. 현재 위치에서 Global Path의 시작점까지 이동하는 Approach Path를 생성  
-           - 현재 위치의 가장 가까운 노드에서 Global Path의 시작점까지 경로 계산  
-        수신 측은 Approach Path를 따라 이동한 후, Global Path를 따라 순찰을 수행한다.
+        - 각 목표점 사이를 Global_map에서 A* 알고리즘을 이용해 최단 경로로 연결  
+        2. 현재 위치에서 Patrol Path(사용자가 준 모든 목표 지점을 포함하는 글로벌 경로)까지
+        실제 이동 경로(내비게이션 경로 길이)를 A* 알고리즘으로 계산하여, 가장 짧은 경로를 Approach Path로 생성  
+        수신 측은 Approach Path를 따라 이동한 후, Patrol Path를 따라 순찰을 수행한다.
         """
         self.get_logger().info(f"[Patrol] Received multi-goals: {request.goals}")
 
@@ -137,7 +137,15 @@ class GlobalPathPlanner(Node):
 
         self.get_logger().info(f"Global path node count: {len(global_path_nodes)}")
 
-        # --- Step 2: Approach Path 생성 (현재 위치에서 Global Path 진입) ---
+        # --- 헬퍼 함수: 경로 길이 계산 ---
+        # 연속된 두 노드 사이의 유클리드 거리를 합산하여 경로 길이를 계산합니다.
+        def compute_path_length(path):
+            length = 0.0
+            for i in range(len(path) - 1):
+                length += self.euclidean_distance(path[i], path[i + 1])
+            return length
+
+        # --- Step 2: Approach Path 생성 (현재 위치에서 Patrol Path까지) ---
         current_node = self.find_nearest_node(self.current_pos)
         if current_node is None:
             self.get_logger().error("Cannot find nearest node to current position.")
@@ -145,25 +153,51 @@ class GlobalPathPlanner(Node):
             response.message = "Failed to find current position node."
             return response
 
-        approach_path = self.find_shortest_path_nodes(current_node, global_path_nodes[0])
-        if not approach_path:
-            self.get_logger().error("Failed to generate approach path from current position to global path.")
+        # 현재 위치와 global_path_nodes(=Patrol Path) 상의 각 노드 사이의
+        # 실제 내비게이션 경로 길이를 A* 알고리즘으로 계산하여 가장 짧은 경로 선택
+        min_length = float('inf')
+        chosen_index = None
+        approach_path = None
+
+        for idx, node in enumerate(global_path_nodes):
+            path = self.find_shortest_path_nodes(current_node, node)
+            if not path:
+                continue  # 해당 노드로 가는 경로가 없으면 건너뜀
+
+            length = compute_path_length(path)
+            if length < min_length:
+                min_length = length
+                chosen_index = idx
+                approach_path = path
+
+        if chosen_index is None:
+            self.get_logger().error("Failed to generate an approach path to the patrol path.")
             response.success = False
             response.message = "Failed to generate approach path."
             return response
 
-        self.get_logger().info(f"Approach path node count: {len(approach_path)}")
+        self.get_logger().info(f"Chosen approach path length: {min_length}")
 
-        # --- 경로 발행 및 시각화 ---
-        # 1) Approach Path 발행 (현재위치에서 Global Path 진입)
-        self.publish_path(approach_path)
+        # 임계값(threshold)을 설정하여 현재 위치가 이미 Patrol Path 상에 있는지 판단
+        threshold = 1.0  # 예: 1미터 이하이면 이미 경로 위로 간주
+        if min_length < threshold:
+            # 현재 위치가 Patrol Path 상에 있으면 Approach Path는 빈 리스트로 처리
+            approach_path = []
+            self.get_logger().info("Current position is on or very near the patrol path. No approach path needed.")
+        else:
+            self.get_logger().info(f"Approach path node count: {len(approach_path)}")
 
-        # 2) Global Path 저장 (이후 순찰 시 사용)
+        # --- Step 3: 경로 발행 및 시각화 ---
+        # 1) Approach Path 발행 (필요한 경우)
+        if approach_path:
+            self.publish_path(approach_path)
+
+        # 2) Patrol Path는 사용자가 준 모든 목표 지점을 포함한 글로벌 경로 그대로 사용
         self.global_patrol_path = global_path_nodes
 
         # 3) 시각화 (두 경로 모두 표시)
         if self.enable_plot:
-            self.visualize_path(approach_path, patrol_path=global_path_nodes, multi_goal=True, goals=request.goals)
+            self.visualize_path(approach_path, patrol_path=self.global_patrol_path, multi_goal=True, goals=request.goals)
 
         response.success = True
         response.message = "Approach path and global patrol path calculated and published successfully."
