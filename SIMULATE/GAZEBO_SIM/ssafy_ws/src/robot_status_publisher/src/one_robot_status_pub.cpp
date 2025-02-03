@@ -3,6 +3,7 @@
 // - UTM 좌표 변환
 // - Heading 발행
 // - Status 메시지 발행
+// - 추가: 호밍, 네비게이트, 패트롤 서비스 처리
 
 #include <chrono>
 #include <string>
@@ -10,9 +11,15 @@
 #include <sstream>
 #include <random>
 #include "rclcpp/rclcpp.hpp"
-//Custom message, service
+
+// Custom message, service
 #include "robot_custom_interfaces/msg/status.hpp"
 #include "robot_custom_interfaces/srv/estop.hpp"
+
+// 추가된 서비스 헤더 파일들
+#include "robot_custom_interfaces/srv/homing.hpp"
+#include "robot_custom_interfaces/srv/navigate.hpp"
+#include "robot_custom_interfaces/srv/patrol.hpp"
 
 #include <GeographicLib/UTMUPS.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -50,6 +57,7 @@ public:
         status_message.network = 100.0f;  // 초기 네트워크 상태 값
         status_message.mode = "operational";
         status_message.is_active = true;
+
         // 토픽 설정
         std::string imu_topic = "/" + robot_name + "/imu";
         std::string gps_topic = "/" + robot_name + "/gps";
@@ -57,6 +65,10 @@ public:
         std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
         std::string stop_service = "/robot_" + std::to_string(robot_num) + "/stop";
         std::string resume_service = "/robot_" + std::to_string(robot_num) + "/resume";
+        // 추가된 서비스 토픽
+        std::string homing_service = "/robot_" + std::to_string(robot_num) + "/homing";
+        std::string navigate_service = "/robot_" + std::to_string(robot_num) + "/navigate";
+        std::string patrol_service = "/robot_" + std::to_string(robot_num) + "/patrol";
 
         RCLCPP_INFO(this->get_logger(),
             "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n",
@@ -78,11 +90,22 @@ public:
         publisher_status_ = this->create_publisher<robot_custom_interfaces::msg::Status>(
             status_topic, 10);
 
+        // 기존 서비스: Estop 관련
         stop_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
             stop_service, std::bind(&RobotStatusPublisher::stop_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         resume_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
             resume_service, std::bind(&RobotStatusPublisher::resume_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
+        // 추가된 서비스: Homing, Navigate, Patrol
+        homing_srv = this->create_service<robot_custom_interfaces::srv::Homing>(
+            homing_service, std::bind(&RobotStatusPublisher::homing_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
+        navigate_srv = this->create_service<robot_custom_interfaces::srv::Navigate>(
+            navigate_service, std::bind(&RobotStatusPublisher::navigate_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
+        patrol_srv = this->create_service<robot_custom_interfaces::srv::Patrol>(
+            patrol_service, std::bind(&RobotStatusPublisher::patrol_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         status_timer_ = this->create_wall_timer(
             100ms, std::bind(&RobotStatusPublisher::publish_status, this));
@@ -103,6 +126,19 @@ private:
     std::uniform_real_distribution<float> temp_dist{50.0f, 80.0f};  // 온도 랜덤
     std::uniform_int_distribution<int> network_dist{0, 100};  // 네트워크 상태 랜덤
 
+    // 구독자, 발행자, 서비스 서버, 타이머 멤버 변수
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subscription_imu_;
+    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr subscription_gps_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_heading_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_utm_;
+    rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
+    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr stop_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr resume_srv;
+    // 추가된 서비스 서버 멤버 변수
+    rclcpp::Service<robot_custom_interfaces::srv::Homing>::SharedPtr homing_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Navigate>::SharedPtr navigate_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Patrol>::SharedPtr patrol_srv;
+    rclcpp::TimerBase::SharedPtr status_timer_;
 
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
     {
@@ -134,8 +170,6 @@ private:
 
         publisher_heading_->publish(heading_msg);
     }
-
-
 
     void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
     {
@@ -172,7 +206,6 @@ private:
         status_message.temperatures = {temp_dist(gen)};
         status_message.network = static_cast<float>(network_dist(gen));
         
-
         publisher_status_->publish(status_message);
     }
 
@@ -203,14 +236,40 @@ private:
         }
     }
 
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subscription_imu_;
-    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr subscription_gps_;
-    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr publisher_heading_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_utm_;
-    rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
-    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr stop_srv;
-    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr resume_srv;
-    rclcpp::TimerBase::SharedPtr status_timer_;
+    // 추가된 서비스 콜백 함수들
+
+    void homing_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Homing::Request> request,
+                                 std::shared_ptr<robot_custom_interfaces::srv::Homing::Response> response)
+    {
+        RCLCPP_INFO(this->get_logger(), "[HOMING] Switching to homing mode.");
+        status_message.mode = "homing";
+        publisher_status_->publish(status_message);
+        response->success = true;
+    }
+
+    void navigate_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Navigate::Request> request,
+                                   std::shared_ptr<robot_custom_interfaces::srv::Navigate::Response> response)
+    {
+        RCLCPP_INFO(this->get_logger(), "[NAVIGATE] Switching to navigating mode. Goal: x=%.2f, y=%.2f, theta=%.2f", 
+                    request->goal.x, request->goal.y, request->goal.theta);
+        status_message.mode = "navigating";
+        publisher_status_->publish(status_message);
+        response->success = true;
+    }
+
+    void patrol_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Patrol::Request> request,
+                                 std::shared_ptr<robot_custom_interfaces::srv::Patrol::Response> response)
+    {
+        std::ostringstream oss;
+        oss << "[PATROL] Switching to patrolling mode. Goals: ";
+        for (const auto & goal : request->goals) {
+            oss << "(" << goal.x << ", " << goal.y << ", " << goal.theta << ") ";
+        }
+        RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
+        status_message.mode = "patrolling";
+        publisher_status_->publish(status_message);
+        response->success = true;
+    }
 };
 
 int main(int argc, char *argv[])

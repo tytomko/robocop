@@ -33,9 +33,6 @@ ros2 run keyboard_input key_publisher --ros-args -p robot_name:=ssafy -p robot_n
 
 # 3. 플래닝 패키지 실행
 
-```bash
-ros2 run robot_planning_pkg testservice --ros-args -p robot_name:=ssafy -p robot_number:=1
-```
 
 ```bash
 ros2 run robot_planning_pkg global_path_planner --ros-args -p robot_name:=ssafy -p robot_number:=1
