@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Body
 from typing import List, Optional
 from ..service.robot_service import RobotService
-from ..models.robot_models import Robot, RouteRequest, RouteResponse, MapResponse, StatusUpdate, StatusResponse, LogResponse
+from ..models.robot_models import Robot, RouteRequest, RouteResponse, MapResponse, StatusUpdate, StatusResponse, LogResponse, RobotCreate
 from ....common.models.responses import BaseResponse
 from fastapi import HTTPException
 
@@ -10,20 +10,30 @@ robot_service = RobotService()
 
 @router.post("", response_model=BaseResponse[Robot])
 async def create_robot(
-    name: str = Form(...),
-    ip_address: str = Form(...),
-    image: Optional[UploadFile] = Form(default=None)
+    robot_data: RobotCreate = Body(..., example={
+        "name": "Robot1",
+        "ip_address": "192.168.1.100"
+    })
 ):
     try:
-        robot = await robot_service.create_robot(name, ip_address, image)
+        robot = await robot_service.create_robot(
+            name=robot_data.name,
+            ip_address=robot_data.ip_address,
+            image=None
+        )
         return BaseResponse[Robot](
             status=201,
             success=True,
             message="로봇 등록 성공",
             data=robot
         )
-    except Exception as e:
+    except HTTPException as e:
         raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
 
 @router.get("", response_model=BaseResponse[List[Robot]])
 async def get_robots():

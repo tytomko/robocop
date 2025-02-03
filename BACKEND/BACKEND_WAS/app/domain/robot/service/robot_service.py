@@ -13,44 +13,50 @@ class RobotService:
         self.repository = RobotRepository()
 
     async def create_robot(self, name: str, ip_address: str, image: Optional[UploadFile] = None) -> Robot:
-        # IP 주소 형식 검증
-        ip_pattern = r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
-        if not re.match(ip_pattern, ip_address):
-            raise HTTPException(
-                status_code=400,
-                detail="유효하지 않은 IP 주소 형식입니다. (예: 192.168.1.100)"
+        try:
+            # IP 주소 형식 검증
+            ip_pattern = r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            if not re.match(ip_pattern, ip_address):
+                raise HTTPException(
+                    status_code=400,
+                    detail="유효하지 않은 IP 주소 형식입니다. (예: 192.168.1.100)"
+                )
+
+            # 로봇 이름 중복 검사
+            existing_robot = await self.repository.find_robot_by_name(name)
+            if existing_robot:
+                raise HTTPException(
+                    status_code=400,
+                    detail="이미 사용 중인 로봇 이름입니다."
+                )
+
+            # 새 로봇 ID 생성
+            robot_id = await self.repository.get_next_robot_id()
+
+            # 이미지 처리
+            robot_image = None
+            if image:
+                robot_image = await self.repository.save_robot_image(image, robot_id)
+
+            # 로봇 생성
+            robot = Robot(
+                robotId=robot_id,
+                name=name,
+                ipAddress=ip_address,
+                status=RobotStatus.IDLE,
+                position=Position(),
+                battery=BatteryStatus(),
+                image=robot_image,
+                lastActive=datetime.now(),
+                createdAt=datetime.now()
             )
 
-        # 로봇 이름 중복 검사
-        existing_robot = await self.repository.find_robot_by_name(name)
-        if existing_robot:
+            return await self.repository.create_robot(robot)
+        except Exception as e:
             raise HTTPException(
-                status_code=400,
-                detail="이미 사용 중인 로봇 이름입니다."
+                status_code=500,
+                detail=f"로봇 생성 중 오류 발생: {str(e)}"
             )
-
-        # 새 로봇 ID 생성
-        robot_id = await self.repository.get_next_robot_id()
-
-        # 이미지 처리
-        robot_image = None
-        if image:
-            robot_image = await self.repository.save_robot_image(image, robot_id)
-
-        # 로봇 생성
-        robot = Robot(
-            robotId=robot_id,
-            name=name,
-            ipAddress=ip_address,
-            status=RobotStatus.IDLE,
-            position=Position(),
-            battery=BatteryStatus(),
-            image=robot_image,
-            lastActive=datetime.now(),
-            createdAt=datetime.now()
-        )
-
-        return await self.repository.create_robot(robot)
 
     async def get_all_robots(self) -> List[Robot]:
         return await self.repository.find_all_robots()
