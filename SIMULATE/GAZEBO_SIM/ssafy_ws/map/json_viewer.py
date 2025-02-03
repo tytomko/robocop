@@ -45,7 +45,7 @@ def visualize_graphs(graph_data_list):
 
         # 노드 위치를 좌표 값 그대로 사용
         pos = {node: node for node in G.nodes()}
-        nx.draw(G, pos, node_size=50, node_color="blue", edge_color="gray", with_labels=True, font_size=8)
+        nx.draw(G, pos, node_size=50, node_color="blue", edge_color="gray", with_labels=False, font_size=8)
 
         plt.xlabel("X Coordinate")
         plt.ylabel("Y Coordinate")
