@@ -14,16 +14,18 @@
 #include "robot_custom_interfaces/msg/status.hpp"
 
 // 터틀봇3에 맞춘 파라미터들 (단위: m, m/s, rad/s)
-const double LOOKAHEAD_DISTANCE = 1.5;  // Lookahead 거리 (m)
-const double MAX_LINEAR_SPEED = 0.3;    // 최대 선속도 (m/s)
-const double MAX_ANGULAR_SPEED = 1.0;   // 최대 각속도 (rad/s)
+const double LOOKAHEAD_DISTANCE = 0.8;  // Lookahead 거리 (m)
+const double MAX_LINEAR_SPEED = 0.5;    // 최대 선속도 (m/s)
+const double MAX_ANGULAR_SPEED = 0.5;   // 최대 각속도 (rad/s)
 const double ACCEL_STEP = 0.15;
-const double ANGLE_STEP = 0.1;
-const double FRICTION_FACTOR_LINEAR = 1.0;
-const double FRICTION_FACTOR_ANGULAR = 1.0;
+const double ANGLE_STEP = 0.10;
+const double FRICTION_FACTOR_LINEAR = 0.8;
+const double FRICTION_FACTOR_ANGULAR = 0.8;
 
 // 각도 오차 임계치 (rad)
-const double ANGLE_ERROR_THRESHOLD = 0.2;
+const double ANGLE_ERROR_THRESHOLD = 0.3;
+// 해당 수치만큼 angle_error가 작으면 angular velocity를 0으로 만든다.
+const double HEADING_ERROR_THRESHOLD = 0.1;
 
 struct Point {
     double x, y, z;
@@ -154,7 +156,7 @@ private:
         current_position_.x = msg->pose.position.x;
         current_position_.y = msg->pose.position.y;
         current_position_.z = msg->pose.position.z;
-        RCLCPP_INFO(this->get_logger(), "현재 위치: (%.2f, %.2f)", current_position_.x, current_position_.y);
+        //RCLCPP_INFO(this->get_logger(), "현재 위치: (%.2f, %.2f)", current_position_.x, current_position_.y);
         follow_path();
     }
 
@@ -184,8 +186,6 @@ private:
     }
 
     // Pure Pursuit 제어를 수행하여 현재 경로를 따라가고, 경로 끝에 도달하면 true 반환
-// 상수 추가: 각도 오차 임계치 (rad)
-
 
     bool follow_current_path() {
         if (current_path_.empty()) {
@@ -198,51 +198,52 @@ private:
             target_index_ = current_path_.size() - 1;
         Point target = current_path_[target_index_];
         double distance = std::hypot(target.x - current_position_.x, target.y - current_position_.y);
+        
+        // 현재 위치와 목표점 사이의 각도 계산
         double target_angle = 0.0;
         if (distance > 0.01) {
-            // 기존 방식: 현재 위치와 목표점 사이의 각도 계산
+            // IMU에서 나오는 yaw와 부호를 맞추기 위해, 현재 위치와 목표점의 차이를 뒤집어 계산 (이전 CSV 코드와 동일)
             target_angle = std::atan2(current_position_.y - target.y, current_position_.x - target.x);
         }
         double angle_error = normalize_angle(target_angle - current_heading_);
         
-        // 만약 각도 오차가 임계치 이상이면, 선속도를 0으로 하여 제자리 회전
-        double target_speed = 0.0;
-        if (std::fabs(angle_error) > ANGLE_ERROR_THRESHOLD) {
-            // 제자리 회전: 선속도 0, 각속도는 오차에 비례
-            target_speed = 0.0;
+        // HEADING_ERROR_THRESHOLD 이하이면 회전은 멈추도록 설정
+        if (std::fabs(angle_error) < HEADING_ERROR_THRESHOLD) {
+            angular_vel_ = 0.0;
         } else {
-            // 각도 오차가 작으면, 기존 방식대로 선속도를 결정 (각 오차에 따라 선속도 스케일링)
-            double speed_scale = std::max(0.0, std::cos(angle_error)); // 1 ~ 0
-            target_speed = std::min(distance, MAX_LINEAR_SPEED * speed_scale);
+            // 각도 오차가 크면 비례 제어로 회전
+            angular_vel_ = ANGLE_STEP * angle_error;
+            angular_vel_ = std::clamp(angular_vel_, -MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED);
         }
+        
+        // 각도 오차에 따라 선속도 스케일링: 오차가 클 경우 선속도를 낮춤.
+        double speed_scale = std::max(0.0, std::cos(angle_error));
+        double target_speed = std::min(distance, MAX_LINEAR_SPEED * speed_scale);
         
         // 가속/감속 적용
         linear_vel_ += ACCEL_STEP * (target_speed - linear_vel_);
         linear_vel_ = std::clamp(linear_vel_, 0.0, MAX_LINEAR_SPEED);
-        angular_vel_ += ANGLE_STEP * angle_error;
-        angular_vel_ = std::clamp(angular_vel_, -MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED);
-
-        // friction factor 적용 (여기서는 1.0이므로 영향 없음)
-        linear_vel_ *= FRICTION_FACTOR_LINEAR;
-        angular_vel_ *= FRICTION_FACTOR_ANGULAR;
-
+        
         geometry_msgs::msg::Twist cmd_vel_msg;
         cmd_vel_msg.linear.x = linear_vel_;
         cmd_vel_msg.angular.z = angular_vel_;
         cmd_vel_pub_->publish(cmd_vel_msg);
-
-        RCLCPP_INFO(this->get_logger(), "Target: (%.2f, %.2f), Distance: %.2f, Angle Error: %.2f",
-                    target.x, target.y, distance, angle_error);
-
-        // 목표점에 충분히 근접하면 다음 목표점으로 전환
-        if (distance < LOOKAHEAD_DISTANCE * 0.5) {
+        
+        RCLCPP_INFO(this->get_logger(),
+            "Target: (%.2f, %.2f), Distance: %.2f, TargetAngle: %.2f, Heading: %.2f, AngleError: %.2f, LinearVel: %.2f, AngularVel: %.2f",
+            target.x, target.y, distance, target_angle, current_heading_, angle_error, linear_vel_, angular_vel_);
+        
+        // 목표점에 충분히 근접하고, 헤딩 오차가 충분히 작을 때만 다음 목표점으로 전환
+        if (distance < LOOKAHEAD_DISTANCE * 0.5 && std::fabs(angle_error) < HEADING_ERROR_THRESHOLD) {
             target_index_++;
             if (target_index_ >= current_path_.size()) {
                 return true; // 경로 끝 도달
             }
         }
         return false;
-}
+    }
+
+
 
 
     // 상태(mode)에 따라 로봇의 행동을 결정하는 함수
