@@ -35,6 +35,10 @@ async-timeout==5.0.1
 certifi>=2024.2.2
 idna==3.10
 urllib3==1.26.5
+roslibpy==1.8.1
+opencv-python==4.11.0.86
+av==13.1.0
+aiortc==1.10.1
 
 # ROS2 Related (Commented out)
 # ackermann-msgs==2.0.2
