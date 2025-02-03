@@ -45,42 +45,18 @@ class DatabaseConnection:
     @classmethod
     async def init_collections(cls):
         """필요한 컬렉션과 인덱스를 초기화합니다."""
-        try:
-            db = await cls.get_db()
-            
-            # 사용자 컬렉션 인덱스
-            try:
-                await db.users.create_index("username", unique=True)
-            except Exception as e:
-                if 'already exists' in str(e) or 'IndexKeySpecsConflict' in str(e):
-                    print("Username 인덱스가 이미 존재합니다.")
-                else:
-                    raise e
-            
-            # 로봇 컬렉션 인덱스
-            try:
-                await db.robots.create_index("robotId", unique=True)
-                await db.robots.create_index("name", unique=True)
-            except Exception as e:
-                if 'already exists' in str(e) or 'IndexKeySpecsConflict' in str(e):
-                    print("Robot 인덱스가 이미 존재합니다.")
-                else:
-                    raise e
-            
-            # 비디오 세션 컬렉션 인덱스
-            try:
-                await db.videos.create_index("sessionId", unique=True)
-                await db.videos.create_index([("cameraType", 1), ("createdAt", -1)])
-            except Exception as e:
-                if 'already exists' in str(e) or 'IndexKeySpecsConflict' in str(e):
-                    print("Video 인덱스가 이미 존재합니다.")
-                else:
-                    raise e
-
-        except Exception as e:
-            print(f"인덱스 초기화 중 에러 발생: {str(e)}")
-            # 인덱스 에러는 애플리케이션 실행에 치명적이지 않으므로 무시
-            pass
+        db = await cls.get_db()
+        
+        # 사용자 컬렉션 인덱스
+        await db.users.create_index("username", unique=True)
+        
+        # 로봇 컬렉션 인덱스
+        await db.robots.create_index("robotId", unique=True)
+        await db.robots.create_index("name", unique=True)
+        
+        # 비디오 세션 컬렉션 인덱스
+        await db.videos.create_index("sessionId", unique=True)
+        await db.videos.create_index([("cameraType", 1), ("createdAt", -1)])
 
     @classmethod
     async def test_connection(cls):
