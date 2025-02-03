@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Body
+from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Body, status
 from typing import List, Optional
 from ..service.robot_service import RobotService
 from ..models.robot_models import Robot, RouteRequest, RouteResponse, MapResponse, StatusUpdate, StatusResponse, LogResponse, RobotCreate
@@ -10,16 +10,16 @@ robot_service = RobotService()
 
 @router.post("", response_model=BaseResponse[Robot])
 async def create_robot(
-    robot_data: RobotCreate = Body(..., example={
-        "name": "Robot1",
-        "ip_address": "192.168.1.100"
-    })
+    name: str = Form(...),
+    ipAddress: str = Form(...),
+    image: Optional[UploadFile] = File(None)
 ):
+    """로봇을 생성합니다. FormData로 이미지와 함께 데이터를 받습니다."""
     try:
         robot = await robot_service.create_robot(
-            name=robot_data.name,
-            ip_address=robot_data.ip_address,
-            image=None
+            name=name,
+            ip_address=ipAddress,
+            image=image
         )
         return BaseResponse[Robot](
             status=201,
@@ -46,7 +46,10 @@ async def get_robots():
             data=robots
         )
     except Exception as e:
-        raise e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @router.get("/{robot_identifier}", response_model=BaseResponse[Robot])
 async def get_robot(
@@ -57,17 +60,29 @@ async def get_robot(
         try:
             robot_id = int(robot_identifier)
         except ValueError:
+            # 숫자가 아닌 경우 이름으로 처리
             robot_id = robot_identifier
 
         robot = await robot_service.get_robot(robot_id)
+        if not robot:  # 로봇을 찾지 못한 경우 처리 추가
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="로봇을 찾을 수 없습니다."
+            )
+            
         return BaseResponse[Robot](
             status=200,
             success=True,
             message="로봇 정보 조회 성공",
             data=robot
         )
-    except Exception as e:
+    except HTTPException as e:
         raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @router.delete("/{robot_identifier}", response_model=BaseResponse)
 async def delete_robot(
@@ -92,9 +107,15 @@ async def delete_robot(
 @router.post("/{id}/routes", response_model=BaseResponse[RouteResponse])
 async def set_route(
     id: int = Path(..., description="로봇 ID"),
-    request: RouteRequest = None
+    request: RouteRequest = Body(..., description="경로 설정 정보")
 ):
     try:
+        if not request or not request.sequence or not request.waypoints:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="올바른 경로 정보를 입력해주세요."
+            )
+            
         route_response = await robot_service.set_route(
             id,
             request.sequence,
@@ -106,8 +127,13 @@ async def set_route(
             message="경로 설정 완료",
             data=route_response
         )
-    except Exception as e:
+    except HTTPException as e:
         raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @router.get("/{id}/map", response_model=BaseResponse[MapResponse])
 async def get_map(id: int = Path(..., description="로봇 ID")):
