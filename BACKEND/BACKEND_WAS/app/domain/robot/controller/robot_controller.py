@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Body
 from typing import List, Optional
 from ..service.robot_service import RobotService
 from ..models.robot_models import Robot, RouteRequest, RouteResponse, MapResponse, StatusUpdate, StatusResponse, LogResponse
 from ....common.models.responses import BaseResponse
+from fastapi import HTTPException
 
 router = APIRouter()
 robot_service = RobotService()
@@ -111,22 +112,6 @@ async def get_map(id: int = Path(..., description="로봇 ID")):
     except Exception as e:
         raise e
 
-@router.patch("/{id}/status", response_model=BaseResponse[StatusResponse])
-async def update_status(
-    id: int = Path(..., description="로봇 ID"),
-    status_update: StatusUpdate = None
-):
-    try:
-        status_response = await robot_service.update_status(id, status_update.status)
-        return BaseResponse[StatusResponse](
-            status=200,
-            success=True,
-            message="로봇 상태 업데이트 성공",
-            data=status_response
-        )
-    except Exception as e:
-        raise e
-
 @router.get("/{id}/logs", response_model=BaseResponse[LogResponse])
 async def get_logs(
     id: int = Path(..., description="로봇 ID"),
@@ -142,3 +127,23 @@ async def get_logs(
         )
     except Exception as e:
         raise e
+
+@router.patch("/{robot_id}/status", response_model=BaseResponse[StatusResponse])
+async def update_robot_status(
+    robot_id: int = Path(..., description="로봇 ID"),
+    status_update: StatusUpdate = Body(..., description="변경할 상태")
+):
+    """로봇의 상태를 변경합니다."""
+    try:
+        status_response = await robot_service.update_status(robot_id, status_update.status)
+        return BaseResponse[StatusResponse](
+            status=200,
+            success=True,
+            message="로봇 상태가 성공적으로 변경되었습니다.",
+            data=status_response
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )

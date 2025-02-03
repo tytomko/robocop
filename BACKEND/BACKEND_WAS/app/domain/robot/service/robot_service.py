@@ -125,3 +125,24 @@ class RobotService:
             detections=[],  # 실제 감지 로그 데이터
             pagination={"total": 0, "page": 1, "size": 10}
         )
+
+    async def update_robot_status(self, robot_id: int, new_status: str) -> None:
+        """로봇의 상태를 업데이트합니다."""
+        # 유효한 상태값 검증
+        valid_statuses = ["IDLE", "RUNNING", "PAUSED", "ERROR", "CHARGING", "active"]  # active 상태 추가
+        if new_status not in valid_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail=f"유효하지 않은 상태입니다. 가능한 상태: {', '.join(valid_statuses)}"
+            )
+        
+        # 로봇 존재 여부 확인
+        robot = await self.get_robot(robot_id)
+        if not robot:
+            raise HTTPException(
+                status_code=404,
+                detail="로봇을 찾을 수 없습니다."
+            )
+        
+        # 상태 업데이트
+        await self.repository.update_robot_status(robot_id, new_status)

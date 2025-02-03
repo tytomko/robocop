@@ -27,12 +27,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    await auth_service.authenticate_user(form_data.username, form_data.password)
-    return await auth_service.create_tokens(form_data.username)
+    user = await auth_service.authenticate_user(form_data.username, form_data.password)
+    tokens = await auth_service.create_tokens(form_data.username)
+    return {
+        "accessToken": tokens.access_token,
+        "refreshToken": tokens.refresh_token,
+        "tokenType": tokens.token_type
+    }
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(current_token: str):
-    return await auth_service.refresh_tokens(current_token)
+    tokens = await auth_service.refresh_tokens(current_token)
+    return {
+        "accessToken": tokens.access_token,
+        "refreshToken": tokens.refresh_token,
+        "tokenType": tokens.token_type
+    }
 
 @router.post("/change-password", response_model=BaseResponse)
 async def change_password(
