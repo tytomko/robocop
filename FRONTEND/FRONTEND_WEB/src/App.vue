@@ -12,6 +12,7 @@
             <div class="navbar-links">
               <router-link to="/" class="navbar-link">현황</router-link>
               <router-link to="/settings" class="navbar-link">설정</router-link>
+              <router-link to="/cctv" class="navbar-link">CCTV</router-link>
             </div>
           </div>
         </nav>
@@ -35,7 +36,7 @@
 <script>
 import { useRoute } from "vue-router";
 import { computed } from "vue";
-import StreamingSection from "@/components/dashboard/monitoring/StreamingSection.vue";
+import StreamingSection from "@/components/dashboard/StreamingSection.vue";
 
 export default {
   components: {
@@ -45,7 +46,12 @@ export default {
     const route = useRoute();
     const isLoginPage = computed(() => route.path === "/login");
 
-    return { isLoginPage };
+    // 새로고침 대신 localhost:3000으로 이동
+    const refreshPage = () => {
+      window.location.href = "http://localhost:3000";
+    };
+
+    return { isLoginPage, refreshPage };
   },
 };
 </script>

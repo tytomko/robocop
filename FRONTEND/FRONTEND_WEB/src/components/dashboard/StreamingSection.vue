@@ -1,23 +1,21 @@
 <template>
-    <!-- 오른쪽 실시간 모니터링 사이드바 -->
-    <div class="right-sidebar">
-        <div class="sidebar-sections">
-            <div class="sidebar-section">
-            <div class="section-header">
-                <h3>실시간 스트리밍</h3>
-            </div>
-
-            <!-- 알림 아이콘 -->
-        <div class="notification-icon" @click="toggleNotifications">
-            <!-- 빈 종 또는 가득 찬 종으로 상태에 따라 아이콘 변경 -->
-            <i :class="isNotificationsOpen ? 'fa-solid fa-bell bell-icon-active' : 'fa-regular fa-bell bell-icon'"></i>
-            <!-- 읽지 않은 알림 개수 표시 -->
-            <span v-if="unreadCount > 0" class="notification-badge">
-            {{ unreadCount }}
-            </span>
+  <!-- 오른쪽 사이드바 -->
+  <div class="right-sidebar">
+    <div class="sidebar-sections">
+      <div class="sidebar-section">
+        <div class="section-header">
+            <h3>지도</h3>
         </div>
 
-            <!-- 알림 토글창 -->
+        <!-- 알림 아이콘 -->
+        <div class="notification-icon" @click="toggleNotifications">
+          <i :class="isNotificationsOpen ? 'fa-solid fa-bell bell-icon-active' : 'fa-regular fa-bell bell-icon'"></i>
+          <span v-if="unreadCount > 0" class="notification-badge">
+          {{ unreadCount }}
+          </span>
+        </div>
+
+        <!-- 알림 토글창 -->
         <div v-if="isNotificationsOpen" class="notification-dropdown">
             <ul>
             <li v-for="(notification, index) in notifications" :key="index" :class="{ 'read': notification.isRead }">
@@ -26,34 +24,31 @@
             </ul>
         </div>
 
-            <!-- 실시간 모니터링 섹션 -->
-            <div class="video-container">
-                <div class="robot-selector">
-                <!-- 로봇 선택 -->
-                <select v-model="robotsStore.selectedRobot" class="robot-select" @change="robotsStore.handleRobotSelection">
-                    <option value="">로봇 선택</option>
-                    <option v-for="robot in robotsStore.registered_robots" :key="robot.id" :value="robot.id">
-                    {{ robot.name }}
-                    </option>
-                </select>
-                </div>
-                <!-- 선택된 로봇 카메라 -->
-                <div v-if="robotsStore.selectedRobot" class="camera-sections">
-                <CameraView cameraName="프론트캠" :cameraStatus="'연결 대기 중'" />
-                <CameraView cameraName="리어캠" :cameraStatus="'연결 대기 중'" />
-                </div>
-                <div v-else class="no-robot-selected">로봇을 선택해주세요</div>
-            </div>
-            </div>
+        <!-- 지도 섹션 -->
+        <div class="map-container">
+          <div class="robot-selector">
+            <!-- 로봇 선택 -->
+            <select v-model="robotsStore.selectedRobot" class="robot-select" @change="robotsStore.handleRobotSelection">
+                <option value="">로봇 선택</option>
+                <option v-for="robot in robotsStore.registered_robots" :key="robot.id" :value="robot.id">
+                {{ robot.name }}
+                </option>
+            </select>
+          </div>
+
+          <!-- RobotMap.vue 컴포넌트 사용 -->
+          <RobotMap />
         </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useRobotsStore } from '@/stores/robots'
-import CameraView from '@/components/dashboard/monitoring/CameraView.vue'
+import RobotMap from '@/components/dashboard/RobotMap.vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useRobotsStore } from '@/stores/robots';
 
 // robotsStore 활용하기
 const robotsStore = useRobotsStore();
@@ -121,51 +116,6 @@ onMounted(() => {
   flex-direction: column;
   flex-shrink: 0;
   overflow-y: auto;
-}
-
-.alert-section {
-  padding: 20px;
-  background: white;
-}
-
-.alert-section h3 {
-  margin: 0 0 15px 0;
-  color: #333;
-}
-
-.alert-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.alert-item {
-  padding: 12px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.alert-item.warning {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
-  color: #856404;
-}
-
-.alert-item.info {
-  background-color: #cce5ff;
-  border: 1px solid #b8daff;
-  color: #004085;
-}
-
-.alert-item .time {
-  font-size: 0.85em;
-  opacity: 0.8;
-}
-
-.alert-item .message {
-  font-weight: 500;
 }
 
 .divider {
@@ -248,24 +198,24 @@ onMounted(() => {
 
 /* 알림 아이콘 스타일링 */
 .notification-icon {
-  position: fixed; /* 오른쪽 끝으로 고정 */
-  top: 14px;
-  right: 20px; /* 화면의 가장 오른쪽 끝 */
+  position: fixed;
+  top: 13px;
+  right: 20px;
   cursor: pointer;
   display: inline-block;
-  z-index: 99; /* 다른 요소보다 위에 위치하도록 설정 */
+  z-index: 99;
 }
 
 /* 종 모양 아이콘 (Font Awesome 사용) */
 .bell-icon,
 .bell-icon-active {
   font-size: 24px;
-  color: #333; /* 기본 색상 */
+  color: #333;
   transition: color 0.3s;
 }
 
 .bell-icon-active {
-  color: #000; /* 클릭 시 까만색으로 변경 */
+  color: #000;
 }
 
 /* 알림 배지 (알림 개수 표시) */
@@ -283,16 +233,18 @@ onMounted(() => {
 
 /* 알림 드롭다운 (알림 목록) */
 .notification-dropdown {
-  position: fixed; /* 화면 고정 */
-  top: 40px; /* 종 바로 아래 */
-  right: 20px;
-  background-color: white;
+  position: fixed;
+  top: 40px;
+  right: 30px;
+  background-color: #fff;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  width: 200px;
-  max-height: 175px; /* 높이 제한 */
-  overflow-y: auto; /* 내용이 넘치면 스크롤 */
+  width: 300px;
+  max-height: 250px;
+  overflow-y: auto;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 10000; /* 다른 요소보다 위에 나타나도록 설정 */
+  z-index: 10000;
+  animation: slideIn 0.3s ease-in-out;
 }
 
 .notification-dropdown ul {
@@ -302,39 +254,46 @@ onMounted(() => {
 }
 
 .notification-dropdown li {
-  padding: 6px 8px; /* 간격 줄임: 위아래 6px, 좌우 8px */
+  padding: 8px 10px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
-  font-size: 14px;  /* 텍스트 크기 약간 줄임 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
 }
 
-/* 읽은 알림 스타일 */
 .notification-dropdown li.read {
-  background-color: #f0f0f0;
+  background-color: #fff;
 }
 
 .notification-dropdown li:last-child {
   border-bottom: none;
 }
 
-.video-container {
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 애니메이션 */
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.map-container {
   padding: 0 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.camera-section {
-  background: #1a1a1a;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 1rem;
-}
-
-.camera-section h3 {
-  padding: 0.5rem 1rem;
-  margin: 0;
-  background: #2a2a2a;
-  color: white;
-}
 </style>

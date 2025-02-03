@@ -129,25 +129,27 @@
     <!-- 설정 모달(닉네임/상태 변경) -->
     <div v-if="showNicknameModal" class="modal">
       <div class="modal-content">
-        <h3>로봇 설정</h3>
+        <div class="modal-header">
+          <h3>로봇 설정</h3>
+          <!-- 고장 버튼 -->
+          <!-- <button v-if="selectedRobotForNickname.status !== 'breakdown'" 
+                  @click="robotsStore.updateRobotStatus(selectedRobotForNickname.id, 'breakdown')" 
+                  class="action-btn breakdown">
+            고장
+          </button>
+          
+          <button v-if="selectedRobotForNickname.status === 'breakdown'" 
+                  @click="robotsStore.updateRobotStatus(selectedRobotForNickname.id, 'active')" 
+                  class="action-btn active">
+            재가동
+          </button> -->
+        </div>
         <label>로봇명: </label>
         <input v-model="selectedRobotForNickname.nickname" placeholder="로봇명을 설정하세요" />
+
         <div class="modal-buttons">
           <button @click="setRobotNickname(selectedRobotForNickname.id, selectedRobotForNickname.nickname)">저장</button>
           <button @click="closeNicknameModal" class="close-btn">닫기</button>
-        </div>
-        <!-- 로봇 상태 변경 버튼 -->
-        <div class="robot-actions break">
-          <button 
-            class="action-btn breakdown" 
-            @click="changeRobotStatus(robot.id, 'breakdown')">
-            고장
-          </button>
-          <button 
-            class="action-btn active" 
-            @click="changeRobotStatus(robot.id, 'active')">
-            재가동
-          </button>
         </div>
       </div>
     </div>
@@ -215,7 +217,8 @@ const getStatusLabel = (status) => {
     stopped: '정지 중',
     error: '오류 발생',
     idle: '대기 중',
-    returning: '복귀 중'
+    returning: '복귀 중',
+    breakdown: '고장'
   }
   return labels[status] || status
 }
@@ -277,13 +280,15 @@ const emergencyStop = async (robotId) => {
   }
 };
 
-// 로봇 상태 변경 처리
-const changeRobotStatus = async (robotId, newStatus) => {
-  try {
-    await robotsStore.updateRobotStatus(robotId, newStatus);
-    console.log(`${newStatus}로 상태 변경됨`);
-  } catch (err) {
-    console.error('상태 변경 실패:', err);
+// 고장 및 재가동 처리
+const setRobotStatus = (robotId, status) => {
+  // 'breakdown' 상태로 변경
+  if (status === 'breakdown') {
+    updateRobotStatus(robotId, 'breakdown');
+  }
+  // 'active' 상태로 변경
+  else if (status === 'active') {
+    updateRobotStatus(robotId, 'active');
   }
 };
 
@@ -725,12 +730,13 @@ onUnmounted(() => {
   background: #c82333;
 }
 
-/* 고장 버튼 (빨간색) */
-.robot-actions .action-btn.breakdown {
-  background: #dc3545;
+/* 고장 버튼 */
+.action-btn.breakdown {
+  background: #dc3545; /* 빨간색 */
+  color: white;
 }
 
-.robot-actions .action-btn.breakdown:hover {
+.action-btn.breakdown:hover {
   background: #c82333;
 }
 
@@ -739,6 +745,20 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+}
+
+/* 고장 버튼 스타일 */
+.modal-header .action-btn.breakdown {
+  background: #dc3545;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-header .action-btn.breakdown:hover {
+  background: #c82333;
 }
 
 /* 버튼 스타일 */
