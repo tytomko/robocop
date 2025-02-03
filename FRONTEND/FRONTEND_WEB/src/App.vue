@@ -25,9 +25,9 @@
         </div>
       </div>
 
-      <!-- Streaming Section (별도 컨테이너) -->
-      <div class="streaming-area" v-if="!isLoginPage">
-        <StreamingSection />
+      <!-- Sidebar Section (별도 컨테이너) -->
+      <div class="sidebar-area" v-if="!isLoginPage">
+        <SidebarSection />
       </div>
     </div>
   </div>
@@ -36,11 +36,11 @@
 <script>
 import { useRoute } from "vue-router";
 import { computed } from "vue";
-import StreamingSection from "@/components/dashboard/StreamingSection.vue";
+import SidebarSection from "@/components/dashboard/SidebarSection.vue";
 
 export default {
   components: {
-    StreamingSection,
+    SidebarSection,
   },
   setup() {
     const route = useRoute();
@@ -143,7 +143,7 @@ body {
   overflow: hidden;
 }
 
-.streaming-area {
+.sidebar-area {
   width: 400px;
   background: white;
   border-left: 1px solid #ddd;

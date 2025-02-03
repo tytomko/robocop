@@ -17,7 +17,7 @@ onMounted(() => {
   }).addTo(map.value);
 
   // 로봇 위치를 아이콘으로 표시할 수 있습니다.
-  L.marker([51.505, -0.09]).addTo(map.value)
+  L.marker([52.505, -0.09]).addTo(map.value)
     .bindPopup('현재 로봇 위치')
     .openPopup();
 });
