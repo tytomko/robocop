@@ -3,7 +3,7 @@ import LoginView from '@/views/LoginView.vue'
 import MonitoringView from '@/views/MonitoringView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import RobotDetailView from '@/views/RobotDetailView.vue'
-import CctvView from '@/views/CctvView.vue'
+import CameraView from '@/views/CameraView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -29,9 +29,9 @@ const router = createRouter({
       component: RobotDetailView
     },
     {
-      path: '/cctv',
-      name: 'cctv', 
-      component: CctvView
+      path: '/camera',
+      name: 'camera', 
+      component: CameraView
     }
   ]
 })

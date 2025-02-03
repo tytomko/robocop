@@ -21,25 +21,13 @@
             </div>
         </div>
       </div>
-      
-      <!--카메라 파트-->
-      <div class="camera-container">
-        <h3>카메라</h3>
-        <CameraView />
-      </div>
-      
+            
       <!-- 수동 제어 파트-->
       <div class="manual-control">
         <h3>수동 제어</h3>
         <p>화살표</p>
       </div>
 
-      <!-- 맵 뷰-->
-      <div class="map-container">
-        <h3>맵</h3>
-        <p>maaap</p>
-      </div>
-      
       <button class="back-btn" @click="goBack">뒤로 가기</button>
     </div>
   </template>
@@ -48,7 +36,7 @@
   import { ref, computed, onMounted, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { useRobotsStore } from '@/stores/robots';
-  import CameraView from '@/components/dashboard/CameraView.vue'
+  import Cctv from '@/components/dashboard/Cctv.vue'
 
   const route = useRoute();
   const router = useRouter();

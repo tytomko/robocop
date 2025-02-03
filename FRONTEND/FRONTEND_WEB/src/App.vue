@@ -12,7 +12,7 @@
             <div class="navbar-links">
               <router-link to="/" class="navbar-link">현황</router-link>
               <router-link to="/settings" class="navbar-link">설정</router-link>
-              <router-link to="/cctv" class="navbar-link">CCTV</router-link>
+              <router-link to="/camera" class="navbar-link">CCTV</router-link>
             </div>
           </div>
         </nav>
