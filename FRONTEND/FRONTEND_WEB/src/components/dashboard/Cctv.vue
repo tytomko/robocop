@@ -1,38 +1,38 @@
 <template>
-    <div class="camera-header">
-      <div class="camera-status-info">
-        <div class="status-item">
-          <span class="camera-label">{{ cameraName }}</span>
-          <span class="status-label">상태:</span>
-          <span :class="['status-value', cameraStatus === '스트리밍 중' ? 'status-active' : '']">
-            {{ cameraStatus }}
-          </span>
-        </div>
-        <div v-if="streamInfo" class="status-item">
-          <span class="status-label">해상도:</span>
-          <span class="status-value">{{ streamInfo.width }}x{{ streamInfo.height }}</span>
-        </div>
+<div class="camera-header">
+    <div class="camera-status-info">
+      <div class="status-item">
+        <span class="camera-label">{{ cameraName }}</span>
+        <span class="status-label">상태:</span>
+        <span :class="['status-value', cameraStatus === '스트리밍 중' ? 'status-active' : '']">
+          {{ cameraStatus }}
+        </span>
+      </div>
+      <div v-if="streamInfo" class="status-item">
+        <span class="status-label">해상도:</span>
+        <span class="status-value">{{ streamInfo.width }}x{{ streamInfo.height }}</span>
       </div>
     </div>
-    
-    <div class="camera-container">
-      <div v-if="!hasPermission" class="permission-request">
-        <p>카메라 접근 권한이 필요합니다</p>
-        <button @click="requestPermission" class="permission-button">
-          카메라 권한 요청
-        </button>
-      </div>
-      <div v-else-if="errorMessage" class="error-display">
-        <p>{{ errorMessage }}</p>
-        <button @click="retryConnection" class="retry-button">
-          다시 시도
-        </button>
-      </div>
-      <video v-else-if="hasPermission" ref="videoElement" autoplay playsinline></video>
-      <div v-else class="loading">
-        카메라 연결 중...
-      </div>
+  </div>
+  
+  <div class="camera-container">
+    <div v-if="!hasPermission" class="permission-request">
+      <p>카메라 접근 권한이 필요합니다</p>
+      <button @click="requestPermission" class="permission-button">
+        카메라 권한 요청
+      </button>
     </div>
+    <div v-else-if="errorMessage" class="error-display">
+      <p>{{ errorMessage }}</p>
+      <button @click="retryConnection" class="retry-button">
+        다시 시도
+      </button>
+    </div>
+    <video v-else-if="hasPermission" ref="videoElement" autoplay playsinline></video>
+    <div v-else class="loading">
+      카메라 연결 중...
+    </div>
+  </div>
 </template>
 
 <script setup>

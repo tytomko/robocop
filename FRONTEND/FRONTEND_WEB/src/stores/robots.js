@@ -12,7 +12,6 @@ export const useRobotsStore = defineStore('robots', () => {
   const newRobot = ref({
     name: '',
     ipAddress: '',
-    image: null
   })
   const selectedRobot = ref(localStorage.getItem('selectedRobot') || '')
 
@@ -75,7 +74,7 @@ export const useRobotsStore = defineStore('robots', () => {
     try {
       const formData = new FormData()
       formData.append('name', newRobot.value.name)
-      formData.append('ip_address', newRobot.value.ipAddress)
+      formData.append('ipAddress', newRobot.value.ipAddress)
       const response = await axios.post('https://robocop-backend-app.fly.dev/api/v1/robots', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
@@ -124,7 +123,7 @@ export const useRobotsStore = defineStore('robots', () => {
 
     const updateRobotStatus = async (robotId, newStatus) => {
       try {
-        await axios.put(`https://robocop-backend-app.fly.dev/api/v1/robots/${robotId}/status`, {
+        await axios.patch(`https://robocop-backend-app.fly.dev/api/v1/robots/${robotId}/status`, {
           status: newStatus
         });
         const robot = registered_robots.value.find(r => r.id === robotId);
