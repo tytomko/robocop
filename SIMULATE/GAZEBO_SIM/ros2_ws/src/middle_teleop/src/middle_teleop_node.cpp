@@ -22,8 +22,8 @@ public:
 
     // 구독 및 발행 토픽 설정
     std::string key_topic = "/" + robot_name_ + "/key_publisher";
-    //std::string cmd_vel_topic = "/" + robot_name_ + "/cmd_vel";
-    std::string cmd_vel_topic = "/cmd_vel";
+    std::string cmd_vel_topic = "/" + robot_name_ + "/cmd_vel";
+    //std::string cmd_vel_topic = "/cmd_vel";
 
     // key_publisher 토픽 구독
     subscription_ = this->create_subscription<std_msgs::msg::String>(
