@@ -55,12 +55,12 @@ ros2 service call /robot_1/homing robot_custom_interfaces/srv/Homing
 
 ### 네비게이트서비스
 ```bash
-ros2 service call /robot_1/navigate robot_custom_interfaces/srv/Navigate "{goal: {x: 304412.94040598295, y: 3892840.5655467883, theta: 0.0}}"
+ros2 service call /robot_1/navigate robot_custom_interfaces/srv/Navigate "{goal: {x: 304401.2780476108, y: 3892837.505477577, theta: 0.0}}"
 ```
-
+                
 ### 패트롤 서비스
 ```bash
-ros2 service call /robot_1/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304410.5991357809, y: 3892836.2283385303, theta: 0.0}, {x: 304411.54326689156, y: 3892845.3441660292, theta: 0.0}, {x: 304413.21575799957, y: 3892843.983522342, theta: 0.0}]}"
+ros2 service call /robot_1/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304401.2780476108, y: 3892837.505477577, theta: 0.0}, {x: 304417.68651993107, y: 3892838.6313477717, theta: 0.0}, {x: 304417.91822496144, y: 3892850.079599839, theta: 0.0}]}"
 ```
 ### Estop 서비스
 ```bash

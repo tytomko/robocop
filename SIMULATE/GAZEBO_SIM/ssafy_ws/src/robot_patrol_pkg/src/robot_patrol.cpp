@@ -151,7 +151,7 @@ private:
         }
     }
 
-    // Pose 및 Heading 콜백
+    // Pose 및 Heading 콜백 8hz
     void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
         current_position_.x = msg->pose.position.x;
         current_position_.y = msg->pose.position.y;
