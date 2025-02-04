@@ -308,6 +308,14 @@ private:
             }
             return;
         }
+        // 그 외의 모드에서는 정지
+        else {
+            geometry_msgs::msg::Twist stop_msg;
+            stop_msg.linear.x = 0.0;
+            stop_msg.angular.z = 0.0;
+            cmd_vel_pub_->publish(stop_msg);
+            RCLCPP_INFO(this->get_logger(), "로봇 정지");
+        }
     }
 };
 
