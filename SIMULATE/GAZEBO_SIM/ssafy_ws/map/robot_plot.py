@@ -12,7 +12,7 @@ import math
 class PathVisualizer(Node):
     def __init__(self):
         super().__init__('path_visualizer')
-        
+        self.plot_size = 25.0  # 플롯 가시화 범위
         # ─── 구독자 설정 ─────────────────────────────────────────────────────────────────
         self.pose_sub = self.create_subscription(
             PoseStamped,
@@ -191,8 +191,10 @@ class PathVisualizer(Node):
             self.current_pos_plot.set_xdata([self.current_x])
             self.current_pos_plot.set_ydata([self.current_y])
             # 가시화 범위 조절 (옵션)
-            self.ax.set_xlim(self.current_x - 10, self.current_x + 10)
-            self.ax.set_ylim(self.current_y - 10, self.current_y + 10)
+
+            self.ax.set_xlim(self.current_x - (self.plot_size/2), self.current_x + (self.plot_size/2))
+            self.ax.set_ylim(self.current_y - (self.plot_size/2), self.current_y + (self.plot_size/2))
+            
             plt.draw()
             plt.pause(0.1)
             # 헤딩 화살표도 위치가 바뀌면 재갱신
