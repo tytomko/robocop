@@ -2,9 +2,9 @@
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/float64.hpp"
-#include <algorithm>  // std::clamp
-#include <cmath>      // std::fabs, std::sqrt, std::pow
-// test
+#include <algorithm>
+#include <cmath>
+
 class MiddleTeleop : public rclcpp::Node
 {
 public:
@@ -13,32 +13,25 @@ public:
     linear_vel_(0.0),
     angular_vel_(0.0)
   {
-    // 파라미터 선언 및 초기화
     this->declare_parameter<std::string>("robot_name", "not_defined");
     this->declare_parameter<int>("robot_number", -1);
 
     robot_name_ = this->get_parameter("robot_name").as_string();
     robot_num_ = this->get_parameter("robot_number").as_int();
 
-    // 구독 및 발행 토픽 설정
     std::string key_topic = "/" + robot_name_ + "/key_publisher";
     std::string cmd_vel_topic = "/" + robot_name_ + "/cmd_vel";
-    //std::string cmd_vel_topic = "/cmd_vel";
 
-    // key_publisher 토픽 구독
     subscription_ = this->create_subscription<std_msgs::msg::String>(
       key_topic,
       10,
       std::bind(&MiddleTeleop::keyCallback, this, std::placeholders::_1)
     );
 
-    // cmd_vel 토픽 발행
     cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_topic, 10);
 
-
-    // 일정 주기로 속도 갱신(가속/감속)하는 타이머
     timer_ = this->create_wall_timer(
-      std::chrono::milliseconds(50), // 20Hz
+      std::chrono::milliseconds(50),
       std::bind(&MiddleTeleop::controlLoop, this)
     );
 
@@ -48,7 +41,9 @@ public:
 private:
   void keyCallback(const std_msgs::msg::String::SharedPtr msg)
   {
-    auto now = std::chrono::steady_clock::now(); // 시스템 시간 사용
+    auto now = std::chrono::steady_clock::now();
+
+    // 특정 키 입력이 감지될 경우, 해당 키의 타임스탬프만 업데이트
     if (msg->data == "UP") {
       up_last_time_ = now;
     } else if (msg->data == "DOWN") {
@@ -59,12 +54,26 @@ private:
       right_last_time_ = now;
     } else if (msg->data == "SPACE") {
       space_last_time_ = now;
+    } else if (msg->data == "UP_LEFT") {
+      up_last_time_ = now;
+      left_last_time_ = now;
+    } else if (msg->data == "UP_RIGHT") {
+      up_last_time_ = now;
+      right_last_time_ = now;
+    } else if (msg->data == "DOWN_LEFT") {
+      down_last_time_ = now;
+      left_last_time_ = now;
+    } else if (msg->data == "DOWN_RIGHT") {
+      down_last_time_ = now;
+      right_last_time_ = now;
     }
+
+    RCLCPP_INFO(this->get_logger(), "Received key input: %s", msg->data.c_str());
   }
 
   void controlLoop()
   {
-    auto now = std::chrono::steady_clock::now(); // 시스템 시간 사용
+    auto now = std::chrono::steady_clock::now();
 
     auto is_key_pressed_recently = [&](const auto &last_time) {
       return std::chrono::duration_cast<std::chrono::milliseconds>(now - last_time).count() < 200;
@@ -79,19 +88,14 @@ private:
     if (space) {
       linear_vel_ *= BRAKE_FACTOR_LINEAR;
       angular_vel_ *= BRAKE_FACTOR_ANGULAR;
-
-      if (std::fabs(linear_vel_) < 0.001) {
-        linear_vel_ = 0.0;
-      }
-      if (std::fabs(angular_vel_) < 0.001) {
-        angular_vel_ = 0.0;
-      }
+      if (std::fabs(linear_vel_) < 0.001) linear_vel_ = 0.0;
+      if (std::fabs(angular_vel_) < 0.001) angular_vel_ = 0.0;
     } else {
       double forward_sign = 0.0;
+      double turn_sign = 0.0;
+
       if (up) forward_sign += 1.0;
       if (down) forward_sign -= 1.0;
-
-      double turn_sign = 0.0;
       if (left) turn_sign += 1.0;
       if (right) turn_sign -= 1.0;
 
@@ -100,9 +104,7 @@ private:
         linear_vel_ = std::clamp(linear_vel_, -MAX_LINEAR_SPEED, MAX_LINEAR_SPEED);
       } else {
         linear_vel_ *= FRICTION_FACTOR_LINEAR;
-        if (std::fabs(linear_vel_) < 0.001) {
-          linear_vel_ = 0.0;
-        }
+        if (std::fabs(linear_vel_) < 0.001) linear_vel_ = 0.0;
       }
 
       if (turn_sign != 0.0) {
@@ -110,9 +112,7 @@ private:
         angular_vel_ = std::clamp(angular_vel_, -MAX_ANGULAR_SPEED, MAX_ANGULAR_SPEED);
       } else {
         angular_vel_ *= FRICTION_FACTOR_ANGULAR;
-        if (std::fabs(angular_vel_) < 0.001) {
-          angular_vel_ = 0.0;
-        }
+        if (std::fabs(angular_vel_) < 0.001) angular_vel_ = 0.0;
       }
     }
 
@@ -121,7 +121,7 @@ private:
     cmd_vel_msg.angular.z = angular_vel_;
     cmd_vel_publisher_->publish(cmd_vel_msg);
 
-    
+    RCLCPP_INFO(this->get_logger(), "Velocity updated - Linear: %.2f, Angular: %.2f", linear_vel_, angular_vel_);
   }
 
   std::string robot_name_;
@@ -131,17 +131,16 @@ private:
   std::chrono::steady_clock::time_point up_last_time_, down_last_time_, left_last_time_, right_last_time_, space_last_time_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr speed_publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  static constexpr double ACCEL_STEP = 0.13;
-  static constexpr double ANGLE_STEP = 0.4;
-  static constexpr double BRAKE_FACTOR_LINEAR = 0.01;
-  static constexpr double BRAKE_FACTOR_ANGULAR = 0.003;
+  static constexpr double ACCEL_STEP = 0.04;
+  static constexpr double ANGLE_STEP = 0.03;
+  static constexpr double BRAKE_FACTOR_LINEAR = 0.005;
+  static constexpr double BRAKE_FACTOR_ANGULAR = 0.001;
   static constexpr double FRICTION_FACTOR_LINEAR = 0.98;
   static constexpr double FRICTION_FACTOR_ANGULAR = 0.95;
-  static constexpr double MAX_LINEAR_SPEED = 2.0;
-  static constexpr double MAX_ANGULAR_SPEED = 2.0;
+  static constexpr double MAX_LINEAR_SPEED = 1.5;
+  static constexpr double MAX_ANGULAR_SPEED = 1.5;
 };
 
 int main(int argc, char *argv[])
