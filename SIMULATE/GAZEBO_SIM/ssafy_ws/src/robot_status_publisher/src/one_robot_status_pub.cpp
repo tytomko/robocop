@@ -140,36 +140,47 @@ private:
     rclcpp::Service<robot_custom_interfaces::srv::Patrol>::SharedPtr patrol_srv;
     rclcpp::TimerBase::SharedPtr status_timer_;
 
+    /// -π ~ π 범위로 정규화하는 함수
+    static double normalizeAngle(double angle) {
+        while (angle >  M_PI) angle -= 2.0 * M_PI;
+        while (angle < -M_PI) angle += 2.0 * M_PI;
+        return angle;
+    }
+
     void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
     {
-        // IMU에서 받은 쿼터니언 데이터를 TF2 객체로 변환
         tf2::Quaternion q(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
         tf2::Matrix3x3 m(q);
 
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
 
-        // Yaw 값을 -π ~ π 범위로 제한 (누적 오차 방지)
-        yaw = std::fmod(yaw + M_PI, 2 * M_PI) - M_PI;
+        // 1) yaw를 우선 -π ~ π로 정규화
+        yaw = normalizeAngle(yaw);
 
-        // 로우패스 필터 적용 (0.95의 계수를 적용하여 부드러운 yaw 값 유지)
-        static float filtered_yaw = yaw;  // 초기값 설정
-        float alpha = 0.95;  // 필터 계수 (0~1, 1에 가까울수록 반응 속도 감소)
+        // 2) UTM 좌표계 기준으로 맞추기 위해 오프셋 적용 (여기서는 -π 예시)
+        constexpr double OFFSET = -M_PI;
+        yaw = normalizeAngle(yaw + OFFSET);
 
-        filtered_yaw = alpha * filtered_yaw + (1 - alpha) * yaw;
+        // 3) 로우패스 필터 (각도 차이 방식으로 필터링하는 것을 권장)
+        //    - 간단히 기존 방식 유지한다면:
+        // gazebo imu의 yaw값은 서쪽이 0rad 동쪽이 +-3.14rad, 북쪽이 -1.57rad, 남쪽이 1.57rad
+        static double filtered_yaw = yaw;  // 초기화
+        float alpha = 0.95;
+        // (단순 방식) filtered_yaw = alpha * filtered_yaw + (1 - alpha) * yaw;
 
+        // (권장 방식) 각도 차이를 -π~π로 정규화하여 필터링
+        double diff = normalizeAngle(yaw - filtered_yaw);
+        double adjusted = (1.0 - alpha) * diff;
+        filtered_yaw = normalizeAngle(filtered_yaw + adjusted);
+
+        // 4) 메시지에 담아 퍼블리시
         auto heading_msg = std_msgs::msg::Float32();
         heading_msg.data = filtered_yaw;
-
-        // 일정 주기마다 로그 출력
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_imu_log_time_).count() >= 2) {
-            RCLCPP_INFO(this->get_logger(), "IMU received. Filtered Yaw (heading): %.2f (rad)", filtered_yaw);
-            last_imu_log_time_ = now;
-        }
-
         publisher_heading_->publish(heading_msg);
     }
+
+
 
     void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
     {

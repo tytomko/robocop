@@ -15,14 +15,16 @@ import matplotlib.pyplot as plt
 
 # 전역 상수 및 초기 설정
 global_map = 'map/global_map.json'
-home_pose = (304412.92687916575, 3892844.1526765698)  # UTM 좌표
+# 이전 홈 좌표
+#home_pose = (304412.92687916575, 3892844.1526765698)  # UTM 좌표
+home_pose = (304411.67767234833, 3892844.1732352837)
 
 class GlobalPathPlanner(Node):
     def __init__(self):
         super().__init__('global_path_planner')
 
         # (옵션) 플롯 활성화 여부
-        self.enable_plot = True
+        self.enable_plot = False
 
         # [변경] 백그라운드 맵(그래프) 표시 여부
         self.enable_background_map = True  # 필요하면 False로 바꾸면 됨
