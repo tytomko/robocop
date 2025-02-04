@@ -5,7 +5,7 @@
       <div class="sidebar-section">
         <div class="section-header">
             <h3>지도</h3>
-        </div>
+        </div>  
 
         <!-- 알림 아이콘 -->
         <div class="notification-icon" @click="toggleNotifications">
@@ -47,27 +47,16 @@
 <script setup>
 import RobotMap from '@/components/dashboard/RobotMap.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
 
 // robotsStore 활용하기
 const robotsStore = useRobotsStore();
-const router = useRouter();
-const route = useRoute();
-const activeMenu = ref('');
-
-// robotsStore에 등록된 로봇 불러오기
-watch(() => robotsStore.selectedRobot, (newRobotId) => {
-  if (newRobotId) {
-    localStorage.setItem('selectedRobot', newRobotId);
-  }
-}, { immediate: true });
 
 // 알림 관련 변수
 const notifications = ref([]) // 알림 목록
 const isNotificationsOpen = ref(false) // 알림 창 열림 여부
 
-// 알림을 추가하는 메소드 (최신 5개만 남도록)
+// 알림을 추가하는 메소드 (최신 7개만 남도록)
 const addNotification = (message) => {
   notifications.value.unshift({ message, isRead: false })  // 새 알림을 맨 앞에 추가
   if (notifications.value.length > 7) {  // 7개 이상이면, 가장 오래된 알림을 제거
@@ -118,12 +107,6 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-.divider {
-  height: 1px;
-  background: #ddd;
-  margin: 0;
-}
-
 .sidebar-sections {
   display: flex;
   flex-direction: column;
@@ -143,14 +126,6 @@ onMounted(() => {
   padding: 15px 20px;
   border-bottom: solid #eee;
   background: white;
-}
-
-.section-handle {
-  cursor: move;
-  padding: 0 10px;
-  color: #666;
-  font-size: 18px;
-  margin-right: 10px;
 }
 
 .section-header h3 {
@@ -173,27 +148,6 @@ onMounted(() => {
   border-radius: 4px;
   background: white;
   font-size: 14px;
-}
-
-.no-robot-selected {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-}
-
-/* 드롭다운 스타일 개선 */
-.robot-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
-  padding-right: 32px;
-}
-
-.robot-select:focus {
-  outline: none;
-  border-color: #007bff;
 }
 
 /* 알림 아이콘 스타일링 */

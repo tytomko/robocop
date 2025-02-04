@@ -1,5 +1,5 @@
 <template>
-<div class="camera-header">
+  <div class="camera-header">
     <div class="camera-status-info">
       <div class="status-item">
         <span class="camera-label">{{ cameraName }}</span>
@@ -40,12 +40,12 @@ import { ref, onMounted, onUnmounted } from 'vue';
 
 const ws = ref(null);
 const videoElement = ref(null);
-const imageData = ref(null);
 const cameraStatus = ref('연결 대기 중');
 const errorMessage = ref('');
 const hasPermission = ref(false);
 const stream = ref(null);
 const streamInfo = ref(null);
+
 const props = defineProps({
   cameraName: {
     type: String,
@@ -154,7 +154,6 @@ const connectWebSocket = () => {
           reader.onload = () => {
             try {
               const base64data = reader.result.split(',')[1];
-              imageData.value = base64data;
               cameraStatus.value = '스트리밍 중';
               errorMessage.value = ''; // 성공적인 프레임 수신 시 에러 메시지 초기화
             } catch (error) {
@@ -309,11 +308,11 @@ onUnmounted(() => {
 
 .camera-label {
   font-size: 0.9rem;
-  font-weight: bold; /* Bold 처리 */
-  background-color: #000; /* 검은 배경 */
-  color: #fff; /* 흰 글씨 */
-  padding: 0.2rem 0.5rem; /* 텍스트 주위 여백 */
-  border-radius: 4px; /* 모서리 둥글게 */
+  font-weight: bold;
+  background-color: #000;
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
 }
 
 .status-item {
@@ -378,4 +377,4 @@ onUnmounted(() => {
   color: #fff;
   font-size: 1.1rem;
 }
-</style> 
+</style>

@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -41,18 +41,13 @@ const loginForm = ref({
 
 const handleLogin = async () => {
   try {
-    // FormData 객체 생성
-    const formData = new FormData();
-    formData.append('username', loginForm.value.username);
-    formData.append('password', loginForm.value.password);
-
     // URLSearchParams 사용
     const params = new URLSearchParams();
     params.append('username', loginForm.value.username);
     params.append('password', loginForm.value.password);
 
     const response = await axios.post('https://robocop-backend-app.fly.dev/api/v1/auth/login', 
-      params,  // FormData 대신 URLSearchParams 사용
+      params, 
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -68,7 +63,6 @@ const handleLogin = async () => {
 
     // 로그인 성공 시 대시보드로 이동
     router.push({ name: 'monitoring' });
-    console.log(accessToken, refreshToken)
   } catch (error) {
     console.error('로그인 실패:', error);
     alert('로그인에 실패했습니다. 다시 시도해주세요.');
@@ -77,33 +71,20 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden; /* 스크롤 방지 */
-}
-
 .login-container {
   display: flex;
-  height: 100%; /* 부모 높이에 맞춤 */
-  width: 100%; /* 전체 너비 차지 */
-  position: relative;
-  background-color: #ffffff;
-  transition: all 0.3s ease;
+  height: 100vh;
+  width: 100%;
 }
 
 .left-column {
   width: 50%;
-  flex: 1 1 50%;
-  min-width: 600px;
   background-color: #f5f5f5;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  transition: background-color 0.3s ease;
 }
 
 .logo {
@@ -114,7 +95,6 @@ body {
 .slogan {
   text-align: center;
   color: #333;
-  transition: color 0.3s ease;
 }
 
 .slogan h2 {
@@ -124,27 +104,22 @@ body {
 
 .right-column {
   width: 50%;
-  flex: 1 1 50%;
-  min-width: 600px;
+  min-width: 500px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background-color: #ffffff;
-  transition: background-color 0.3s ease;
   height: 89vh; /* 높이를 화면 전체로 설정 */
 }
 
 .login-form {
   width: 80%;
   max-width: 400px;
-  margin: auto; /* 중앙 정렬 유지 */
 }
 
 .login-form h3 {
   margin-bottom: 0.5rem;
   color: #333;
-  transition: color 0.3s ease;
 }
 
 .login-form input {
@@ -153,9 +128,6 @@ body {
   margin-bottom: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  background-color: #ffffff;
-  color: #333;
-  transition: all 0.3s ease;
 }
 
 .login-button {
@@ -167,7 +139,6 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
-  transition: background-color 0.3s ease;
 }
 
 .login-button:hover {

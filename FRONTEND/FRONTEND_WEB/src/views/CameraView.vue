@@ -109,8 +109,4 @@ watch(selectedRobots, (newRobots) => {
   padding-right: 32px;
 }
 
-.robot-select:focus {
-  outline: none;
-  border-color: #007bff;
-}
 </style>
