@@ -157,7 +157,7 @@ onMounted(() => {
   right: 20px;
   cursor: pointer;
   display: inline-block;
-  z-index: 99;
+  z-index: 1;
 }
 
 /* 종 모양 아이콘 (Font Awesome 사용) */
