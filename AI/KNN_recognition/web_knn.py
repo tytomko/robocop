@@ -3,6 +3,7 @@ import cv2
 import pickle
 import numpy as np
 import time
+import keyboard
 
 # KNN 모델 로드 (numpy._core 에러시 해당 환경에서 모델 재학습해야함)
 MODEL_PATH = "trained_knn_model.clf"
@@ -29,11 +30,21 @@ def predict(frame, knn_clf, distance_threshold=0.38):
     
     return [(pred, loc, closest_distances[0][i][0]) if rec else ("Unknown", loc, closest_distances[0][i][0]) for i, (pred, loc, rec) in enumerate(zip(knn_clf.predict(face_encodings), face_locations, are_matches))]
 
+isCheckStart = False
+isCheckNow = False
+isCheckCount = 0
+check_time = 0
+isFindEnemy = False
+
 while True:
     ret, frame = video_capture.read()
     if not ret:
         print("Error: 카메라에서 영상을 읽을 수 없습니다.")
         break
+
+    if keyboard.is_pressed("a"):
+        print("수하를 시작합니다")
+        isCheckStart = True
     
     predictions = predict(frame, knn_clf)
     
@@ -49,6 +60,27 @@ while True:
         font = cv2.FONT_HERSHEY_DUPLEX
         # 이름과 유사도 표시
         cv2.putText(frame, f"{name} ({distance:.2f})", (left + 6, bottom - 6), font, 0.7, (255, 255, 255), 1)
+        # 수하 프로세스
+        # 데이터베이스의 인물 중 여러 명이 교차되어 인식되는 경우에 대해서도 예외처리할 필요가 있음음
+        if isCheckStart:
+            check_time = time.time()
+            isCheckStart = False
+            isCheckNow = True
+            isCheckCount = 0
+        
+        if isCheckNow:
+            if distance <= 0.38:
+                power = 10 / distance
+                isCheckCount += power
+            print(time.time() - check_time)
+            if time.time() - check_time >= 10:
+                isCheckNow = False
+                isFindEnemy = True #나중에 함수로 대체
+                print("신원확인에 실패하였습니다.")
+            if isCheckCount >= 100:
+                isCheckNow = False
+                isCheckCount = 0
+                print(f"신원이 확인되었습니다.{name}")
     
     cv2.imshow('Video', frame)
     
