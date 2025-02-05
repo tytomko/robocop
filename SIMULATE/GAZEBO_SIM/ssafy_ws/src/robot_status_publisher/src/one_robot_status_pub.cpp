@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <sstream>
 #include <random>
+#include <cmath>
+#include <algorithm>
 #include "rclcpp/rclcpp.hpp"
 
 // Custom message, service
@@ -128,8 +130,6 @@ private:
 
     std::random_device rd;
     std::mt19937 gen{rd()};
-    std::uniform_real_distribution<float> temp_dist{50.0f, 80.0f};  // 온도 랜덤
-    std::uniform_int_distribution<int> network_dist{0, 100};  // 네트워크 상태 랜덤
 
     // 구독자, 발행자, 서비스 서버, 타이머 멤버 변수
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subscription_imu_;
@@ -210,7 +210,7 @@ private:
     {
         auto now = std::chrono::steady_clock::now();
 
-        // 배터리 감소
+        // 배터리 감소 로직 (1분마다 1% 감소)
         if (std::chrono::duration_cast<std::chrono::minutes>(now - last_battery_update_time_).count() >= 1) {
             if (status_message.battery > 0.0f) {
                 status_message.battery -= 1.0f;
@@ -218,10 +218,33 @@ private:
             last_battery_update_time_ = now;
         }
 
-        // 랜덤 온도 및 네트워크 상태 업데이트
-        status_message.temperatures = {temp_dist(gen)};
-        status_message.network = static_cast<float>(network_dist(gen));
-        
+        // 랜덤 엔진 생성 (static으로 유지하여 계속 같은 시드 사용)
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+
+        // 온도 및 네트워크 상태 초기값
+        static float temperature = 55.0f;
+        static float network = 100.0f;
+        static float network_trend = 0.0f;
+
+        // 온도 변화: 작은 변동 추가 (±0.5°C)
+        std::normal_distribution<float> temp_noise(0.0f, 0.3f); // 표준 편차 0.3
+        temperature += temp_noise(gen);
+        temperature = std::clamp(temperature, 50.0f, 70.0f); // 현실적인 온도 범위 유지
+        temperature = std::round(temperature * 1000.0f) / 1000.0f; // 소수점 3번째 자리까지 반올림
+
+        // 네트워크 상태 변화: 랜덤 변동 추가
+        network_trend += 0.1f;
+        std::uniform_real_distribution<float> network_noise(-5.0f, 5.0f); // ±5% 변동
+        network = 50.0f + 30.0f * std::sin(network_trend) + network_noise(gen);
+        network = std::clamp(network, 60.0f, 100.0f); // 네트워크 신호가 60~100% 사이에서 유지되도록 제한
+        network = std::round(network * 1000.0f) / 1000.0f; // 소수점 3번째 자리까지 반올림
+
+        // 상태 메시지 업데이트
+        status_message.temperatures = {temperature};
+        status_message.network = network;
+
+        // 상태 메시지 발행
         publisher_status_->publish(status_message);
     }
 
@@ -233,6 +256,7 @@ private:
         publisher_status_->publish(status_message);
         
         response->success = true;
+        response->message = "Robot stopped.";
     }
 
     void resume_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
@@ -241,14 +265,16 @@ private:
         if (status_message.mode == "emergency stop") {
             RCLCPP_INFO(this->get_logger(), "[RESUME] Returning to operational mode.");
             
-            status_message.mode = "operational";
+            status_message.mode = "waiting";
             status_message.is_active = true;
             publisher_status_->publish(status_message);
             
             response->success = true;
+            response->message = "Robot is waiting.";
         } else {
             RCLCPP_WARN(this->get_logger(), "[RESUME] Robot is already operational.");
             response->success = false;
+            response->message = "Robot is already operational.";
         }
     }
 
@@ -294,6 +320,7 @@ private:
         status_message.mode = "waiting";
         publisher_status_->publish(status_message);
         response->success = true;
+        response->message = "Robot is waiting.";
     }
 };
 
