@@ -13,6 +13,9 @@
 #include <algorithm>
 #include <nav_msgs/msg/path.hpp>
 #include "robot_custom_interfaces/msg/status.hpp"
+// 목적지 도착 시 상태를 waiting으로 바꾸는 서비스
+#include "robot_custom_interfaces/srv/waiting.hpp"
+
 #include <queue>
 
 // ─── 파라미터들 ─────────────────────────────────────────────────────────────
@@ -27,7 +30,6 @@ const double POSITION_TOLERANCE       = 0.1;  // 목표점 도달 허용 오차 
 const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
-// POSITION_TOLERANCE와 동일하게 쓰거나, 약간 크게 설정해도 된다.
 const double SKIP_THRESHOLD = 0.2;
 
 struct Point {
@@ -61,6 +63,7 @@ public:
         std::string approach_path_topic = "/robot_" + std::to_string(my_robot_number_) + "/approach_path";
         std::string target_point_topic  = "/robot_" + std::to_string(my_robot_number_) + "/target_point";
         std::string target_heading_topic = "/robot_" + std::to_string(my_robot_number_) + "/target_heading";
+        waiting_service_name_ = "/robot_" + std::to_string(my_robot_number_) + "/waiting"; // waiting service 토픽 설정
 
         // ─── 구독자 생성 ─────────────────────────────────────────────────
         pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
@@ -82,7 +85,6 @@ public:
         approach_path_sub_ = this->create_subscription<nav_msgs::msg::Path>(
             approach_path_topic, 10,
             std::bind(&PurePursuitNode::approach_path_callback, this, std::placeholders::_1));
-
         // ─── 퍼블리셔 생성 ───────────────────────────────────────────────
         cmd_vel_pub_         = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_topic, 10);
         target_point_pub_    = this->create_publisher<geometry_msgs::msg::Point>(target_point_topic, 10);
@@ -100,9 +102,11 @@ private:
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr target_point_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr target_heading_pub_;
+    // waiting service는 client로 호출할 예정이므로 별도 생성
 
     int my_robot_number_;
     std::string my_robot_name_;
+    std::string waiting_service_name_; // waiting service 토픽 이름
 
     // ─────────────
     // ※ 여기서 핵심: "인덱스+벡터" 대신 "큐"로 경로를 관리
@@ -256,7 +260,11 @@ private:
         linear_vel_ += ACCEL_STEP * (target_speed - linear_vel_);
         linear_vel_ = std::clamp(linear_vel_, 0.0, MAX_LINEAR_SPEED);
         linear_vel_ *= FRICTION_FACTOR_LINEAR;
-
+        
+        // 각도 오차가 너무 크면 선속도 0으로
+        if (std::fabs(angle_error) > M_PI / 2) {
+            linear_vel_ = 0.0;
+        }
         // ── (3) cmd_vel 퍼블리시 ──────────────────────────────────────────
         geometry_msgs::msg::Twist cmd_vel_msg;
         cmd_vel_msg.linear.x  = linear_vel_;
@@ -310,13 +318,18 @@ private:
         if (current_mode_ == "homing" || current_mode_ == "navigating") {
             if (path_queue_.empty()) {
                 RCLCPP_WARN(this->get_logger(), "Global path이 없습니다(큐 비어있음).");
+                // Global path이 없을 때 먼저 정지 후 waiting service 호출
+                stop_robot();
+                callWaitingService();
                 return;
             }
             bool reached = follow_current_path();
             if (reached) {
-                // 경로 끝 -> 로봇 정지
-                RCLCPP_INFO(this->get_logger(), "경로에 도달했습니다. 로봇 정지.");
+                RCLCPP_INFO(this->get_logger(),
+                    "경로에 도달했습니다. Waiting service 호출하여 대기모드로 전환.");
+                // 경로 도달 시 먼저 정지 후 waiting service 호출
                 stop_robot();
+                callWaitingService();
             }
             return;
         }
@@ -334,8 +347,6 @@ private:
                     RCLCPP_INFO(this->get_logger(),
                         "Approach path 도착. 이제 글로벌 path로 순찰 시작.");
                     patrol_state_ = PatrolState::PATROL_FORWARD;
-                    // 여기서 큐를 비우고, 실제 global_path_callback에서 수신했을 수도 있음
-                    // 혹은 이미 global path가 세팅되어 있으면 그것을 사용
                 }
             }
             else if (patrol_state_ == PatrolState::PATROL_FORWARD) {
@@ -348,7 +359,6 @@ private:
                 if (reached) {
                     RCLCPP_INFO(this->get_logger(),
                         "순찰 경로 끝 도달. 역방향 순찰 시작.");
-                    // ── (중요) 큐 뒤집어서 역순으로 만든다
                     reverse_path_queue();
                     patrol_state_ = PatrolState::PATROL_REVERSE;
                 }
@@ -369,8 +379,6 @@ private:
             }
             return;
         }
-
-        // ── 그 외 모드에서는 정지 ─────────────────────────────────────────
         else {
             stop_robot();
         }
@@ -393,6 +401,28 @@ private:
         RCLCPP_INFO(this->get_logger(), "로봇 정지");
     }
 
+    // waiting service 호출 함수 (대기모드 전환)
+    void callWaitingService() {
+        auto client = this->create_client<robot_custom_interfaces::srv::Waiting>(waiting_service_name_);
+        if (!client->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_ERROR(this->get_logger(), "Waiting 서비스가 응답하지 않습니다.");
+            return;
+        }
+        auto request = std::make_shared<robot_custom_interfaces::srv::Waiting::Request>();
+        // 요청 데이터가 필요 없다면 빈 요청으로 보내면 됩니다.
+        client->async_send_request(request,
+            [this](rclcpp::Client<robot_custom_interfaces::srv::Waiting>::SharedFuture future) {
+                try {
+                    // 응답이 없거나 별도 처리가 필요 없으면 단순 로그 출력
+                    auto response = future.get();
+                    RCLCPP_INFO(this->get_logger(), "Waiting 서비스 호출 성공");
+                } catch (const std::exception &e) {
+                    RCLCPP_ERROR(this->get_logger(), "Waiting 서비스 호출 실패: %s", e.what());
+                }
+            }
+        );
+    }
+
     // 큐 비우기 (경로 갱신 시 사용)
     void clear_path_queue() {
         while (!path_queue_.empty()) {
@@ -402,13 +432,11 @@ private:
 
     // 큐를 뒤집는 함수 (역순찰 시 사용)
     void reverse_path_queue() {
-        // 1) 큐에서 모든 원소를 꺼내 vector에 저장
         std::vector<Point> temp_vec;
         while (!path_queue_.empty()) {
             temp_vec.push_back(path_queue_.front());
             path_queue_.pop();
         }
-        // 2) vector를 뒤집은 뒤, 다시 큐에 push
         std::reverse(temp_vec.begin(), temp_vec.end());
         for (auto & p : temp_vec) {
             path_queue_.push(p);
