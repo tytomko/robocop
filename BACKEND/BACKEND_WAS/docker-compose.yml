@@ -32,4 +32,17 @@ services:
 #    env_file:
 #      - .env
     volumes:
-      - ./app:/BACKEND_WAS/app```
+      - ./app:/BACKEND_WAS/app
+      - robocop_storage:/data/storage  # 영구 스토리지를 위한 볼륨
+    environment:
+      - STORAGE_PATH=/data/storage
+    networks:
+      - robocop_network
+
+volumes:
+  robocop_storage:  # 영구 볼륨 정의
+    name: robocop_storage
+
+networks:
+  robocop_network:
+    name: robocop_network

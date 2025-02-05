@@ -257,3 +257,18 @@ class CameraService:
         if camera_name in self.cameras:
             return self.cameras[camera_name]["status"]
         return None
+
+    async def save_image(self, image_data: bytes, filename: str):
+        """이미지를 로컬 스토리지에 저장"""
+        try:
+            storage_path = Path(settings.storage.IMAGE_STORAGE_PATH)
+            storage_path.mkdir(parents=True, exist_ok=True)
+            
+            file_path = storage_path / filename
+            with open(file_path, 'wb') as f:
+                f.write(image_data)
+                
+            return str(file_path)
+        except Exception as e:
+            print(f"이미지 저장 실패: {str(e)}")
+            raise

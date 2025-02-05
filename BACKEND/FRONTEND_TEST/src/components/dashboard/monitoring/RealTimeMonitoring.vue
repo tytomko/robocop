@@ -299,7 +299,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (webSocketService.isConnected()) {
+  // isConnected 메서드 대신 connection 상태 확인
+  if (webSocketService.connection) {
     webSocketService.disconnect()
   }
 })

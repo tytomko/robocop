@@ -43,22 +43,26 @@ const robots = ref([
 
 // 전역 변수 선언
 let ws = null  // 웹소켓 연결 객체를 전역으로 관리
-const connectWebSocket = () => {
+const connectWebSocket = async () => {
   try {
-    webSocketService.connect('ws://localhost:8000/api/v1/lidar/ws')
-    .then(() => {
-      webSocketService.subscribe('lidar_points', (data) => {
-        if (data && data.points && data.points.length > 0) {
-          console.log('Received points:', data.points.length)
-          updatePointCloud(data.points)
-        }
-      }, '/api/v1/lidar/ws')
-    })
-    .catch(error => {
-      console.error('라이다 웹소켓 연결 실패:', error)
-    })
+    console.log('웹소켓 연결 시도...');  // 디버깅용
+    await webSocketService.connect('ws://localhost:8000/api/v1/lidar/ws');
+    console.log('웹소켓 연결 성공');  // 디버깅용
+    
+    // 라이다 데이터 구독
+    const unsubscribe = webSocketService.subscribe('lidar_data', (data) => {
+      console.log('데이터 수신:', data);  // 디버깅용
+      if (data && data.points && data.points.length > 0) {
+        console.log('Received points:', data.points.length);
+        updatePointCloud(data.points);
+      }
+    });
+
+    isConnected.value = true;
+    
   } catch (error) {
-    console.error('라이다 웹소켓 연결 에러:', error)
+    console.error('라이다 웹소켓 연결/구독 실패:', error);
+    isConnected.value = false;
   }
 }
 
@@ -94,7 +98,7 @@ const initThree = () => {
   // 포인트 클라우드 초기화
   const geometry = new THREE.BufferGeometry()
   const material = new THREE.PointsMaterial({
-    size: 0.1,  // 각 포인트의 크기
+    size: 0.05,  // 각 포인트의 크기
     color: 0x2196f3,  // 포인트 색상 (파란색)
     transparent: true,  // 투명도 활성화
     opacity: 0.8  // 투명도 값
@@ -173,6 +177,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (webSocketService) {
+    webSocketService.disconnect();
+  }
   window.removeEventListener('resize', handleResize)
   if (renderer) {
     renderer.dispose()
@@ -280,4 +287,4 @@ onUnmounted(() => {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-</style> 
+</style>

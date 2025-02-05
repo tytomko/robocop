@@ -45,7 +45,6 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { webSocketService } from '@/services/websocket'
 
 const canvasRef = ref(null)
 const selectedRobot = ref(localStorage.getItem('selectedRobot') || '')
@@ -210,33 +209,13 @@ const drawRobot = (ctx, x, y) => {
   ctx.restore()
 }
 
-// WebSocket 연결 설정
-const setupWebSocket = async () => {
-  try {
-    await webSocketService.connect('ws://localhost:8000/api/v1/robots/ws')
-    
-    // 로봇 위치 구독
-    webSocketService.subscribe('robot/position', (data) => {
-      console.log('로봇 위치 업데이트:', data)
-      drawMap()
-    }, '/api/v1/robots/ws')
-
-  } catch (error) {
-    console.error('WebSocket 연결 실패:', error)
-  }
-}
-
 // 컴포넌트 마운트/언마운트
 onMounted(() => {
-  setupWebSocket()
   window.addEventListener('resize', drawMap)
   loading.value = false
 })
 
 onUnmounted(() => {
-  if (webSocketService.isConnected()) {
-    webSocketService.disconnect()
-  }
   window.removeEventListener('resize', drawMap)
 })
 

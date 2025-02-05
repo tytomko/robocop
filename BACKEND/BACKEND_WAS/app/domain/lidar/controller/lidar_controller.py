@@ -13,12 +13,12 @@ settings = get_settings()
 
 # 기본 라이다 설정
 DEFAULT_LIDAR_CONFIG = LidarConfig(
-    ros_bridge_host="172.30.1.78",
+    ros_bridge_host="192.168.100.104",
     ros_bridge_port=9090,
     topic_name="/ssafy/velodyne_points",
     message_type="sensor_msgs/PointCloud2",
     update_interval=0.1,
-    max_points=1000
+    max_points=4500
 )
 
 @router.websocket("/ws")

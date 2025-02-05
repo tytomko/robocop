@@ -26,15 +26,15 @@ class User(UserBase):
 
 class Token(BaseModel):
     """토큰 모델"""
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
+    accessToken: str
+    refreshToken: str
+    tokenType: str = "bearer"
 
 class TokenData(BaseModel):
     username: Optional[str] = None
 
 class PasswordChange(BaseModel):
     """비밀번호 변경 모델"""
-    current_password: str = Field(..., description="현재 비밀번호")
-    new_password: str = Field(..., description="새 비밀번호")
-    confirm_password: str = Field(..., description="새 비밀번호 확인")
+    currentPassword: str = Field(..., description="현재 비밀번호")
+    newPassword: str = Field(..., description="새 비밀번호")
+    confirmPassword: str = Field(..., description="새 비밀번호 확인")

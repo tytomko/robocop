@@ -5,7 +5,7 @@ from datetime import datetime
 class CameraConfig(BaseModel):
     camera_topic: str
     camera_name: str = "robot1"
-    ros_bridge_host: str = "192.168.100.104"
+    ros_bridge_host: str = "172.30.1.10"
     ros_bridge_port: int = 9090
 
 class WebRTCOffer(BaseModel):
