@@ -5,7 +5,7 @@ int32 id
 string name
 
 # 현재 상태를 나타내는 모드 
-# emergency stop / homing / navigating / patrol
+# emergency stop / homing / navigating / patrol / waiting
 string mode
 
 # 배터리 (더미)

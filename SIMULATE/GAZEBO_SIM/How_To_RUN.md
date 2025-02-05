@@ -69,5 +69,10 @@ ros2 service call /robot_1/stop robot_custom_interfaces/srv/Estop
 
 ### Resume 서비스
 ```bash
+ros2 service call /robot_1/resume robot_custom_interfaces/srv/Estop
+```
+
+### waiting 서비스
+```bash
 ros2 service call /robot_1/resume robot_custom_interfaces/srv/Resume
 ```

@@ -20,6 +20,7 @@
 #include "robot_custom_interfaces/srv/homing.hpp"
 #include "robot_custom_interfaces/srv/navigate.hpp"
 #include "robot_custom_interfaces/srv/patrol.hpp"
+#include "robot_custom_interfaces/srv/waiting.hpp"
 
 #include <GeographicLib/UTMUPS.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -69,6 +70,7 @@ public:
         std::string homing_service = "/robot_" + std::to_string(robot_num) + "/homing";
         std::string navigate_service = "/robot_" + std::to_string(robot_num) + "/navigate";
         std::string patrol_service = "/robot_" + std::to_string(robot_num) + "/patrol";
+        std::string waiting_service = "/robot_" + std::to_string(robot_num) + "/waiting";
 
         RCLCPP_INFO(this->get_logger(),
             "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n",
@@ -107,6 +109,9 @@ public:
         patrol_srv = this->create_service<robot_custom_interfaces::srv::Patrol>(
             patrol_service, std::bind(&RobotStatusPublisher::patrol_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
+        waiting_srv = this->create_service<robot_custom_interfaces::srv::Waiting>(
+            waiting_service, std::bind(&RobotStatusPublisher::waiting_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
         status_timer_ = this->create_wall_timer(
             100ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
@@ -134,10 +139,12 @@ private:
     rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
     rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr stop_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr resume_srv;
+
     // 추가된 서비스 서버 멤버 변수
     rclcpp::Service<robot_custom_interfaces::srv::Homing>::SharedPtr homing_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Navigate>::SharedPtr navigate_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Patrol>::SharedPtr patrol_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Waiting>::SharedPtr waiting_srv;
     rclcpp::TimerBase::SharedPtr status_timer_;
 
     /// -π ~ π 범위로 정규화하는 함수
@@ -179,8 +186,6 @@ private:
         heading_msg.data = filtered_yaw;
         publisher_heading_->publish(heading_msg);
     }
-
-
 
     void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
     {
@@ -278,6 +283,15 @@ private:
         }
         RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
         status_message.mode = "patrolling";
+        publisher_status_->publish(status_message);
+        response->success = true;
+    }
+
+    void waiting_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Waiting::Request> request,
+                                  std::shared_ptr<robot_custom_interfaces::srv::Waiting::Response> response)
+    {
+        RCLCPP_INFO(this->get_logger(), "[WAITING] Switching to waiting mode.");
+        status_message.mode = "waiting";
         publisher_status_->publish(status_message);
         response->success = true;
     }
