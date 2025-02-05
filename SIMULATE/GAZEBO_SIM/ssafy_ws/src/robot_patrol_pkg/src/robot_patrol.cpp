@@ -132,7 +132,7 @@ private:
     // -------------------------------
     void status_callback(const robot_custom_interfaces::msg::Status::SharedPtr msg) {
         current_mode_ = msg->mode;
-        if (current_mode_ == "patrol") {
+        if (current_mode_ == "patrolling") {
             if (patrol_state_ == PatrolState::NONE) {
                 patrol_state_ = PatrolState::APPROACH;
                 RCLCPP_INFO(this->get_logger(), "Patrol 모드: APPROACH 상태 시작.");
@@ -148,7 +148,7 @@ private:
     void global_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
         // homing, navigating, 혹은 patrol의 (APPROACH가 아닌) 상태일 때만 글로벌 경로 업데이트
         if (!(current_mode_ == "homing" || current_mode_ == "navigating" ||
-              (current_mode_ == "patrol" && patrol_state_ != PatrolState::APPROACH))) {
+              (current_mode_ == "patrolling" && patrol_state_ != PatrolState::APPROACH))) {
             return;
         }
 
@@ -172,7 +172,7 @@ private:
     // 3) approach_path 콜백 (patrol-APPROACH 전용)
     // -------------------------------
     void approach_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
-        if (current_mode_ == "patrol" && patrol_state_ == PatrolState::APPROACH) {
+        if (current_mode_ == "patrolling" && patrol_state_ == PatrolState::APPROACH) {
             // 이전 큐를 비우고 새 경로로 채움
             clear_path_queue();
 
@@ -335,7 +335,7 @@ private:
         }
 
         // ── 순찰 모드 ────────────────────────────────────────────────────
-        if (current_mode_ == "patrol") {
+        if (current_mode_ == "patrolling") {
             if (patrol_state_ == PatrolState::APPROACH) {
                 // Approach path
                 if (path_queue_.empty()) {
