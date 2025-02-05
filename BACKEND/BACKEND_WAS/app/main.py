@@ -122,13 +122,13 @@ async def startup_event():
         #     CameraConfig(
         #         camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
         #         camera_name='robot1_front',
-        #         ros_bridge_host='172.30.1.78',
+        #         ros_bridge_host='172.30.1.10',
         #         ros_bridge_port=9090
         #     ),
         #     CameraConfig(
         #         camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
         #         camera_name='robot1_rear',
-        #         ros_bridge_host='172.30.1.78',
+        #         ros_bridge_host='172.30.1.10',
         #         ros_bridge_port=9090
         #     )
         # ]

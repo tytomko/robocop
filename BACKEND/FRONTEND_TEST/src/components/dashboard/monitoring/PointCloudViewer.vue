@@ -98,7 +98,7 @@ const initThree = () => {
   // 포인트 클라우드 초기화
   const geometry = new THREE.BufferGeometry()
   const material = new THREE.PointsMaterial({
-    size: 0.1,  // 각 포인트의 크기
+    size: 0.05,  // 각 포인트의 크기
     color: 0x2196f3,  // 포인트 색상 (파란색)
     transparent: true,  // 투명도 활성화
     opacity: 0.8  // 투명도 값

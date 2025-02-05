@@ -9,7 +9,7 @@ class Point(BaseModel):
     intensity: float
 
 class LidarConfig(BaseModel):
-    ros_bridge_host: str = "172.30.1.10"
+    ros_bridge_host: str = "localhost"
     ros_bridge_port: int = 9090
     topic_name: str = "/ssafy/velodyne_points"
     message_type: str = "sensor_msgs/PointCloud2"
