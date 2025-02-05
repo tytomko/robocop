@@ -4,7 +4,8 @@ int32 id
 # 로봇의 이름
 string name
 
-# 현재 상태를 나타내는 모드 /순찰중 /수동모드 /충전중
+# 현재 상태를 나타내는 모드 
+# emergency stop / homing / navigating / patrol
 string mode
 
 # 배터리 (더미)
