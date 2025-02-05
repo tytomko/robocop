@@ -25,6 +25,13 @@ class WebSocketService {
   connect(url) {
     return new Promise((resolve, reject) => {
       try {
+        // robots/ws 요청은 연결 시도하지 않음
+        if (url.includes('/robots/ws')) {
+          console.log('로봇 WebSocket 연결 요청 무시됨');
+          resolve();
+          return;
+        }
+
         const connectionKey = this.getConnectionKey(url)
         
         // 이미 연결이 존재하면 재사용
@@ -73,6 +80,12 @@ class WebSocketService {
   }
 
   handleReconnect(connectionKey, url) {
+    // robots/ws 요청은 재연결 시도하지 않음
+    if (url.includes('/robots/ws')) {
+      console.log('로봇 WebSocket 연결 재시도 건너뜀');
+      return;
+    }
+
     const attempts = this.reconnectAttempts.get(connectionKey) || 0
     if (attempts < this.maxReconnectAttempts) {
       this.reconnectAttempts.set(connectionKey, attempts + 1)

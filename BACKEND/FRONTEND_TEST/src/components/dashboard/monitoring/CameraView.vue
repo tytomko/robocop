@@ -57,7 +57,7 @@ const props = defineProps({
   },
   rosHost: {
     type: String,
-    default: '172.30.1.78'
+    default: '192.168.100.104'
   },
   rosPort: {
     type: Number,

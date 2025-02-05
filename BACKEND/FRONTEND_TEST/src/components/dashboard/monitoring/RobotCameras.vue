@@ -25,7 +25,7 @@
 import { ref } from 'vue';
 import CameraView from './CameraView.vue';
 
-const rosHost = ref('172.30.1.78');
+const rosHost = ref('192.168.100.104');
 const rosPort = ref(9090);
 </script>
 

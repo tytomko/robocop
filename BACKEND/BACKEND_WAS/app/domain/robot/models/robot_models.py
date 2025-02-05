@@ -95,4 +95,4 @@ class LogResponse(BaseModel):
 
 class RobotCreate(BaseModel):
     name: str
-    ip_address: str
+    ipAddress: str
