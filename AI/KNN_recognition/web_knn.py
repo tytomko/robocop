@@ -12,7 +12,7 @@ with open(MODEL_PATH, 'rb') as f:
 
 # RealSense 파이프라인 초기화 (리얼센스를 사용할 경우)
 video_capture = cv2.VideoCapture(0) # 환경에 따라 0~4번까지 변경해야함, 리얼센스 웹캠만 쓸거면 4번
-    
+
 
 def predict(frame, knn_clf, distance_threshold=0.38):
     """
@@ -30,17 +30,24 @@ def predict(frame, knn_clf, distance_threshold=0.38):
     
     return [(pred, loc, closest_distances[0][i][0]) if rec else ("Unknown", loc, closest_distances[0][i][0]) for i, (pred, loc, rec) in enumerate(zip(knn_clf.predict(face_encodings), face_locations, are_matches))]
 
+# 수하 관련 변수 초기화
 isCheckStart = False
 isCheckNow = False
 isCheckCount = 0
 check_time = 0
 isFindEnemy = False
 
+# FPS 측정을 위한 변수 초기화
+frame_count = 0
+start_time = time.time()
+
 while True:
     ret, frame = video_capture.read()
     if not ret:
         print("Error: 카메라에서 영상을 읽을 수 없습니다.")
         break
+    # 프레임의 해상도를 50%로 축소
+    #frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
     if keyboard.is_pressed("a"):
         print("수하를 시작합니다")
@@ -81,11 +88,23 @@ while True:
                 isCheckNow = False
                 isCheckCount = 0
                 print(f"신원이 확인되었습니다.{name}")
+
+    # FPS 계산
+    frame_count += 1
+    elapsed_time = time.time() - start_time
+    if elapsed_time > 1:
+        fps = frame_count / elapsed_time
+        # 프레임에 FPS 표시
+        cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        # 변수 초기화
+        frame_count = 0
+        start_time = time.time()
     
     cv2.imshow('Video', frame)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    #time.sleep(0.1)
     
 # 종료 처리
 video_capture.release()

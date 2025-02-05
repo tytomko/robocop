@@ -30,7 +30,7 @@ ensure_dir_exists(output_dir)
 ensure_dir_exists(origin_dir)
 
 # 얼굴 중심으로 크롭하는 함수
-def crop_face_center(image, desired_size=224, margin=0.4):
+def crop_face_center(image, desired_size=224, margin=1.0):
     # face_recognition을 사용하여 얼굴 위치 검출
     face_locations = face_recognition.face_locations(image)
 
