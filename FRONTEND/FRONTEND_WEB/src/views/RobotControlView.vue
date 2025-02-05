@@ -1,5 +1,5 @@
 <template>
-  <div class="robot-control-page">
+  <div class="robot-control-page" @keydown="handleKeyDown" @keyup="handleKeyUp">
     <!-- 로봇 선택 -->
     <div class="robot-selection">
       <label for="robot-select">로봇 선택:</label>
@@ -27,55 +27,27 @@
     </div>
 
     <!-- 선택된 로봇이 없으면 안내 메시지 출력 -->
-    <div v-if="!selectedRobot">
+    <div v-if="!activeRobot">
       로봇을 먼저 선택해주세요.
     </div>
 
     <!-- 제어 영역 -->
-    <div class="control-area" v-if="selectedRobot">
+    <div class="control-area" v-if="activeRobot">
       <!-- 자동 모드: 지도와 위치 정보 표시 -->
       <div v-if="mode === 'auto'">
-        <RobotMap :robot="selectedRobot" />
+        <RobotMap :robot="activeRobot" />
       </div>
 
-      <!-- 수동 제어 모드: CCTV와 화살표 컨트롤 표시 -->
+      <!-- 수동 제어 모드: CCTV와 키보드 화살표 컨트롤 표시 -->
       <div v-else-if="mode === 'manual'">
-        <Cctv :robot="selectedRobot" />
+        <Cctv :robot="activeRobot" />
         <div class="arrow-controls">
-          <button
-            :class="{ active: activeArrow === 'up' }"
-            @mousedown="pressArrow('up')"
-            @mouseup="releaseArrow"
-            @mouseleave="releaseArrow"
-          >
-            ↑
-          </button>
+          <button :class="{ active: activeArrow === 'ArrowUp' }">↑</button>
           <div class="horizontal-controls">
-            <button
-              :class="{ active: activeArrow === 'left' }"
-              @mousedown="pressArrow('left')"
-              @mouseup="releaseArrow"
-              @mouseleave="releaseArrow"
-            >
-              ←
-            </button>
-            <button
-              :class="{ active: activeArrow === 'right' }"
-              @mousedown="pressArrow('right')"
-              @mouseup="releaseArrow"
-              @mouseleave="releaseArrow"
-            >
-              →
-            </button>
+            <button :class="{ active: activeArrow === 'ArrowLeft' }">←</button>
+            <button :class="{ active: activeArrow === 'ArrowRight' }">→</button>
           </div>
-          <button
-            :class="{ active: activeArrow === 'down' }"
-            @mousedown="pressArrow('down')"
-            @mouseup="releaseArrow"
-            @mouseleave="releaseArrow"
-          >
-            ↓
-          </button>
+          <button :class="{ active: activeArrow === 'ArrowDown' }">↓</button>
         </div>
       </div>
     </div>
@@ -83,42 +55,41 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/dashboard/Cctv.vue'
 import RobotMap from '@/components/dashboard/RobotMap.vue'
 
-// Pinia store에서 로봇 데이터를 불러옵니다.
 const robotsStore = useRobotsStore()
 
-// 선택된 로봇 ID (select box의 v-model)
+// 선택된 로봇 ID (select의 v-model)
 const selectedRobotId = ref('')
 
-// 선택된 로봇 객체 (ID에 따라 computed로 찾아냄)
-const selectedRobot = computed(() =>
-  (robotsStore.registered_robots.value || []).find(
-    robot => String(robot.id) === selectedRobotId.value
-  )
-)
+// activeRobot computed: 등록된 로봇이 존재할 때만 선택
+const activeRobot = computed(() => {
+  return robotsStore.registered_robots.find(robot => String(robot.id) === String(selectedRobotId.value)) || null
+})
 
 // 제어 모드 (기본값 'auto' : 자동 주행 모드)
 const mode = ref('auto')
 
-// 수동 제어 모드에서 눌린 화살표 상태
+// 키보드 입력으로 눌린 화살표 상태
 const activeArrow = ref(null)
 
-// 화살표 버튼을 누르면 activeArrow 업데이트
-function pressArrow(direction) {
-  activeArrow.value = direction
-  // 여기에 로봇 제어 관련 API 호출 등 추가 로직 구현 가능
+// 키보드 이벤트 감지
+function handleKeyDown(event) {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    activeArrow.value = event.key
+  }
 }
 
-// 버튼에서 손을 떼거나 마우스가 벗어나면 activeArrow 초기화
-function releaseArrow() {
-  activeArrow.value = null
+function handleKeyUp(event) {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+    activeArrow.value = null
+  }
 }
 
-// 모드 토글 스위치 관련 (예시로 isAutoMode를 활용)
+// 모드 토글 스위치
 const isAutoMode = ref(true)
 function toggleMode() {
   mode.value = isAutoMode.value ? 'auto' : 'manual'
@@ -126,15 +97,26 @@ function toggleMode() {
 
 // 컴포넌트가 마운트될 때 로봇 데이터를 로드합니다.
 onMounted(() => {
-robotsStore.loadRobots()
+  robotsStore.loadRobots()
 })
 </script>
 
 <style scoped>
+/* HTML, BODY 전체적으로 스크롤 가능하도록 설정 */
+html, body {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 기본적인 스타일 수정 */
 .robot-control-page {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 150vh; /* 화면보다 더 크게 만들어서 스크롤 가능 */
+  overflow-y: auto; /* 항상 스크롤 가능하도록 설정 */
+  display: flex;
+  flex-direction: column;
 }
 
 .robot-selection {
@@ -154,6 +136,7 @@ robotsStore.loadRobots()
   font-weight: bold;
 }
 
+/* 토글 스위치 */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -199,6 +182,7 @@ input:checked + .switch .slider {
   transform: translateX(80px);
 }
 
+/* 컨트롤 영역 */
 .control-area {
   margin-top: 20px;
 }
@@ -228,9 +212,12 @@ input:checked + .switch .slider {
   transition: all 0.2s ease;
 }
 
+/* 키보드 입력 시 버튼이 활성화되도록 변경 */
 .arrow-controls button.active {
   font-weight: bold;
   background-color: #007bff;
   color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
 }
 </style>
