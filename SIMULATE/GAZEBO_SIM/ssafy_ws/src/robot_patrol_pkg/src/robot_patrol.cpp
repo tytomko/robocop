@@ -28,7 +28,7 @@ const double FRICTION_FACTOR_LINEAR   = 0.9;  // 선속도 감쇠 계수
 const double FRICTION_FACTOR_ANGULAR  = 0.8;  // 각속도 감쇠 계수
 const double POSITION_TOLERANCE       = 0.1;  // 목표점 도달 허용 오차 (m)
 const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
-const double heading_threshold_       = M_PI / 2;  // 목표 각도 오차 임계값 (rad)
+const double heading_threshold_       = M_PI / 3;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
 const double SKIP_THRESHOLD = 0.2;
 // global path 전환 하고 시작노드 설정용 변수
