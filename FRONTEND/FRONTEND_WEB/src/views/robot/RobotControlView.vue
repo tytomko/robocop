@@ -60,8 +60,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
-import Cctv from '@/components/dashboard/Cctv.vue'
-import RobotMap from '@/components/dashboard/RobotMap.vue'
+import Cctv from '@/components/camera/Cctv.vue'
+import RobotMap from '@/components/map/RobotMap.vue'
 
 const robotsStore = useRobotsStore()
 

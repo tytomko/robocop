@@ -26,15 +26,6 @@
 
         <!-- 지도 섹션 -->
         <div class="map-container">
-          <div class="robot-selector">
-            <!-- 로봇 선택 -->
-            <select v-model="robotsStore.selectedRobot" class="robot-select" @change="robotsStore.handleRobotSelection">
-                <option value="">로봇 선택</option>
-                <option v-for="robot in robotsStore.registered_robots" :key="robot.id" :value="robot.id">
-                {{ robot.name }}
-                </option>
-            </select>
-          </div>
 
           <!-- RobotMap.vue 컴포넌트 사용 -->
           <RobotMap />
@@ -45,7 +36,7 @@
 </template>
 
 <script setup>
-import RobotMap from '@/components/dashboard/RobotMap.vue';
+import RobotMap from '@/components/map/RobotMap.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRobotsStore } from '@/stores/robots';
 
