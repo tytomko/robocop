@@ -58,7 +58,7 @@ public:
         status_message.battery = 75.0f;  // 초기 배터리 값
         status_message.temperatures = {55.0f};  // 초기 온도 값
         status_message.network = 100.0f;  // 초기 네트워크 상태 값
-        status_message.mode = "operational";
+        status_message.mode = "waiting";
         status_message.is_active = true;
 
         // 토픽 설정
@@ -320,12 +320,17 @@ private:
         }
     }
 
-
-    // 추가된 서비스 콜백 함수들
+    // homing, navigate, patrol 서비스는 현재 로봇이 waiting 상태일 때만 동작하도록 수정
 
     void homing_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Homing::Request> request,
-                                 std::shared_ptr<robot_custom_interfaces::srv::Homing::Response> response)
+                                std::shared_ptr<robot_custom_interfaces::srv::Homing::Response> response)
     {
+        if (status_message.mode != "waiting") {
+            RCLCPP_WARN(this->get_logger(), "[HOMING] Cannot switch to homing mode because robot is not in waiting mode.");
+            response->success = false;
+            response->message = "Homing service is allowed only in waiting mode.";
+            return;
+        }
         RCLCPP_INFO(this->get_logger(), "[HOMING] Switching to homing mode.");
         status_message.mode = "homing";
         publisher_status_->publish(status_message);
@@ -333,8 +338,14 @@ private:
     }
 
     void navigate_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Navigate::Request> request,
-                                   std::shared_ptr<robot_custom_interfaces::srv::Navigate::Response> response)
+                                std::shared_ptr<robot_custom_interfaces::srv::Navigate::Response> response)
     {
+        if (status_message.mode != "waiting") {
+            RCLCPP_WARN(this->get_logger(), "[NAVIGATE] Cannot switch to navigate mode because robot is not in waiting mode.");
+            response->success = false;
+            response->message = "Navigate service is allowed only in waiting mode.";
+            return;
+        }
         RCLCPP_INFO(this->get_logger(), "[NAVIGATE] Switching to navigate mode. Goal: x=%.2f, y=%.2f, theta=%.2f", 
                     request->goal.x, request->goal.y, request->goal.theta);
         status_message.mode = "navigate";
@@ -343,8 +354,14 @@ private:
     }
 
     void patrol_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Patrol::Request> request,
-                                 std::shared_ptr<robot_custom_interfaces::srv::Patrol::Response> response)
+                                std::shared_ptr<robot_custom_interfaces::srv::Patrol::Response> response)
     {
+        if (status_message.mode != "waiting") {
+            RCLCPP_WARN(this->get_logger(), "[PATROL] Cannot switch to patrol mode because robot is not in waiting mode.");
+            response->success = false;
+            response->message = "Patrol service is allowed only in waiting mode.";
+            return;
+        }
         std::ostringstream oss;
         oss << "[PATROL] Switching to patrol mode. Goals: ";
         for (const auto & goal : request->goals) {
@@ -357,7 +374,7 @@ private:
     }
 
     void waiting_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Waiting::Request> request,
-                                  std::shared_ptr<robot_custom_interfaces::srv::Waiting::Response> response)
+                                std::shared_ptr<robot_custom_interfaces::srv::Waiting::Response> response)
     {
         RCLCPP_INFO(this->get_logger(), "[WAITING] Switching to waiting mode.");
         status_message.mode = "waiting";
@@ -365,7 +382,6 @@ private:
         response->success = true;
         response->message = "Robot is waiting.";
     }
-    
 };
 
 int main(int argc, char *argv[])
