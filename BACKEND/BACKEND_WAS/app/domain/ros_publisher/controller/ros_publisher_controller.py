@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks
-from ..models.ros_publisher_models import PublishRequest
-from ..service.ros_publisher_service import publish_message, publish_loop, stop_publishing
+from ..models.ros_publisher_models import PublishRequest, HomingServiceRequest
+from ..service.ros_publisher_service import *
 
 router = APIRouter()
 
@@ -49,3 +49,12 @@ async def stop_publishing_api():
     """발행 중지"""
     stop_publishing()
     return {"status": "stopped", "message": "Stopped publishing"}
+
+@router.post("/call_service/")
+async def call_homing_service(request: HomingServiceRequest):
+    """로봇 호밍 서비스 호출"""
+    try:
+        await call_service()
+        return {"status": "success", "message": "Homing service called successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
