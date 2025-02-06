@@ -226,7 +226,7 @@ private:
         if (std::chrono::duration_cast<std::chrono::minutes>(now - last_battery_update_time_).count() >= 1) {
             if (status_message.battery > 0.0) {
                 // status_message.battery에서 1.0을 빼고, 소수점 한 자리까지 반올림
-                status_message.battery = std::round((status_message.battery * 10.0 - 1)) / 10.0;
+                status_message.battery = std::round(int((status_message.battery * 10.0 - 1))) / 10.0;
             }
             last_battery_update_time_ = now;
         }
