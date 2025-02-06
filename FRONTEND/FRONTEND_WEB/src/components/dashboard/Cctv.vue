@@ -1,38 +1,22 @@
 <template>
-    <div class="camera-header">
-      <div class="camera-status-info">
-        <div class="status-item">
-          <span class="camera-label">{{ cameraName }}</span>
-          <span class="status-label">상태:</span>
-          <span :class="['status-value', cameraStatus === '스트리밍 중' ? 'status-active' : '']">
-            {{ cameraStatus }}
-          </span>
-        </div>
-        <div v-if="streamInfo" class="status-item">
-          <span class="status-label">해상도:</span>
-          <span class="status-value">{{ streamInfo.width }}x{{ streamInfo.height }}</span>
-        </div>
-      </div>
+  <div class="camera-container">
+    <div v-if="!hasPermission" class="permission-request">
+      <p>카메라 접근 권한이 필요합니다</p>
+      <button @click="requestPermission" class="permission-button">
+        카메라 권한 요청
+      </button>
     </div>
-    
-    <div class="camera-container">
-      <div v-if="!hasPermission" class="permission-request">
-        <p>카메라 접근 권한이 필요합니다</p>
-        <button @click="requestPermission" class="permission-button">
-          카메라 권한 요청
-        </button>
-      </div>
-      <div v-else-if="errorMessage" class="error-display">
-        <p>{{ errorMessage }}</p>
-        <button @click="retryConnection" class="retry-button">
-          다시 시도
-        </button>
-      </div>
-      <video v-else-if="hasPermission" ref="videoElement" autoplay playsinline></video>
-      <div v-else class="loading">
-        카메라 연결 중...
-      </div>
+    <div v-else-if="errorMessage" class="error-display">
+      <p>{{ errorMessage }}</p>
+      <button @click="retryConnection" class="retry-button">
+        다시 시도
+      </button>
     </div>
+    <video v-else-if="hasPermission" ref="videoElement" autoplay playsinline></video>
+    <div v-else class="loading">
+      카메라 연결 중...
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -40,12 +24,12 @@ import { ref, onMounted, onUnmounted } from 'vue';
 
 const ws = ref(null);
 const videoElement = ref(null);
-const imageData = ref(null);
 const cameraStatus = ref('연결 대기 중');
 const errorMessage = ref('');
 const hasPermission = ref(false);
 const stream = ref(null);
 const streamInfo = ref(null);
+
 const props = defineProps({
   cameraName: {
     type: String,
@@ -154,7 +138,6 @@ const connectWebSocket = () => {
           reader.onload = () => {
             try {
               const base64data = reader.result.split(',')[1];
-              imageData.value = base64data;
               cameraStatus.value = '스트리밍 중';
               errorMessage.value = ''; // 성공적인 프레임 수신 시 에러 메시지 초기화
             } catch (error) {
@@ -309,11 +292,11 @@ onUnmounted(() => {
 
 .camera-label {
   font-size: 0.9rem;
-  font-weight: bold; /* Bold 처리 */
-  background-color: #000; /* 검은 배경 */
-  color: #fff; /* 흰 글씨 */
-  padding: 0.2rem 0.5rem; /* 텍스트 주위 여백 */
-  border-radius: 4px; /* 모서리 둥글게 */
+  font-weight: bold;
+  background-color: #000;
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
 }
 
 .status-item {
@@ -378,4 +361,4 @@ onUnmounted(() => {
   color: #fff;
   font-size: 1.1rem;
 }
-</style> 
+</style>
