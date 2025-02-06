@@ -30,7 +30,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
-import Cctv from '@/components/dashboard/Cctv.vue'
+import Cctv from '@/components/camera/Cctv.vue'
 
 // robotsStore 활용하기
 const robotsStore = useRobotsStore()

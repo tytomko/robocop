@@ -14,6 +14,7 @@
               <router-link to="/camera" class="navbar-link">CCTV</router-link>
               <router-link to="/control" class="navbar-link">제어</router-link>
               <router-link to="/enrollment" class="navbar-link">등록</router-link>
+              <router-link to="/statistics" class="navbar-link">통계</router-link>
               <router-link to="/settings" class="navbar-link">설정</router-link>
             </div>
           </div>
