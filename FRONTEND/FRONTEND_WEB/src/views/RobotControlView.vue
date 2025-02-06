@@ -1,53 +1,56 @@
 <template>
   <div class="robot-control-page" @keydown="handleKeyDown" @keyup="handleKeyUp">
-    <!-- 로봇 선택 -->
-    <div class="robot-selection">
-      <label for="robot-select">로봇 선택:</label>
-      <select id="robot-select" v-model="selectedRobotId">
-        <option disabled value="">선택해주세요</option>
-        <option 
-          v-for="robot in robotsStore.registered_robots" 
-          :key="robot.id" 
-          :value="robot.id">
-          {{ robot.nickname || robot.name }}
-        </option>
-      </select>
-    </div>
-
-    <!-- 제어 모드 토글 스위치 -->
-    <div class="mode-toggle">
-      <span class="mode-label">수동</span>
-      <div class="toggle-switch">
-        <input type="checkbox" id="toggle" v-model="isAutoMode" @change="toggleMode">
-        <label for="toggle" class="switch">
-          <span class="slider"></span>
-        </label>
+    <div class="robot-selection-and-mode">
+      <div class="robot-selection">
+        <label for="robot-select">로봇 선택:</label>
+        <select id="robot-select" v-model="selectedRobotId">
+          <option disabled value="">선택해주세요</option>
+          <option 
+            v-for="robot in robotsStore.registered_robots" 
+            :key="robot.id" 
+            :value="robot.id">
+            {{ robot.nickname || robot.name }}
+          </option>
+        </select>
       </div>
-      <span class="mode-label">자동</span>
+
+      <div class="mode-toggle">
+        <span class="mode-label">수동</span>
+        <div class="toggle-switch">
+          <input type="checkbox" id="toggle" v-model="isAutoMode" @change="toggleMode">
+          <label for="toggle" class="switch">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <span class="mode-label">자동</span>
+      </div>
     </div>
 
-    <!-- 선택된 로봇이 없으면 안내 메시지 출력 -->
     <div v-if="!activeRobot">
       로봇을 먼저 선택해주세요.
     </div>
 
-    <!-- 제어 영역 -->
     <div class="control-area" v-if="activeRobot">
-      <!-- 자동 모드: 지도와 위치 정보 표시 -->
       <div v-if="mode === 'auto'">
         <RobotMap :robot="activeRobot" />
       </div>
 
-      <!-- 수동 제어 모드: CCTV와 키보드 화살표 컨트롤 표시 -->
-      <div v-else-if="mode === 'manual'">
-        <Cctv :robot="activeRobot" />
-        <div class="arrow-controls">
-          <button :class="{ active: activeArrow === 'ArrowUp' }">↑</button>
-          <div class="horizontal-controls">
-            <button :class="{ active: activeArrow === 'ArrowLeft' }">←</button>
-            <button :class="{ active: activeArrow === 'ArrowRight' }">→</button>
+      <div v-else-if="mode === 'manual'" class="manual-mode">
+        <div class="cctv-and-controls">
+          <!-- CCTV 컴포넌트 크기 확대 -->
+          <Cctv :robot="activeRobot" />
+
+          <!-- 화살표 컨트롤 -->
+          <div class="arrow-controls">
+            <div class="vertical-controls">
+              <button :class="{ active: activeArrow === 'ArrowUp' }">↑</button>
+            </div>
+            <div class="horizontal-controls">
+              <button :class="{ active: activeArrow === 'ArrowLeft' }">←</button>
+              <button :class="{ active: activeArrow === 'ArrowDown' }">↓</button>
+              <button :class="{ active: activeArrow === 'ArrowRight' }">→</button>
+            </div>
           </div>
-          <button :class="{ active: activeArrow === 'ArrowDown' }">↓</button>
         </div>
       </div>
     </div>
@@ -102,41 +105,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* HTML, BODY 전체적으로 스크롤 가능하도록 설정 */
-html, body {
-  height: 100%;
-  overflow-y: auto;
-}
-
-/* 기본적인 스타일 수정 */
 .robot-control-page {
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 20px;
-  min-height: 150vh; /* 화면보다 더 크게 만들어서 스크롤 가능 */
-  overflow-y: auto; /* 항상 스크롤 가능하도록 설정 */
+  min-height: 150vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
-.robot-selection {
+.robot-selection-and-mode {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+.robot-selection {
+  margin-bottom: 0;
 }
 
 .mode-toggle {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
 }
 
 .mode-label {
   margin: 0 10px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
 }
 
-/* 토글 스위치 */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -187,25 +187,52 @@ input:checked + .switch .slider {
   margin-top: 20px;
 }
 
-/* 화살표 컨트롤 스타일 */
+.manual-mode {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cctv-and-controls {
+  display: flex;
+  flex-direction: row; /* 세로로 배치 */
+  align-items: center; /* 중앙 정렬 */
+  width: 100%; /* 카메라 화면을 더 크게 만들기 위해 전체 너비의 90%로 설정 */
+  margin: 0 auto; /* 가운데 정렬 */
+}
+
+.cctv-screen {
+  width: 100%; /* CCTV 화면이 화면 전체 너비를 차지하도록 설정 */
+  height: 500px; /* 카메라 화면의 높이를 크게 설정 */
+  background-color: black; /* 배경을 검정색으로 설정 */
+  margin-bottom: 20px; /* 카메라 화면과 화살표 컨트롤 간의 간격 */
+}
+
 .arrow-controls {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-top: 20px;
+  margin-left: 20px;
 }
 
 .horizontal-controls {
   display: flex;
   justify-content: center;
-  margin: 10px 0;
+  margin-bottom: 10px;
+}
+
+.vertical-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .arrow-controls button {
-  width: 50px;
-  height: 50px;
-  font-size: 24px;
-  margin: 5px;
+  width: 60px; /* 버튼 크기 키움 */
+  height: 60px;
+  font-size: 28px; /* 텍스트 크기 증가 */
+  margin: 8px;
   border: 1px solid #ccc;
   background: #f9f9f9;
   cursor: pointer;
