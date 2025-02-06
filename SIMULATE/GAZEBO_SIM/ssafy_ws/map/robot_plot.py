@@ -1,17 +1,19 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point
 from nav_msgs.msg import Path as NavPath
+from std_msgs.msg import Float32
 import matplotlib.pyplot as plt
 import json
 import networkx as nx
 import os
+import math
 
 class PathVisualizer(Node):
     def __init__(self):
         super().__init__('path_visualizer')
-        
-        # 현재 위치 토픽 구독 (/robot_1/utm_pose)
+        self.plot_size = 25.0  # 플롯 가시화 범위
+        # ─── 구독자 설정 ─────────────────────────────────────────────────────────────────
         self.pose_sub = self.create_subscription(
             PoseStamped,
             '/robot_1/utm_pose',
@@ -19,7 +21,6 @@ class PathVisualizer(Node):
             10
         )
         
-        # global_path 토픽 구독 (nav_msgs/Path) → 초록색 선 표시
         self.global_path_sub = self.create_subscription(
             NavPath,
             '/robot_1/global_path',
@@ -27,7 +28,6 @@ class PathVisualizer(Node):
             10
         )
         
-        # approach_path 토픽 구독 (nav_msgs/Path) → 빨간색 선 표시
         self.approach_path_sub = self.create_subscription(
             NavPath,
             '/robot_1/approach_path',
@@ -35,34 +35,77 @@ class PathVisualizer(Node):
             10
         )
         
-        # global_map.json 파일을 읽어 그래프 데이터 로드 (배경 지도)
+        self.heading_sub = self.create_subscription(
+            Float32,
+            '/robot_1/heading',
+            self.heading_callback,
+            10
+        )
+        
+        self.target_pose_sub = self.create_subscription(
+            Point,
+            '/robot_1/target_point',
+            self.target_pose_callback,
+            10
+        )
+
+        self.target_heading_sub = self.create_subscription(
+            Float32,
+            '/robot_1/target_heading',
+            self.target_heading_callback,
+            10
+        )
+
+        # ─── 그래프 로드 (배경 지도) ──────────────────────────────────────────────────────
         self.load_graph_data("global_map.json")
 
-        # 초기 좌표 설정
+        # ─── 내부 상태 값 초기화 ─────────────────────────────────────────────────────────
         self.current_x = None
         self.current_y = None
+        self.current_heading = None
 
-        # 인터랙티브 모드 활성화 후 Figure, Axes 생성
+        self.target_x = None
+        self.target_y = None
+        self.target_heading = None
+
+        # ─── Matplotlib 설정 (인터랙티브 모드) ──────────────────────────────────────────
         plt.ion()
         self.fig, self.ax = plt.subplots(figsize=(8, 8))
         
-        # global_map.json에서 로드한 그래프가 있을 경우 배경에 표시
+        # 배경 그래프(지도) 표시
         if self.G is not None:
             self.pos = {node: node for node in self.G.nodes()}
-            nx.draw(self.G, pos=self.pos, ax=self.ax, node_size=50, node_color='blue',
-                    edge_color='gray', with_labels=False)
+            nx.draw(
+                self.G, 
+                pos=self.pos, 
+                ax=self.ax, 
+                node_size=50, 
+                node_color='blue',
+                edge_color='gray', 
+                with_labels=False
+            )
         else:
             self.get_logger().error("Graph 데이터가 로드되지 않았습니다.")
         
-        # 로봇의 현재 위치를 표시할 빨간 점 생성
+        # ─── 플롯 요소들 초기화 ─────────────────────────────────────────────────────────
+        # 현재 위치(빨간 점)
         self.current_pos_plot, = self.ax.plot([], [], 'ro', markersize=10, label='Current Position')
-        
+
+        # 타겟 좌표(하늘색 X 마커)
+        self.target_pos_plot, = self.ax.plot([], [], 'cx', markersize=10, label='Target Position')
+
         # global_path 선 (초록색)
         self.global_path_plot, = self.ax.plot([], [], 'g-', linewidth=4, label='Global Path')
         
         # approach_path 선 (빨간색)
         self.approach_path_plot, = self.ax.plot([], [], 'r-', linewidth=4, label='Approach Path')
-        
+
+        # 내 헤딩 표시(노란색 선)
+        self.heading_line, = self.ax.plot([], [], 'y-', linewidth=2, label='Current Heading')
+
+        # 타겟 헤딩 표시(분홍색 선)
+        self.target_heading_line, = self.ax.plot([], [], 'm-', linewidth=2, label='Target Heading')
+
         self.ax.legend()
 
     def load_graph_data(self, file_name):
@@ -93,14 +136,35 @@ class PathVisualizer(Node):
             self.get_logger().error(f"global_map.json 그래프 데이터 로드 실패: {e}")
             self.G = None
 
-    def pose_callback(self, msg):
-        # 현재 위치 업데이트
+    # ──────────────────────────────────────────────────────────────────────────
+    #                         콜백 함수들
+    # ──────────────────────────────────────────────────────────────────────────
+
+    def pose_callback(self, msg: PoseStamped):
+        """현재 로봇 위치 콜백"""
         self.current_x = msg.pose.position.x
         self.current_y = msg.pose.position.y
         self.update_current_position_plot()
 
-    def global_path_callback(self, msg):
-        # global_path 토픽의 경로를 초록색 선으로 업데이트
+    def heading_callback(self, msg: Float32):
+        """현재 로봇 헤딩 콜백"""
+        self.current_heading = msg.data
+        self.update_current_heading_arrow()
+
+    def target_pose_callback(self, msg: Point):
+        """타겟 좌표 콜백"""
+        self.target_x = msg.x
+        self.target_y = msg.y
+        self.update_target_position_plot()
+        self.update_target_heading_arrow()  # 타겟좌표가 갱신되면 타겟헤딩 화살표도 다시 그리기
+
+    def target_heading_callback(self, msg: Float32):
+        """타겟 헤딩 콜백"""
+        self.target_heading = msg.data
+        self.update_target_heading_arrow()
+
+    def global_path_callback(self, msg: NavPath):
+        """글로벌 경로 콜백"""
         x_vals = [pose.pose.position.x for pose in msg.poses]
         y_vals = [pose.pose.position.y for pose in msg.poses]
         self.global_path_plot.set_xdata(x_vals)
@@ -108,8 +172,8 @@ class PathVisualizer(Node):
         plt.draw()
         plt.pause(0.1)
 
-    def approach_path_callback(self, msg):
-        # approach_path 토픽의 경로를 빨간색 선으로 업데이트
+    def approach_path_callback(self, msg: NavPath):
+        """어프로치 경로 콜백"""
         x_vals = [pose.pose.position.x for pose in msg.poses]
         y_vals = [pose.pose.position.y for pose in msg.poses]
         self.approach_path_plot.set_xdata(x_vals)
@@ -117,13 +181,64 @@ class PathVisualizer(Node):
         plt.draw()
         plt.pause(0.1)
 
+    # ──────────────────────────────────────────────────────────────────────────
+    #                         플롯 업데이트 함수들
+    # ──────────────────────────────────────────────────────────────────────────
+
     def update_current_position_plot(self):
+        """현재 로봇 위치(red dot) 업데이트"""
         if self.current_x is not None and self.current_y is not None:
             self.current_pos_plot.set_xdata([self.current_x])
             self.current_pos_plot.set_ydata([self.current_y])
-            # Axes 범위 업데이트 (옵션)
-            self.ax.set_xlim(self.current_x - 10, self.current_x + 10)
-            self.ax.set_ylim(self.current_y - 10, self.current_y + 10)
+            # 가시화 범위 조절 (옵션)
+
+            self.ax.set_xlim(self.current_x - (self.plot_size/2), self.current_x + (self.plot_size/2))
+            self.ax.set_ylim(self.current_y - (self.plot_size/2), self.current_y + (self.plot_size/2))
+            
+            plt.draw()
+            plt.pause(0.1)
+            # 헤딩 화살표도 위치가 바뀌면 재갱신
+            self.update_current_heading_arrow()
+
+    def update_current_heading_arrow(self):
+        """
+        현재 헤딩을 화살표처럼 표시하기 위해,
+        (current_x, current_y)에서 heading 방향으로 일정 길이(arrow_length)만큼 그린다.
+        """
+        if self.current_x is not None and self.current_y is not None and self.current_heading is not None:
+            arrow_length = 2.0
+            dx = arrow_length * math.cos(self.current_heading)
+            dy = arrow_length * math.sin(self.current_heading)
+            x_vals = [self.current_x, self.current_x + dx]
+            y_vals = [self.current_y, self.current_y + dy]
+            self.heading_line.set_xdata(x_vals)
+            self.heading_line.set_ydata(y_vals)
+            plt.draw()
+            plt.pause(0.1)
+
+    def update_target_position_plot(self):
+        """타겟 좌표 표시(하늘색 X) 업데이트"""
+        if self.target_x is not None and self.target_y is not None:
+            self.target_pos_plot.set_xdata([self.target_x])
+            self.target_pos_plot.set_ydata([self.target_y])
+            plt.draw()
+            plt.pause(0.1)
+
+    def update_target_heading_arrow(self):
+        """
+        타겟 헤딩을 화살표처럼 표시하기 위해,
+        (target_x, target_y)에서 target_heading 방향으로 일정 길이(arrow_length)만큼 그린다.
+        """
+        if (self.target_x is not None and 
+            self.target_y is not None and 
+            self.target_heading is not None):
+            arrow_length = 2.0
+            dx = arrow_length * math.cos(self.target_heading)
+            dy = arrow_length * math.sin(self.target_heading)
+            x_vals = [self.target_x, self.target_x + dx]
+            y_vals = [self.target_y, self.target_y + dy]
+            self.target_heading_line.set_xdata(x_vals)
+            self.target_heading_line.set_ydata(y_vals)
             plt.draw()
             plt.pause(0.1)
 

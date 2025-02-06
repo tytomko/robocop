@@ -12,7 +12,12 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(robot_custom_interfaces REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_eigen REQUIRED)
 
 # 실행파일
 add_executable(robot_patrol src/robot_patrol.cpp)
@@ -22,6 +27,11 @@ ament_target_dependencies(robot_patrol
   sensor_msgs
   nav_msgs
   geometry_msgs
+  visualization_msgs
+  tf2_ros
+  tf2_geometry_msgs
+  tf2
+  tf2_eigen
   robot_custom_interfaces
 )
 

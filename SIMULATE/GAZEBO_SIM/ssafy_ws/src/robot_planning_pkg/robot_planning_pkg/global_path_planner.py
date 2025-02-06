@@ -15,7 +15,9 @@ import matplotlib.pyplot as plt
 
 # 전역 상수 및 초기 설정
 global_map = 'map/global_map.json'
-home_pose = (304412.92687916575, 3892844.1526765698)  # UTM 좌표
+# 이전 홈 좌표
+#home_pose = (304412.92687916575, 3892844.1526765698)  # UTM 좌표
+home_pose = (304411.67767234833, 3892844.1732352837)
 
 class GlobalPathPlanner(Node):
     def __init__(self):
@@ -23,6 +25,9 @@ class GlobalPathPlanner(Node):
 
         # (옵션) 플롯 활성화 여부
         self.enable_plot = False
+
+        # [변경] 백그라운드 맵(그래프) 표시 여부
+        self.enable_background_map = True  # 필요하면 False로 바꾸면 됨
 
         # 파라미터: robot_number
         self.declare_parameter('robot_number', 1)
@@ -71,7 +76,6 @@ class GlobalPathPlanner(Node):
     def pose_callback(self, msg: PoseStamped):
         """로봇의 현재 UTM 위치를 수신"""
         self.current_pos = (msg.pose.position.x, msg.pose.position.y)
-        # self.origin = ...  # 이 부분은 제거
 
     def homing_callback(self, request, response):
         """Homing 서비스: 현재 위치 -> home_pose 경로를 찾아서 발행"""
@@ -154,7 +158,6 @@ class GlobalPathPlanner(Node):
             response.message = "Failed to find current position node."
             return response
 
-        # 현재 위치와 global_path_nodes(=Patrol Path) 상의 각 노드 사이의 실제 내비게이션 경로 길이를 A* 알고리즘으로 계산하여 가장 짧은 경로 선택
         min_length = float('inf')
         chosen_index = None
         approach_path = None
@@ -178,27 +181,22 @@ class GlobalPathPlanner(Node):
 
         self.get_logger().info(f"Chosen approach path length: {min_length}")
 
-        # 임계값(threshold)을 설정하여 현재 위치가 이미 Patrol Path 상에 있는지 판단
         threshold = 1.0  # 예: 1미터 이하이면 이미 경로 위로 간주
         if min_length < threshold:
-            # 현재 위치가 Patrol Path 상에 있으면 Approach Path는 빈 리스트로 처리
             approach_path = []
             self.get_logger().info("Current position is on or very near the patrol path. No approach path needed.")
         else:
             self.get_logger().info(f"Approach path node count: {len(approach_path)}")
 
         # --- Step 3: 경로 발행 및 시각화 ---
-        # 1) Approach Path 발행 (필요한 경우)
         if approach_path:
             self.publish_approach_path(approach_path)
 
-        # 2) Global Patrol Path는 사용자가 준 모든 목표 지점을 포함한 글로벌 경로 그대로 사용
         self.global_patrol_path = global_path_nodes
         self.publish_global_path(self.global_patrol_path)
 
-        # 3) 시각화 (두 경로 모두 표시)
         if self.enable_plot:
-            self.visualize_path(approach_path, patrol_path=self.global_patrol_path, multi_goal=True, goals=request.goals)
+            self.visualize_path(approach_path, multi_goal=True, goals=request.goals, patrol_path=self.global_patrol_path)
 
         response.success = True
         response.message = "Approach path and global patrol path calculated and published successfully."
@@ -294,7 +292,7 @@ class GlobalPathPlanner(Node):
             return None
 
     # ------------------------------------------------------------------------- #
-    #               경로 메시지 생성 및 퍼블리셔를 통한 발행 함수              #
+    #               경로 메시지 생성 및 퍼블리셔를 통한 발행 함수               #
     # ------------------------------------------------------------------------- #
 
     def create_path_msg(self, path):
@@ -314,13 +312,11 @@ class GlobalPathPlanner(Node):
         return path_msg
 
     def publish_global_path(self, path):
-        # origin 사용 제거
         path_msg = self.create_path_msg(path)
         self.global_path_pub.publish(path_msg)
         self.get_logger().info(f"Published global path with {len(path)} nodes")
 
     def publish_approach_path(self, path):
-        # origin 사용 제거
         path_msg = self.create_path_msg(path)
         self.approach_path_pub.publish(path_msg)
         self.get_logger().info(f"Published approach path with {len(path)} nodes")
@@ -333,6 +329,13 @@ class GlobalPathPlanner(Node):
         patrol_path: Global Patrol Path (추가 시각화)
         """
         plt.figure(figsize=(8, 6))
+
+        # [변경] enable_background_map이 True일 때, 그래프의 모든 엣지를 회색으로 표시
+        if self.enable_background_map and self.graph is not None:
+            for edge in self.graph.edges():
+                x0, y0 = edge[0]
+                x1, y1 = edge[1]
+                plt.plot([x0, x1], [y0, y1], color='gray', linestyle='-', alpha=0.5, linewidth=1)
 
         if path:
             x_path = [p[0] for p in path]
@@ -355,7 +358,7 @@ class GlobalPathPlanner(Node):
             for i, g in enumerate(goals):
                 label_str = 'Goals' if i == 0 else None
                 plt.scatter(g.x, g.y,
-                            marker='*', c='purple', s=150,
+                            marker='*', c='blue', s=200,
                             label=label_str)
                 plt.text(g.x, g.y, f'{i+1}', color='black', fontsize=12)
 
