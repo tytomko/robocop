@@ -19,7 +19,7 @@
 #include <queue>
 
 // ─── 파라미터들 ─────────────────────────────────────────────────────────────
-const double LOOKAHEAD_DISTANCE       = 0.4;  // Lookahead 거리 (m)
+const double LOOKAHEAD_DISTANCE       = 0.6;  // Lookahead 거리 (m)
 const double MAX_LINEAR_SPEED         = 0.3;  // 최대 선속도 (m/s)
 const double MAX_ANGULAR_SPEED        = 0.6;  // 최대 각속도 (rad/s)
 const double ACCEL_STEP               = 0.1;  // 선속도 가속도 계수
@@ -31,6 +31,8 @@ const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 const double heading_threshold_       = M_PI / 2;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
 const double SKIP_THRESHOLD = 0.2;
+// global path 전환 하고 시작노드 설정용 변수
+
 
 struct Point {
     double x, y, z;
@@ -120,6 +122,8 @@ private:
     double current_heading_;
     double linear_vel_;
     double angular_vel_;
+    // 현재 로봇 상태 외에 접근 경로의 종료점을 저장하는 변수 추가
+    Point approach_end_point_{0.0, 0.0, 0.0};
 
     // 현재 모드 및 순찰 상태
     std::string current_mode_;
@@ -368,28 +372,31 @@ private:
         if (current_mode_ == "patrol") {
             // 순찰 모드 내 APPROACH 상태 부분 (follow_path() 함수 내)
             if (patrol_state_ == PatrolState::APPROACH) {
-                // Approach path가 비어 있다면
                 if (approach_path_queue_.empty()) {
-                    // 글로벌 경로가 존재하면 전환
+                    // 로봇 정지 후 Global path 전환
+                    stop_robot();
                     if (!path_queue_.empty()) {
-                        RCLCPP_INFO(this->get_logger(), "Approach path가 비어 있음 → Global path가 존재하므로 PATROL_FORWARD로 전환.");
+                        RCLCPP_INFO(this->get_logger(), "Approach path가 비어 있음 → Global path가 존재하므로 PATROL_FORWARD 전환.");
+                        // 접근 경로의 종료 지점(현재 위치)을 기준으로 글로벌 경로 재구성
+                        approach_end_point_ = current_position_;
+                        trimGlobalPathQueueToClosestPoint(approach_end_point_);
                         patrol_state_ = PatrolState::PATROL_FORWARD;
-                    }
-                    // 글로벌 경로도 없다면 로봇 정지 (또는 별도의 처리가 필요할 경우)
-                    else {
+                    } else {
                         RCLCPP_WARN(this->get_logger(), "Approach path와 Global path 모두 비어 있음. 로봇 정지.");
                         stop_robot();
                     }
-                } 
-                // approach path가 남아 있다면 기존 로직 실행
-                else {
+                } else {
                     bool reached = follow_current_path();
                     if (reached) {
-                        RCLCPP_INFO(this->get_logger(), "Approach path 도착. 이제 Global path로 순찰 시작.");
+                        RCLCPP_INFO(this->get_logger(), "Approach path 도착. Global path로 순찰 시작.");
+                        // 접근 경로의 마지막 점을 기준으로 글로벌 경로 재구성
+                        approach_end_point_ = current_position_;
+                        trimGlobalPathQueueToClosestPoint(approach_end_point_);
                         patrol_state_ = PatrolState::PATROL_FORWARD;
                     }
                 }
             }
+
             else if (patrol_state_ == PatrolState::PATROL_FORWARD) {
                 // Forward 순찰
                 if (path_queue_.empty()) {
@@ -433,6 +440,47 @@ private:
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // 경로 관리 함수들
+    // ─────────────────────────────────────────────────────────────────────
+    // global path의 중간으로 approach path를 통해 들어왔을때
+    // 가야하는 global path를 재정의
+    void trimGlobalPathQueueToClosestPoint(const Point &startPoint) {
+        if (path_queue_.empty()) return;
+
+        // 큐 크기를 미리 얻어 벡터에 reserve 적용
+        const size_t queueSize = path_queue_.size();
+        std::vector<Point> globalPath;
+        globalPath.reserve(queueSize);
+        
+        // 큐의 모든 요소를 vector로 이동
+        while (!path_queue_.empty()) {
+            globalPath.push_back(path_queue_.front());
+            path_queue_.pop();
+        }
+
+        // startPoint와의 제곱 거리가 가장 짧은 노드의 인덱스 찾기
+        size_t closestIndex = 0;
+        double minDistSq = std::numeric_limits<double>::max();
+        for (size_t i = 0; i < globalPath.size(); ++i) {
+            double dx = globalPath[i].x - startPoint.x;
+            double dy = globalPath[i].y - startPoint.y;
+            double distSq = dx * dx + dy * dy;
+            if (distSq < minDistSq) {
+                minDistSq = distSq;
+                closestIndex = i;
+            }
+        }
+
+        // closestIndex부터 vector의 나머지 경로를 다시 큐에 저장
+        for (size_t i = closestIndex; i < globalPath.size(); ++i) {
+            path_queue_.push(globalPath[i]);
+        }
+        
+        RCLCPP_INFO(this->get_logger(), 
+            "Global path 재구성: 기준점으로부터 인덱스 %zu (거리 %.2f m) 부터 재구성", 
+            closestIndex, std::sqrt(minDistSq));
+    }
     // ─────────────────────────────────────────────────────────────────────
     // 보조 함수들
     // ─────────────────────────────────────────────────────────────────────
