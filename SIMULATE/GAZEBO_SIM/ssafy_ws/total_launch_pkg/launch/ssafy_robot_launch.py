@@ -62,6 +62,7 @@ def generate_launch_description():
     return LaunchDescription([
         robot_name_arg,
         robot_number_arg,
+        # 나중엔 turtlebot_launch빼고 Isaac sim으로 대체
         turtlebot_launch,
         robot_status_node,
         global_path_planner_node,
