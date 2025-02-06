@@ -213,7 +213,7 @@ input:checked + .switch .slider {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-left: 20px;
+  margin-left: 15px;
 }
 
 .horizontal-controls {

@@ -1,11 +1,48 @@
+# version: '3'
+# services:
+#   backend:
+#     build: .
+#     ports:
+#       - "8000:8000"
+#     env_file:
+#       - .env  # 환경변수 파일 사용
+#     volumes:
+#       - ./app:/BACKEND_WAS/app  # 로컬의 app 폴더를 컨테이너와 연결
+#     # mongodb 서비스는 필요없으므로 제거 
+
 version: '3'
 services:
+  ros2:
+    image: osrf/ros:humble-desktop
+    container_name: ros2_gazebo
+    environment:
+      - DISPLAY=host.docker.internal:0
+      - QT_X11_NO_MITSHM=1
+      - LIBGL_ALWAYS_INDIRECT=1
+    volumes:
+      - ./ros2_ws:/ros2_ws
+    network_mode: "host"
+    privileged: true
+    command: bash -c "source /opt/ros/humble/setup.bash && bash"
+
   backend:
     build: .
     ports:
       - "8000:8000"
-    env_file:
-      - .env  # 환경변수 파일 사용
+#    env_file:
+#      - .env
     volumes:
-      - ./app:/BACKEND_WAS/app  # 로컬의 app 폴더를 컨테이너와 연결
-    # mongodb 서비스는 필요없으므로 제거 
+      - ./app:/BACKEND_WAS/app
+      - robocop_storage:/data/storage  # 영구 스토리지를 위한 볼륨
+    environment:
+      - STORAGE_PATH=/data/storage
+    networks:
+      - robocop_network
+
+volumes:
+  robocop_storage:  # 영구 볼륨 정의
+    name: robocop_storage
+
+networks:
+  robocop_network:
+    name: robocop_network

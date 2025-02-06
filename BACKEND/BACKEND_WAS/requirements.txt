@@ -35,6 +35,11 @@ async-timeout==5.0.1
 certifi>=2024.2.2
 idna==3.10
 urllib3==1.26.5
+roslibpy==1.8.1
+opencv-python==4.11.0.86
+av==13.1.0
+aiortc==1.10.1
+websockets==14.2
 
 # ROS2 Related (Commented out)
 # ackermann-msgs==2.0.2
@@ -224,3 +229,13 @@ urllib3==1.26.5
 # vision-msgs==4.1.1
 # visualization-msgs==4.2.4
 # xacro==2.0.8
+sqlalchemy
+
+# 테스트 의존성
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+aioresponses==0.7.4
+freezegun==1.2.2
