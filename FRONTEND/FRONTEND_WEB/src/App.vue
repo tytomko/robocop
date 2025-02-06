@@ -107,7 +107,7 @@ body {
 .navbar {
   background: linear-gradient(to bottom, #b0c4de, #f0f8ff);
   padding: 5px 40px;
-  height: 60px;
+  height: 45px;
 }
 
 .navbar-container {
