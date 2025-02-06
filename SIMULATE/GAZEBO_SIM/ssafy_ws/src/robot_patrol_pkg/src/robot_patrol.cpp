@@ -116,7 +116,7 @@ private:
     // ─────────────
     std::queue<Point> path_queue_; 
     std::queue<Point> approach_path_queue_;  // 추가: Approach path를 위한 큐
-    
+    std::queue<Point> save_path_queue_;  // 추가: Global path 저장용 큐
     // 현재 로봇 상태
     Point current_position_{0.0, 0.0, 0.0};
     double current_heading_;
@@ -174,24 +174,29 @@ private:
     // -------------------------------
     // 2) global_path 콜백
     // -------------------------------
+    // 글로벌 경로 수신 콜백 함수
     void global_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
-        // 글로벌 경로 업데이트: 기존 global path 큐를 비우고 새 경로 저장
+        // 기존 저장된 경로 비움
+        while (!save_path_queue_.empty()) {
+            save_path_queue_.pop();
+        }
         while (!path_queue_.empty()) {
             path_queue_.pop();
         }
 
-        for (auto & ps : msg->poses) {
+        for (auto &ps : msg->poses) {
             Point p;
             p.x = ps.pose.position.x;
             p.y = ps.pose.position.y;
             p.z = ps.pose.position.z;
-            path_queue_.push(p);
+            save_path_queue_.push(p);
         }
+        // 최초 순찰 시작 시에는 글로벌 경로 원본을 그대로 사용
+        path_queue_ = save_path_queue_;
 
         RCLCPP_INFO(this->get_logger(),
             "Global path 업데이트: 큐에 %zu개 노드 저장", msg->poses.size());
     }
-
 
     // -------------------------------
     // 3) approach_path 콜백 (patrol-APPROACH 전용)
@@ -214,7 +219,6 @@ private:
                 "Approach path 업데이트: 큐에 %zu개 노드 저장", msg->poses.size());
         }
     }
-
 
     // -------------------------------
     // 4) pose, heading 콜백
@@ -335,7 +339,6 @@ private:
         return false;
     }
 
-
     // -------------------------------
     // 6) 상태(mode)에 따른 로봇 행동
     // -------------------------------
@@ -370,14 +373,11 @@ private:
 
         // ── 순찰 모드 ────────────────────────────────────────────────────
         if (current_mode_ == "patrol") {
-            // 순찰 모드 내 APPROACH 상태 부분 (follow_path() 함수 내)
             if (patrol_state_ == PatrolState::APPROACH) {
                 if (approach_path_queue_.empty()) {
-                    // 로봇 정지 후 Global path 전환
                     stop_robot();
                     if (!path_queue_.empty()) {
                         RCLCPP_INFO(this->get_logger(), "Approach path가 비어 있음 → Global path가 존재하므로 PATROL_FORWARD 전환.");
-                        // 접근 경로의 종료 지점(현재 위치)을 기준으로 글로벌 경로 재구성
                         approach_end_point_ = current_position_;
                         trimGlobalPathQueueToClosestPoint(approach_end_point_);
                         patrol_state_ = PatrolState::PATROL_FORWARD;
@@ -389,39 +389,33 @@ private:
                     bool reached = follow_current_path();
                     if (reached) {
                         RCLCPP_INFO(this->get_logger(), "Approach path 도착. Global path로 순찰 시작.");
-                        // 접근 경로의 마지막 점을 기준으로 글로벌 경로 재구성
                         approach_end_point_ = current_position_;
                         trimGlobalPathQueueToClosestPoint(approach_end_point_);
                         patrol_state_ = PatrolState::PATROL_FORWARD;
                     }
                 }
             }
-
             else if (patrol_state_ == PatrolState::PATROL_FORWARD) {
-                // Forward 순찰
                 if (path_queue_.empty()) {
                     RCLCPP_WARN(this->get_logger(), "Global patrol path가 없습니다(큐 비어있음).");
                     return;
                 }
                 bool reached = follow_current_path();
                 if (reached) {
-                    RCLCPP_INFO(this->get_logger(),
-                        "순찰 경로 끝 도달. 역방향 순찰 시작.");
-                    reverse_path_queue();
+                    RCLCPP_INFO(this->get_logger(), "순찰 경로 끝 도달. 역방향 순찰 시작.");
+                    construct_reverse_path_queue();  // 정방향에서 역방향 전환
                     patrol_state_ = PatrolState::PATROL_REVERSE;
                 }
             }
             else if (patrol_state_ == PatrolState::PATROL_REVERSE) {
-                // Reverse 순찰
                 if (path_queue_.empty()) {
                     RCLCPP_WARN(this->get_logger(), "역순찰 경로가 없습니다(큐 비어있음).");
                     return;
                 }
                 bool reached = follow_current_path();
                 if (reached) {
-                    RCLCPP_INFO(this->get_logger(),
-                        "역순찰 경로 끝 도달. 다시 순방향 순찰 시작.");
-                    reverse_path_queue();
+                    RCLCPP_INFO(this->get_logger(), "역순찰 경로 끝 도달. 다시 순방향 순찰 시작.");
+                    construct_forward_path_queue();  // 역방향에서 정방향 전환 시, 현재 위치 기준으로 재구성
                     patrol_state_ = PatrolState::PATROL_FORWARD;
                 }
             }
@@ -451,6 +445,9 @@ private:
         // 큐 크기를 미리 얻어 벡터에 reserve 적용
         const size_t queueSize = path_queue_.size();
         std::vector<Point> globalPath;
+        //vector에 큐 크기만큼 할당
+        //reserve는 할당만 하고 초기화는 안함
+        //resize는 할당하고 초기화까지 함
         globalPath.reserve(queueSize);
         
         // 큐의 모든 요소를 vector로 이동
@@ -529,17 +526,28 @@ private:
         }
     }
 
-    // 큐를 뒤집는 함수 (역순찰 시 사용)
-    void reverse_path_queue() {
+    // 역방향 순찰을 위한 경로 재구성 함수
+    void construct_reverse_path_queue() {
+        std::queue<Point> new_queue;
         std::vector<Point> temp_vec;
-        while (!path_queue_.empty()) {
-            temp_vec.push_back(path_queue_.front());
-            path_queue_.pop();
+        std::queue<Point> temp = save_path_queue_;  // 항상 최신의 글로벌 원본 사용
+        while (!temp.empty()) {
+            temp_vec.push_back(temp.front());
+            temp.pop();
         }
         std::reverse(temp_vec.begin(), temp_vec.end());
-        for (auto & p : temp_vec) {
-            path_queue_.push(p);
+        for (auto &p : temp_vec) {
+            new_queue.push(p);
         }
+        path_queue_ = new_queue;
+    }
+
+    // 정방향 순찰을 위한 경로 재구성 함수
+    void construct_forward_path_queue() {
+        // 글로벌 경로의 원본을 복원 후 현재 위치 기준으로 트림
+        path_queue_ = save_path_queue_;
+        // 현재 위치(current_position_)에 가장 가까운 지점부터 남도록 트림
+        trimGlobalPathQueueToClosestPoint(current_position_);
     }
 
     // 각도 보정
