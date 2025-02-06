@@ -128,7 +128,7 @@
     <div v-if="robotsStore.showModal" class="modal-overlay">
       <div class="modal-container add-robot">
         <h3>로봇 등록하기</h3>
-        <label>로봇명: </label>
+        <label>로봇명:</label>
         <input v-model="robotsStore.newRobot.name" placeholder="로봇 이름 입력" />
         <br>
         <label>IP주소: </label>
