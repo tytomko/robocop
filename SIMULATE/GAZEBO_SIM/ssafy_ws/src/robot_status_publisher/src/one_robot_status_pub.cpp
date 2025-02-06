@@ -23,6 +23,7 @@
 #include "robot_custom_interfaces/srv/navigate.hpp"
 #include "robot_custom_interfaces/srv/patrol.hpp"
 #include "robot_custom_interfaces/srv/waiting.hpp"
+#include "robot_custom_interfaces/srv/manual.hpp"
 
 #include <GeographicLib/UTMUPS.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -75,7 +76,7 @@ public:
         std::string navigate_service = "/robot_" + std::to_string(robot_num) + "/navigate";
         std::string patrol_service = "/robot_" + std::to_string(robot_num) + "/patrol";
         std::string waiting_service = "/robot_" + std::to_string(robot_num) + "/waiting";
-
+        std::string manual_service = "/robot_" + std::to_string(robot_num) + "/manual";
         RCLCPP_INFO(this->get_logger(),
             "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n",
             robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str(), status_topic.c_str(), gps_topic.c_str());
@@ -106,7 +107,7 @@ public:
         resume_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
             resume_service, std::bind(&RobotStatusPublisher::resume_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
-        // 추가된 서비스: Homing, Navigate, Patrol
+        // 추가된 서비스: Homing, Navigate, Patrol, Waiting, Manual
         homing_srv = this->create_service<robot_custom_interfaces::srv::Homing>(
             homing_service, std::bind(&RobotStatusPublisher::homing_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -119,6 +120,9 @@ public:
         waiting_srv = this->create_service<robot_custom_interfaces::srv::Waiting>(
             waiting_service, std::bind(&RobotStatusPublisher::waiting_service_callback, this, std::placeholders::_1, std::placeholders::_2));
         
+        manual_srv = this->create_service<robot_custom_interfaces::srv::Manual>(
+            manual_service, std::bind(&RobotStatusPublisher::manual_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
         status_timer_ = this->create_wall_timer(
             100ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
@@ -151,6 +155,7 @@ private:
     rclcpp::Service<robot_custom_interfaces::srv::Navigate>::SharedPtr navigate_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Patrol>::SharedPtr patrol_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Waiting>::SharedPtr waiting_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Manual>::SharedPtr manual_srv;
     
     rclcpp::TimerBase::SharedPtr status_timer_;
 
@@ -382,6 +387,22 @@ private:
         response->success = true;
         response->message = "Robot is waiting.";
     }
+
+    void manual_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Manual::Request> request,
+                                std::shared_ptr<robot_custom_interfaces::srv::Manual::Response> response)
+    {
+        if (status_message.mode != "waiting") {
+            RCLCPP_WARN(this->get_logger(), "[MANUAL] Cannot switch to manual mode because robot is not in waiting mode.");
+            response->success = false;
+            response->message = "Manual service is allowed only in waiting mode.";
+            return;
+        }
+        RCLCPP_INFO(this->get_logger(), "[MANUAL] Switching to manual mode.");
+        status_message.mode = "manual";
+        publisher_status_->publish(status_message);
+        response->success = true;
+    }
+
 };
 
 int main(int argc, char *argv[])

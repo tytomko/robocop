@@ -23,8 +23,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Navigate.srv"
   "srv/Patrol.srv"
   "srv/Estop.srv"
-  "srv/Changemode.srv"
   "srv/Waiting.srv"
+  "srv/Manual.srv"
   # "srv/Control.srv"
   DEPENDENCIES builtin_interfaces sensor_msgs
 )
