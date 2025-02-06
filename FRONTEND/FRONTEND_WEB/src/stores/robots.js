@@ -26,6 +26,7 @@ export const useRobotsStore = defineStore('robots', () => {
         ipAddress: robot.ipAddress || '알 수 없음',
         status: robot.status || 'idle',
         battery: robot.battery?.level || 100,
+        location: robot.location || '2층',
         temperatures: robot.temperatures || 25,
         network: robot.network || 100,
         starttime: robot.starttime || '알 수 없음',
@@ -120,6 +121,16 @@ export const useRobotsStore = defineStore('robots', () => {
       }
     }
 
+    const setBreakdown = (robotId) => {
+      const robot = registered_robots.value.find(r => r.id === robotId)
+      if (robot) robot.status = 'breakdown'
+    }
+  
+    const setActive = (robotId) => {
+      const robot = registered_robots.value.find(r => r.id === robotId)
+      if (robot) robot.status = 'active'
+    }
+
   return {
     registered_robots,
     showModal,
@@ -137,6 +148,8 @@ export const useRobotsStore = defineStore('robots', () => {
     openAddRobotModal,
     handleRobotSelection,
     closeModal,
-    handleAddRobot
+    handleAddRobot,
+    setBreakdown,
+    setActive
   }
 }) 
