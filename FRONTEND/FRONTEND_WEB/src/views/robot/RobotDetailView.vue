@@ -1,6 +1,11 @@
 <template>
   <div class="robot-detail">
-    <h1 v-if="robot">{{ robot.nickname || robot.name }} ({{ robot.is_active ? '활성화' : '비활성화' }})</h1>
+    <div class="robot-header">
+      <h1 v-if="robot">{{ robot.nickname || robot.name }} ({{ robot.is_active ? '활성화' : '비활성화' }})</h1>
+      <button @click="openNicknameModal(robot)" class="settings-btn">
+        <i class="fas fa-cog"></i>
+      </button>
+    </div>
 
     <!-- 로봇 기본 정보 -->
     <div v-if="robot" class="robot-info">
@@ -41,6 +46,14 @@
     </div>
 
     <button class="back-btn" @click="goBack">뒤로 가기</button>
+
+    <!-- RobotNickname 모달 컴포넌트 -->
+    <RobotNickname 
+      v-if="showNicknameModal" 
+      :show="showNicknameModal" 
+      :robot="selectedRobotForNickname" 
+      @close="closeNicknameModal" 
+      @save="setRobotNickname" />
   </div>
 </template>
 
@@ -48,18 +61,17 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
+import RobotNickname from '@/components/detail/RobotNickname.vue';
 
 const route = useRoute();
 const router = useRouter();
 const robotsStore = useRobotsStore();
 const robotId = route.params.robotId;
 
-// 로봇 데이터 로드
 const robot = computed(() => {
   return robotsStore.registered_robots.find(r => r.id == robotId) || null;
 });
 
-// 상태 레이블
 const getStatusLabel = (status) => {
   const labels = {
     active: '활동 중',
@@ -73,15 +85,32 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-// 센서 레이블
-const getSensorLabel = (sensor) => {
-  const labels = {
-    lidar: 'LiDAR',
-    location: '위경도',
-    velocity: '시속/초속',
-    temperature: '섭씨/화씨'
-  };
-  return labels[sensor] || sensor;
+// 닉네임 모달 상태
+const showNicknameModal = ref(false);
+const selectedRobotForNickname = ref(null);
+
+// 로봇 닉네임 모달 열기
+const openNicknameModal = (robot) => {
+  selectedRobotForNickname.value = { id: robot.id, nickname: robot.nickname || '' };
+  showNicknameModal.value = true;
+};
+
+// 닉네임 모달 닫기
+const closeNicknameModal = () => {
+  showNicknameModal.value = false;
+};
+
+// 닉네임 저장
+const setRobotNickname = (robotId, nickname) => {
+  localStorage.setItem(`robot_nickname_${robotId}`, nickname);
+
+  // robots 상태 업데이트
+  const robotIndex = robotsStore.registered_robots.findIndex(r => r.id === robotId);
+  if (robotIndex !== -1) {
+    robotsStore.registered_robots[robotIndex].nickname = nickname;
+  }
+
+  showNicknameModal.value = false;
 };
 
 const goBack = () => {
@@ -92,7 +121,6 @@ onMounted(() => {
   robotsStore.loadRobots();
 });
 
-// 데이터가 갱신될 때도 반영
 watch(() => robotsStore.registered_robots, () => {
   if (!robot.value) {
     robotsStore.loadRobots();
@@ -107,6 +135,12 @@ watch(() => robotsStore.registered_robots, () => {
   margin: 0 auto;
   overflow-y: auto; /* 세로 스크롤 활성화 */
   max-height: 80vh; /* 화면 높이를 넘어가지 않게 제한 */
+}
+
+.robot-header {
+  display: flex;
+  align-items: center; /* 세로 중앙 정렬 */
+  gap: 10px; /* h1과 버튼 사이 여백 */
 }
 
 .robot-info {
@@ -160,4 +194,16 @@ watch(() => robotsStore.registered_robots, () => {
 .lidar-info {
   margin-top: 10px;
 }
+
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.settings-btn i {
+  color: #333; /* 아이콘 색상 */
+}
+
 </style>

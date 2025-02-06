@@ -102,7 +102,6 @@
               <th>배터리</th>
               <th>위치</th>
               <th>상태</th>
-              <th>설정</th>
             </tr>
           </thead>
           <tbody>
@@ -116,29 +115,12 @@
                 <span :class="getStatusClass(robot.status)">{{ getStatusLabel(robot.status) }}</span>
               </td>
               <td>
-                <button @click="openNicknameModal(robot)" class="settings-btn">
-                <i class="fas fa-cog"></i> <!-- Font Awesome 톱니바퀴 아이콘 -->
-                </button>
+                <button v-if="robot.status !== 'breakdown'" class="action-btn breakdown" @click="setBreakdown(robot.id)">고장</button>
+                <button v-else class="action-btn active" @click="setActive(robot.id)">가동</button>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- 설정 모달(닉네임/상태 변경) -->
-    <div v-if="showNicknameModal" class="settings-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>로봇 설정</h3>
-        </div>
-        <label>로봇명: </label>
-        <input v-model="selectedRobotForNickname.nickname" placeholder="로봇명을 설정하세요" />
-
-        <div class="modal-buttons">
-          <button @click="setRobotNickname(selectedRobotForNickname.id, selectedRobotForNickname.nickname)">저장</button>
-          <button @click="closeNicknameModal" class="close-btn">닫기</button>
-        </div>
       </div>
     </div>
 
@@ -185,6 +167,14 @@ const hideRobot = (robotId) => {
 // 상태 클래스 주기
 const getStatusClass = (status) => {
   return `status-badge ${status}`
+}
+
+const setBreakdown = (robotId) => {
+  robotsStore.setBreakdown(robotId)
+}
+
+const setActive = (robotId) => {
+  robotsStore.setActive(robotId)
 }
 
 // 상태 레이블
@@ -270,34 +260,6 @@ const loadRobotsWithNicknames = async () => {
     };
   });
 };
-
-// 닉네임 저장 및 Pinia 상태 업데이트
-const setRobotNickname = (robotId, nickname) => {
-  localStorage.setItem(`robot_nickname_${robotId}`, nickname);
-  
-  // robots 상태 업데이트
-  const robotIndex = robots.value.findIndex(r => r.id === robotId);
-  if (robotIndex !== -1) {
-    robots.value[robotIndex].nickname = nickname;
-  }
-  
-  showNicknameModal.value = false;
-};
-
-// 닉네임 변경 모달 관련 상태
-const showNicknameModal = ref(false)
-const selectedRobotForNickname = ref(null)
-
-// 닉네임 모달 열기
-const openNicknameModal = (robot) => {
-  selectedRobotForNickname.value = { id: robot.id, nickname: robot.nickname || '' }
-  showNicknameModal.value = true
-}
-
-// 닉네임 모달 닫기
-const closeNicknameModal = () => {
-  showNicknameModal.value = false
-}
 
 onMounted(() => {
   // robotsStore.loadRobots();
@@ -440,6 +402,11 @@ onUnmounted(() => {
   color: black;
 }
 
+.status-badge.breakdown {
+  background-color: black;
+  color: white;
+}
+
 .status-details {
   display: flex;
   flex-direction: column;
@@ -573,19 +540,6 @@ onUnmounted(() => {
   width: 600px;
 }
 
-/* 모달 컨테이너 스타일 */
-.modal-content.management {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 400px;
-  text-align: left;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* 내부 요소 간격 추가 */
-}
-
 /* 모달 스타일 */
 .modal-container.add-robot {
   background: white;
@@ -677,49 +631,6 @@ onUnmounted(() => {
   font-size: 0.875rem;
   font-weight: 500;
   display: inline-block;
-}
-
-.settings-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 400px;
-  text-align: left;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* 닉네임 입력 필드 스타일 */
-.modal-content input {
-  width: calc(100% - 20px);
-  padding: 10px;
-  margin: 10px 0 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
-}
-
-.settings-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-.settings-btn i {
-  color: #333; /* 아이콘 색상 */
 }
 
 .close-btnx {
