@@ -67,6 +67,11 @@ ros2 service call /robot_1/patrol robot_custom_interfaces/srv/Patrol "{goals: [{
 ros2 service call /robot_1/stop robot_custom_interfaces/srv/Estop
 ```
 
+### Temp_stop 서비스
+```bash
+ros2 service call /robot_1/temp_stop robot_custom_interfaces/srv/Estop
+```
+
 ### Resume 서비스
 ```bash
 ros2 service call /robot_1/resume robot_custom_interfaces/srv/Estop

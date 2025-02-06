@@ -67,6 +67,8 @@ public:
         std::string heading_topic = "/robot_" + std::to_string(robot_num) + "/heading";
         std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
         std::string stop_service = "/robot_" + std::to_string(robot_num) + "/stop";
+        // 일시 정지, 재개 서비스 토픽
+        std::string temp_stop_service = "/robot_" + std::to_string(robot_num) + "/temp_stop";
         std::string resume_service = "/robot_" + std::to_string(robot_num) + "/resume";
         // 추가된 서비스 토픽
         std::string homing_service = "/robot_" + std::to_string(robot_num) + "/homing";
@@ -98,6 +100,9 @@ public:
         stop_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
             stop_service, std::bind(&RobotStatusPublisher::stop_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
+        temp_stop_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
+            temp_stop_service, std::bind(&RobotStatusPublisher::temp_stop_service_callback, this, std::placeholders::_1, std::placeholders::_2));
+
         resume_srv = this->create_service<robot_custom_interfaces::srv::Estop>(
             resume_service, std::bind(&RobotStatusPublisher::resume_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
@@ -113,7 +118,7 @@ public:
 
         waiting_srv = this->create_service<robot_custom_interfaces::srv::Waiting>(
             waiting_service, std::bind(&RobotStatusPublisher::waiting_service_callback, this, std::placeholders::_1, std::placeholders::_2));
-
+        
         status_timer_ = this->create_wall_timer(
             100ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
@@ -122,7 +127,7 @@ private:
     std::string robot_name;
     int robot_num;
     robot_custom_interfaces::msg::Status status_message;
-
+    std::string before_mode = "";
     std::chrono::steady_clock::time_point last_imu_log_time_;
     std::chrono::steady_clock::time_point last_gps_log_time_;
     std::chrono::steady_clock::time_point last_status_log_time_;
@@ -139,12 +144,14 @@ private:
     rclcpp::Publisher<robot_custom_interfaces::msg::Status>::SharedPtr publisher_status_;
     rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr stop_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr resume_srv;
+    rclcpp::Service<robot_custom_interfaces::srv::Estop>::SharedPtr temp_stop_srv;
 
     // 추가된 서비스 서버 멤버 변수
     rclcpp::Service<robot_custom_interfaces::srv::Homing>::SharedPtr homing_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Navigate>::SharedPtr navigate_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Patrol>::SharedPtr patrol_srv;
     rclcpp::Service<robot_custom_interfaces::srv::Waiting>::SharedPtr waiting_srv;
+    
     rclcpp::TimerBase::SharedPtr status_timer_;
 
     /// -π ~ π 범위로 정규화하는 함수
@@ -249,7 +256,7 @@ private:
     }
 
     void stop_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
-                               std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
+                            std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
         status_message.mode = "emergency stop";
         status_message.is_active = false;
@@ -259,10 +266,35 @@ private:
         response->message = "Robot stopped.";
     }
 
-    void resume_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
-                                 std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
+    void temp_stop_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
+                                    std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
-        if (status_message.mode == "emergency stop") {
+        if (status_message.mode == "temp stop") {
+            RCLCPP_WARN(this->get_logger(), "[TEMP STOP] Robot is already stopped.");
+            response->success = false;
+            response->message = "Robot is already stopped.";
+        } 
+        else if (status_message.mode == "emergency stop") {
+            RCLCPP_INFO(this->get_logger(), "[TEMP STOP] Robot is already E-stop.");
+            response->success = false;
+            response->message = "Robot is already E-stop.";
+        }
+        else {
+            RCLCPP_INFO(this->get_logger(), "[TEMP STOP] Temporarily stopping the robot.");
+            // 이전 모드를 저장 후 일시 정지 모드로 변경
+            before_mode = status_message.mode;
+            status_message.mode = "temp stop";
+            status_message.is_active = true;
+            publisher_status_->publish(status_message);
+            response->success = true;
+            response->message = "Robot is temporarily stopped.";
+        }
+    }
+
+    void resume_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
+                                std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
+    {
+        if (status_message.mode == "emergency stop") { // 비상 정지 상태에서는 waiting으로 재개
             RCLCPP_INFO(this->get_logger(), "[RESUME] Returning to operational mode.");
             
             status_message.mode = "waiting";
@@ -271,12 +303,23 @@ private:
             
             response->success = true;
             response->message = "Robot is waiting.";
-        } else {
+        } 
+        else if (status_message.mode == "temp stop") { // 일시 정지 상태에서는 이전 모드로 복귀
+            RCLCPP_INFO(this->get_logger(), "[RESUME] Resuming from temp stop.");
+            status_message.mode = before_mode;  // 예: "patrol" 또는 다른 모드
+            status_message.is_active = true;
+            publisher_status_->publish(status_message);
+            
+            response->success = true;  // 성공으로 처리 (true)
+            response->message = "Robot resumed.";
+        }
+        else {
             RCLCPP_WARN(this->get_logger(), "[RESUME] Robot is already operational.");
             response->success = false;
             response->message = "Robot is already operational.";
         }
     }
+
 
     // 추가된 서비스 콜백 함수들
 
@@ -292,9 +335,9 @@ private:
     void navigate_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Navigate::Request> request,
                                    std::shared_ptr<robot_custom_interfaces::srv::Navigate::Response> response)
     {
-        RCLCPP_INFO(this->get_logger(), "[NAVIGATE] Switching to navigating mode. Goal: x=%.2f, y=%.2f, theta=%.2f", 
+        RCLCPP_INFO(this->get_logger(), "[NAVIGATE] Switching to navigate mode. Goal: x=%.2f, y=%.2f, theta=%.2f", 
                     request->goal.x, request->goal.y, request->goal.theta);
-        status_message.mode = "navigating";
+        status_message.mode = "navigate";
         publisher_status_->publish(status_message);
         response->success = true;
     }
@@ -303,12 +346,12 @@ private:
                                  std::shared_ptr<robot_custom_interfaces::srv::Patrol::Response> response)
     {
         std::ostringstream oss;
-        oss << "[PATROL] Switching to patrolling mode. Goals: ";
+        oss << "[PATROL] Switching to patrol mode. Goals: ";
         for (const auto & goal : request->goals) {
             oss << "(" << goal.x << ", " << goal.y << ", " << goal.theta << ") ";
         }
         RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
-        status_message.mode = "patrolling";
+        status_message.mode = "patrol";
         publisher_status_->publish(status_message);
         response->success = true;
     }
@@ -322,6 +365,7 @@ private:
         response->success = true;
         response->message = "Robot is waiting.";
     }
+    
 };
 
 int main(int argc, char *argv[])

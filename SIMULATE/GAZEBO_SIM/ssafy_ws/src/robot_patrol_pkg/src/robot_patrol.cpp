@@ -28,7 +28,7 @@ const double FRICTION_FACTOR_LINEAR   = 0.9;  // 선속도 감쇠 계수
 const double FRICTION_FACTOR_ANGULAR  = 0.8;  // 각속도 감쇠 계수
 const double POSITION_TOLERANCE       = 0.1;  // 목표점 도달 허용 오차 (m)
 const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
-
+const double heading_threshold_       = M_PI / 2;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
 const double SKIP_THRESHOLD = 0.2;
 
@@ -46,7 +46,8 @@ public:
         linear_vel_(0.0),
         angular_vel_(0.0),
         current_mode_("operational"),
-        patrol_state_(PatrolState::NONE)
+        patrol_state_(PatrolState::NONE),
+        before_patrol_state_(PatrolState::NONE)  // 추가: 일시정지 전 patrol 상태 저장 변수
     {
         // ─── 파라미터 선언 ─────────────────────────────────────────────────
         this->declare_parameter<int>("robot_number", 1);
@@ -112,7 +113,8 @@ private:
     // ※ 여기서 핵심: "인덱스+벡터" 대신 "큐"로 경로를 관리
     // ─────────────
     std::queue<Point> path_queue_; 
-
+    std::queue<Point> approach_path_queue_;  // 추가: Approach path를 위한 큐
+    
     // 현재 로봇 상태
     Point current_position_{0.0, 0.0, 0.0};
     double current_heading_;
@@ -122,6 +124,7 @@ private:
     // 현재 모드 및 순찰 상태
     std::string current_mode_;
     PatrolState patrol_state_;
+    PatrolState before_patrol_state_;  // 추가: 일시정지 전 patrol 상태 저장
 
     // ─────────────────────────────────────────────────────────────────────
     // 상태, 콜백, 경로 관리, 제어 함수들
@@ -131,13 +134,35 @@ private:
     // 1) status 콜백
     // -------------------------------
     void status_callback(const robot_custom_interfaces::msg::Status::SharedPtr msg) {
+        // 만약 이전 모드가 temp stop였다면, resume 후에 이전 patrol 상태 복원
+        if (current_mode_ == "temp stop" && msg->mode != "temp stop") {
+            // temp stop 전 저장했던 patrol 상태를 복원 (만약 patrol 모드였다면)
+            if (msg->mode == "patrol") {
+                patrol_state_ = before_patrol_state_;
+                RCLCPP_INFO(this->get_logger(), "Temp stop 해제 후 patrol 상태 복원");
+            }
+            else if (msg->mode == "navigate") {
+                patrol_state_ = before_patrol_state_;
+                RCLCPP_INFO(this->get_logger(), "Temp stop 해제 후 patrol 상태 복원");
+            }
+            else if (msg->mode == "homing") {
+                patrol_state_ = before_patrol_state_;
+                RCLCPP_INFO(this->get_logger(), "Temp stop 해제 후 patrol 상태 복원");
+            }
+        }
         current_mode_ = msg->mode;
-        if (current_mode_ == "patrolling") {
+        if (current_mode_ == "patrol") {
+            // patrol 모드로 전환되었는데 patrol_state_가 NONE이면 기본 APPROACH로 시작
             if (patrol_state_ == PatrolState::NONE) {
                 patrol_state_ = PatrolState::APPROACH;
                 RCLCPP_INFO(this->get_logger(), "Patrol 모드: APPROACH 상태 시작.");
             }
-        } else {
+        } else if (current_mode_ == "temp stop") {
+            // temp stop 진입 전 patrol 상태 저장 (나중에 resume 시 복원)
+            before_patrol_state_ = patrol_state_;
+            stop_robot();
+        }
+        else {
             patrol_state_ = PatrolState::NONE;
         }
     }
@@ -146,16 +171,11 @@ private:
     // 2) global_path 콜백
     // -------------------------------
     void global_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
-        // homing, navigating, 혹은 patrol의 (APPROACH가 아닌) 상태일 때만 글로벌 경로 업데이트
-        if (!(current_mode_ == "homing" || current_mode_ == "navigating" ||
-              (current_mode_ == "patrolling" && patrol_state_ != PatrolState::APPROACH))) {
-            return;
+        // 글로벌 경로 업데이트: 기존 global path 큐를 비우고 새 경로 저장
+        while (!path_queue_.empty()) {
+            path_queue_.pop();
         }
 
-        // 이전 큐를 비우고 새 경로로 채움
-        clear_path_queue();
-
-        // msg->poses에서 큐로 push
         for (auto & ps : msg->poses) {
             Point p;
             p.x = ps.pose.position.x;
@@ -168,25 +188,29 @@ private:
             "Global path 업데이트: 큐에 %zu개 노드 저장", msg->poses.size());
     }
 
+
     // -------------------------------
     // 3) approach_path 콜백 (patrol-APPROACH 전용)
     // -------------------------------
     void approach_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
-        if (current_mode_ == "patrolling" && patrol_state_ == PatrolState::APPROACH) {
-            // 이전 큐를 비우고 새 경로로 채움
-            clear_path_queue();
+        if (current_mode_ == "patrol" && patrol_state_ == PatrolState::APPROACH) {
+            // 기존 approach path 큐를 비우고 새 경로 저장
+            while (!approach_path_queue_.empty()) {
+                approach_path_queue_.pop();
+            }
 
             for (auto & ps : msg->poses) {
                 Point p;
                 p.x = ps.pose.position.x;
                 p.y = ps.pose.position.y;
                 p.z = ps.pose.position.z;
-                path_queue_.push(p);
+                approach_path_queue_.push(p);
             }
             RCLCPP_INFO(this->get_logger(),
                 "Approach path 업데이트: 큐에 %zu개 노드 저장", msg->poses.size());
         }
     }
+
 
     // -------------------------------
     // 4) pose, heading 콜백
@@ -206,43 +230,48 @@ private:
     // 5) 경로 추종 핵심 로직 (queue 이용)
     // -------------------------------
     bool follow_current_path() {
+        // 사용할 큐 선택 (APPROACH 상태이면 approach_path_queue_, 아니면 global_path_queue_)
+        std::queue<Point>* current_queue;
+        if (current_mode_ == "patrol" && patrol_state_ == PatrolState::APPROACH) {
+            current_queue = &approach_path_queue_;
+        } else {
+            current_queue = &path_queue_;
+        }
+
         // 경로가 비었으면 false
-        if (path_queue_.empty()) {
-            RCLCPP_WARN(this->get_logger(), "현재 경로(큐)가 비어 있습니다.");
+        if (current_queue->empty()) {
+            RCLCPP_WARN(this->get_logger(), "현재 경로(선택된 큐)가 비어 있습니다.");
             return false;
         }
 
-        // ── (1) 이미 지나친 노드(너무 가까운 노드)는 pop으로 스킵 ─────────────
-        while (!path_queue_.empty()) {
-            const Point &front_node = path_queue_.front();
+        // ── (1) 이미 지나친 노드 스킵 ─────────────
+        while (!current_queue->empty()) {
+            const Point &front_node = current_queue->front();
             double dist = std::hypot(front_node.x - current_position_.x,
-                                     front_node.y - current_position_.y);
+                                    front_node.y - current_position_.y);
             if (dist < SKIP_THRESHOLD) {
-                // 스킵
                 RCLCPP_INFO(this->get_logger(),
                     "Skip node (%.2f, %.2f) dist=%.2f", front_node.x, front_node.y, dist);
-                path_queue_.pop();
+                current_queue->pop();
             } else {
-                // 이제 충분히 멀리있는(가야할) 노드 발견
                 break;
             }
         }
 
-        // 스킵하다가 큐가 비었으면 경로 끝
-        if (path_queue_.empty()) {
-            RCLCPP_INFO(this->get_logger(), "큐 노드를 모두 스킵 → 경로 끝");
+        if (current_queue->empty()) {
+            RCLCPP_INFO(this->get_logger(), "선택된 큐의 노드를 모두 스킵 → 경로 끝");
             return true;
         }
 
-        // ── (2) 큐 front 노드를 목표로하여 Pure Pursuit 제어 ─────────────
-        const Point &target = path_queue_.front();
+        // ── (2) 큐 front 노드를 목표로 Pure Pursuit 제어 ─────────────
+        const Point &target = current_queue->front();
         double distance = std::hypot(target.x - current_position_.x,
-                                     target.y - current_position_.y);
+                                    target.y - current_position_.y);
 
         double target_angle = 0.0;
         if (distance > 0.01) {
             target_angle = std::atan2(target.y - current_position_.y,
-                                      target.x - current_position_.x);
+                                    target.x - current_position_.x);
         }
         double angle_error = normalize_angle(target_angle - current_heading_);
 
@@ -260,18 +289,18 @@ private:
         linear_vel_ += ACCEL_STEP * (target_speed - linear_vel_);
         linear_vel_ = std::clamp(linear_vel_, 0.0, MAX_LINEAR_SPEED);
         linear_vel_ *= FRICTION_FACTOR_LINEAR;
-        
-        // 각도 오차가 너무 크면 선속도 0으로
-        if (std::fabs(angle_error) > M_PI / 2) {
+
+        if (std::fabs(angle_error) > heading_threshold_) {
             linear_vel_ = 0.0;
         }
-        // ── (3) cmd_vel 퍼블리시 ──────────────────────────────────────────
+
+        // cmd_vel 퍼블리시
         geometry_msgs::msg::Twist cmd_vel_msg;
         cmd_vel_msg.linear.x  = linear_vel_;
         cmd_vel_msg.angular.z = angular_vel_;
         cmd_vel_pub_->publish(cmd_vel_msg);
 
-        // ── (4) target point & heading 퍼블리시(디버그용) ─────────────────
+        // 디버그용 target point & heading 퍼블리시
         geometry_msgs::msg::Point target_point_msg;
         target_point_msg.x = target.x;
         target_point_msg.y = target.y;
@@ -282,27 +311,26 @@ private:
         target_heading_msg.data = static_cast<float>(target_angle);
         target_heading_pub_->publish(target_heading_msg);
 
-        // ── (5) 로그 출력 ────────────────────────────────────────────────
+        // 로그 출력
         RCLCPP_INFO(this->get_logger(),
             "\n🚨🚨🚨\nTarget: (%.2f, %.2f)\nDistance: %.2f\nTargetAngle: %.2f\nHeading: %.2f"
             "\nAngleError: %.2f\nLinearVel: %.2f\nAngularVel: %.2f\n🚨🚨🚨\n",
             target.x, target.y, distance, target_angle, current_heading_,
             angle_error, linear_vel_, angular_vel_);
 
-        // ── (6) 목표점에 가까워졌으면(<= POSITION_TOLERANCE) pop & 다음 노드로
+        // 목표점 도달 시 pop
         if (distance < POSITION_TOLERANCE) {
             RCLCPP_INFO(this->get_logger(),
-                "목표점 (%.2f, %.2f)에 도달 -> pop", target.x, target.y);
-            path_queue_.pop();
+                "목표점 (%.2f, %.2f)에 도달 → pop", target.x, target.y);
+            current_queue->pop();
 
-            if (path_queue_.empty()) {
-                // 마지막 노드까지 도달한 경우
+            if (current_queue->empty()) {
                 return true;
             }
         }
-
         return false;
     }
+
 
     // -------------------------------
     // 6) 상태(mode)에 따른 로봇 행동
@@ -314,8 +342,8 @@ private:
             return;
         }
 
-        // ── homing, navigating ───────────────────────────────────────────
-        if (current_mode_ == "homing" || current_mode_ == "navigating") {
+        // ── homing, navigate ───────────────────────────────────────────
+        if (current_mode_ == "homing" || current_mode_ == "navigate") {
             if (path_queue_.empty()) {
                 RCLCPP_WARN(this->get_logger(), "Global path이 없습니다(큐 비어있음).");
                 // Global path이 없을 때 먼저 정지 후 waiting service 호출
@@ -324,29 +352,42 @@ private:
                 return;
             }
             bool reached = follow_current_path();
+            // 목적지 도달 시 waiting service 호출
             if (reached) {
                 RCLCPP_INFO(this->get_logger(),
                     "경로에 도달했습니다. Waiting service 호출하여 대기모드로 전환.");
                 // 경로 도달 시 먼저 정지 후 waiting service 호출
                 stop_robot();
                 callWaitingService();
+                return;
             }
             return;
         }
 
         // ── 순찰 모드 ────────────────────────────────────────────────────
-        if (current_mode_ == "patrolling") {
+        if (current_mode_ == "patrol") {
+            // 순찰 모드 내 APPROACH 상태 부분 (follow_path() 함수 내)
             if (patrol_state_ == PatrolState::APPROACH) {
-                // Approach path
-                if (path_queue_.empty()) {
-                    RCLCPP_WARN(this->get_logger(), "Approach path가 없습니다(큐 비어있음).");
-                    return;
-                }
-                bool reached = follow_current_path();
-                if (reached) {
-                    RCLCPP_INFO(this->get_logger(),
-                        "Approach path 도착. 이제 글로벌 path로 순찰 시작.");
-                    patrol_state_ = PatrolState::PATROL_FORWARD;
+                // Approach path가 비어 있다면
+                if (approach_path_queue_.empty()) {
+                    // 글로벌 경로가 존재하면 전환
+                    if (!path_queue_.empty()) {
+                        RCLCPP_INFO(this->get_logger(), "Approach path가 비어 있음 → Global path가 존재하므로 PATROL_FORWARD로 전환.");
+                        patrol_state_ = PatrolState::PATROL_FORWARD;
+                    }
+                    // 글로벌 경로도 없다면 로봇 정지 (또는 별도의 처리가 필요할 경우)
+                    else {
+                        RCLCPP_WARN(this->get_logger(), "Approach path와 Global path 모두 비어 있음. 로봇 정지.");
+                        stop_robot();
+                    }
+                } 
+                // approach path가 남아 있다면 기존 로직 실행
+                else {
+                    bool reached = follow_current_path();
+                    if (reached) {
+                        RCLCPP_INFO(this->get_logger(), "Approach path 도착. 이제 Global path로 순찰 시작.");
+                        patrol_state_ = PatrolState::PATROL_FORWARD;
+                    }
                 }
             }
             else if (patrol_state_ == PatrolState::PATROL_FORWARD) {
@@ -379,8 +420,16 @@ private:
             }
             return;
         }
+
+        else if (current_mode_ == "temp stop") {
+            // 일시 정지일 때는 로봇 정지 (경로 큐와 patrol 상태는 그대로 유지)
+            stop_robot();
+            return;
+        }
+        //전혀 다른 모드일 때도 무조건 로봇 정지
         else {
             stop_robot();
+            return;
         }
     }
 
@@ -402,18 +451,20 @@ private:
     }
 
     // waiting service 호출 함수 (대기모드 전환)
+    // 목적지 도착하거나 길이 없으면 대기모드로 직접전환해야함.
     void callWaitingService() {
         auto client = this->create_client<robot_custom_interfaces::srv::Waiting>(waiting_service_name_);
-        if (!client->wait_for_service(std::chrono::seconds(1))) {
-            RCLCPP_ERROR(this->get_logger(), "Waiting 서비스가 응답하지 않습니다.");
-            return;
+        // 서비스가 응답할 때까지 반복 시도
+        while (!client->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_ERROR(this->get_logger(), "Waiting 서비스가 응답하지 않습니다. 로봇 정지 후 재시도.");
+            stop_robot();
+            rclcpp::sleep_for(std::chrono::seconds(1));  // 1초 대기 후 재시도
         }
+        
         auto request = std::make_shared<robot_custom_interfaces::srv::Waiting::Request>();
-        // 요청 데이터가 필요 없다면 빈 요청으로 보내면 됩니다.
         client->async_send_request(request,
             [this](rclcpp::Client<robot_custom_interfaces::srv::Waiting>::SharedFuture future) {
                 try {
-                    // 응답이 없거나 별도 처리가 필요 없으면 단순 로그 출력
                     auto response = future.get();
                     RCLCPP_INFO(this->get_logger(), "Waiting 서비스 호출 성공");
                 } catch (const std::exception &e) {
