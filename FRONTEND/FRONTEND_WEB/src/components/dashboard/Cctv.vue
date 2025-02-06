@@ -1,20 +1,4 @@
 <template>
-  <div class="camera-header">
-    <div class="camera-status-info">
-      <div class="status-item">
-        <span class="camera-label">{{ cameraName }}</span>
-        <span class="status-label">상태:</span>
-        <span :class="['status-value', cameraStatus === '스트리밍 중' ? 'status-active' : '']">
-          {{ cameraStatus }}
-        </span>
-      </div>
-      <div v-if="streamInfo" class="status-item">
-        <span class="status-label">해상도:</span>
-        <span class="status-value">{{ streamInfo.width }}x{{ streamInfo.height }}</span>
-      </div>
-    </div>
-  </div>
-  
   <div class="camera-container">
     <div v-if="!hasPermission" class="permission-request">
       <p>카메라 접근 권한이 필요합니다</p>
