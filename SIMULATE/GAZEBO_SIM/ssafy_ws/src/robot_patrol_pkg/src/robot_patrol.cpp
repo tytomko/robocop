@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <chrono>
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
@@ -31,8 +32,8 @@ const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 const double heading_threshold_       = M_PI / 3;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
 const double SKIP_THRESHOLD = 0.2;
-// global path 전환 하고 시작노드 설정용 변수
-
+// 로그 출력 여부
+const bool log_print = false;  // 로그 출력 여부
 
 struct Point {
     double x, y, z;
@@ -109,6 +110,7 @@ private:
 
     int my_robot_number_;
     std::string my_robot_name_;
+    // 다른 함수에서 사용하기에 멤버 변수로 선언
     std::string waiting_service_name_; // waiting service 토픽 이름
 
     // ─────────────
@@ -161,12 +163,22 @@ private:
                 patrol_state_ = PatrolState::APPROACH;
                 RCLCPP_INFO(this->get_logger(), "Patrol 모드: APPROACH 상태 시작.");
             }
-        } else if (current_mode_ == "temp stop") {
+        } 
+        else if (current_mode_ == "temp stop") {
             // temp stop 진입 전 patrol 상태 저장 (나중에 resume 시 복원)
             before_patrol_state_ = patrol_state_;
             stop_robot();
         }
+        else if (current_mode_ == "emergency stop") {
+            // 비상정지 모드로 전환되었을 때는 path_queue_를 비움
+            path_queue_ = std::queue<Point>();
+            approach_path_queue_ = std::queue<Point>();
+            save_path_queue_ = std::queue<Point>();
+            // 다른 모드로 전환되었을 때는 patrol_state_를 NONE으로 초기화
+            patrol_state_ = PatrolState::NONE;
+        }
         else {
+            // 다른 모드로 전환되었을 때는 patrol_state_를 NONE으로 초기화
             patrol_state_ = PatrolState::NONE;
         }
     }
@@ -319,13 +331,15 @@ private:
         target_heading_msg.data = static_cast<float>(target_angle);
         target_heading_pub_->publish(target_heading_msg);
 
-        // 로그 출력
-        RCLCPP_INFO(this->get_logger(),
-            "\n🚨🚨🚨\nTarget: (%.2f, %.2f)\nDistance: %.2f\nTargetAngle: %.2f\nHeading: %.2f"
-            "\nAngleError: %.2f\nLinearVel: %.2f\nAngularVel: %.2f\n🚨🚨🚨\n",
-            target.x, target.y, distance, target_angle, current_heading_,
-            angle_error, linear_vel_, angular_vel_);
-
+        if(log_print){
+            // 로그 출력
+            RCLCPP_INFO(this->get_logger(),
+                "\n🚨🚨🚨\nTarget: (%.2f, %.2f)\nDistance: %.2f\nTargetAngle: %.2f\nHeading: %.2f"
+                "\nAngleError: %.2f\nLinearVel: %.2f\nAngularVel: %.2f\n🚨🚨🚨\n",
+                target.x, target.y, distance, target_angle, current_heading_,
+                angle_error, linear_vel_, angular_vel_);
+        }
+        
         // 목표점 도달 시 pop
         if (distance < POSITION_TOLERANCE) {
             RCLCPP_INFO(this->get_logger(),
@@ -468,12 +482,10 @@ private:
                 closestIndex = i;
             }
         }
-
         // closestIndex부터 vector의 나머지 경로를 다시 큐에 저장
         for (size_t i = closestIndex; i < globalPath.size(); ++i) {
             path_queue_.push(globalPath[i]);
         }
-        
         RCLCPP_INFO(this->get_logger(), 
             "Global path 재구성: 기준점으로부터 인덱스 %zu (거리 %.2f m) 부터 재구성", 
             closestIndex, std::sqrt(minDistSq));
@@ -492,7 +504,15 @@ private:
         linear_vel_ = 0.0;
         angular_vel_ = 0.0;
 
-        RCLCPP_INFO(this->get_logger(), "로봇 정지");
+        // static 변수로 마지막 로그 출력 시점을 저장 (steady_clock 사용)
+        static auto last_log_time = std::chrono::steady_clock::now();
+        auto current_time = std::chrono::steady_clock::now();
+
+        // 1초 간격으로 로그 출력 (간격은 원하는 값으로 변경 가능)
+        if (std::chrono::duration_cast<std::chrono::seconds>(current_time - last_log_time).count() >= 1) {
+            RCLCPP_INFO(this->get_logger(), "로봇 정지");
+            last_log_time = current_time;
+        }
     }
 
     // waiting service 호출 함수 (대기모드 전환)

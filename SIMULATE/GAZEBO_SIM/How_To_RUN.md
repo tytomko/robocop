@@ -1,9 +1,16 @@
 # 1. 시뮬레이션 및 status발행코드 실행하기
 
 ## ssafy_ws 진입
+```bash
+cd S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/ && . install/setup.bash
+```
 
 빌드 후 아래명령어 실행
 
+### rosbridge실행
+```bash
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml 
+```
 
 ### 터틀봇 실행
 ```bash
