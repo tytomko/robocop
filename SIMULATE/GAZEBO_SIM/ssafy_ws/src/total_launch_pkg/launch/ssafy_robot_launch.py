@@ -52,7 +52,7 @@ def generate_launch_description():
     
     # robot_patrol 노드
     robot_patrol_node = Node(
-        package='robot_patrol_pkg',
+        package='robot_control_pkg',
         executable='robot_patrol',
         name='robot_patrol',
         output='screen',

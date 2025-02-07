@@ -34,20 +34,8 @@ target_link_libraries(robot_status_publisher
   /lib/x86_64-linux-gnu/libGeographic.so
 )
 
-add_executable(middle_teleop_node src/middle_teleop_node.cpp)
-ament_target_dependencies(middle_teleop_node
-  rclcpp
-  std_msgs
-  sensor_msgs
-  geometry_msgs
-  robot_custom_interfaces
-  tf2
-  # tf2_geometry_msgs 등
-)
-
 install(TARGETS
   robot_status_publisher
-  middle_teleop_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
