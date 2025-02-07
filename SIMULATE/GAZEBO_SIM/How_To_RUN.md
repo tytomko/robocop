@@ -1,3 +1,8 @@
+# 0. 통합런치파일
+```bash
+ros2 launch total_launch_pkg ssafy_robot_launch.py --ros-args -p robot_name:=robot123 -p robot_number:=5
+```
+
 # 1. 시뮬레이션 및 status발행코드 실행하기
 
 ## ssafy_ws 진입
