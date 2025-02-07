@@ -4,7 +4,7 @@ from .domain.auth.controller.auth_controller import router as auth_router, creat
 from .domain.robot.controller.robot_controller import router as robot_router
 from .domain.camera.controller.camera_controller import router as camera_router, initialize_camera
 from .domain.lidar.controller.lidar_controller import router as lidar_router
-# from .domain.person.controller.person_controller import router as person_router
+from .domain.person.controller.person_controller import router as person_router
 from .domain.ros_publisher.controller.ros_publisher_controller import router as ros_publisher_router
 
 from .common.config.manager import get_settings
@@ -67,7 +67,7 @@ app.include_router(
 
 app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
 app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
-# app.include_router(person_router, eprefix="/api/v1/persons", tags=["persons"])
+app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, tags=["ros_publisher"]) # 0206 test
 
 @app.on_event("startup")
@@ -106,7 +106,9 @@ async def startup_event():
         except Exception as e:
             logger.error(f"시퀀스 초기화 실패: {str(e)}")
             raise
-        
+
+        find_person = db.persons.find_one({"name": "신동욱"})
+        print(find_person)
         # 컬렉션 인덱스 초기화
         await DatabaseConnection.init_collections()
         

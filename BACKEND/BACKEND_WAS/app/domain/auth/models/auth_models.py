@@ -19,10 +19,17 @@ class UserLogin(BaseModel):
 class User(UserBase):
     """사용자 모델"""
     id: str = Field(..., description="사용자 ID")
-    is_active: bool = Field(default=True, description="활성화 여부")
-    is_default_password: bool = Field(default=True, description="기본 비밀번호 사용 여부")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="생성일")
-    updated_at: Optional[datetime] = Field(None, description="수정일")
+    hashedPassword: str = Field(..., alias="hashed_password", description="해시된 비밀번호")
+    isActive: bool = Field(default=True, alias="is_active", description="활성화 여부")
+    isDefaultPassword: bool = Field(default=True, alias="is_default_password", description="기본 비밀번호 사용 여부")
+    createdAt: datetime = Field(default_factory=datetime.utcnow, alias="created_at", description="생성일")
+    updatedAt: Optional[datetime] = Field(None, alias="updated_at", description="수정일")
+
+    class Config:
+        populate_by_name = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 class Token(BaseModel):
     """토큰 모델"""

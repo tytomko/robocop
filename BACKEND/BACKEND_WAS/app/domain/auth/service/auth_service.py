@@ -30,8 +30,14 @@ class AuthService:
         hashed_password = self.get_password_hash(user_data.password)
         
         # 사용자 데이터 준비
-        user_dict = user_data.dict()
-        user_dict["hashed_password"] = hashed_password
+        user_dict = {
+            "username": user_data.username,
+            "hashedPassword": hashed_password,
+            "role": user_data.role,
+            "isActive": True,
+            "isDefaultPassword": True,
+            "createdAt": datetime.now()
+        }
         del user_dict["password"]  # 원본 비밀번호 제거
         
         # 사용자 생성
@@ -42,16 +48,17 @@ class AuthService:
         if not admin:
             admin_user = {
                 "username": "admin",
-                "hashedPassword": security_service.get_password_hash("admin"),
+                "hashedPassword": security_service.get_password_hash("admin1234"),
                 "role": "admin",
                 "isActive": True,
+                "isDefaultPassword": True,
                 "createdAt": datetime.now()
             }
             await self.repository.create_user(admin_user)
 
     async def authenticate_user(self, username: str, password: str):
         user = await self.repository.find_user_by_username(username)
-        if not user or not security_service.verify_password(password, user["hashedPassword"]):
+        if not user or not security_service.verify_password(password, user.hashedPassword):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
@@ -65,15 +72,16 @@ class AuthService:
         refresh_token = security_service.create_refresh_token({"sub": username})
         
         return Token(
-            accessToken=access_token,
-            refreshToken=refresh_token,
-            tokenType="bearer"
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer"
         )
 
     async def refresh_tokens(self, refresh_token: str) -> Token:
         """리프레시 토큰을 사용하여 새로운 토큰 쌍을 생성합니다."""
         token_data = security_service.verify_token(refresh_token)
         if not token_data:
+
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token"
@@ -84,7 +92,7 @@ class AuthService:
     async def change_password(self, username: str, current_password: str, new_password: str, confirm_password: str):
         user = await self.repository.find_user_by_username(username)
         
-        if not security_service.verify_password(current_password, user["hashedPassword"]):
+        if not security_service.verify_password(current_password, user.hashedPassword):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="현재 비밀번호가 일치하지 않습니다."
@@ -113,24 +121,37 @@ class AuthService:
 
     async def verify_token(self, token: str) -> User:
         try:
-            payload = jwt.decode(token, security_service.SECRET_KEY, algorithms=[security_service.ALGORITHM])
-            username: str = payload.get("sub")
+            payload = jwt.decode(
+                token,
+                security_service.config.secret_key,
+                algorithms=[security_service.config.algorithm]
+            )
+            username = payload.get("sub")
             if username is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Could not validate credentials"
                 )
-            token_data = TokenData(username=username)
+            
+            user_data = await self.repository.find_user_by_username(username)
+            if user_data is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found"
+                )
+            
+            # MongoDB 데이터를 User 모델에 맞게 변환
+            return User(
+                id=str(user_data._id),  # ObjectId를 문자열로 변환
+                username=user_data.username,
+                hashed_password=user_data.hashedPassword,  # 이미 alias로 처리됨
+                role=user_data.role,
+                is_active=user_data.isActive,  # 이미 alias로 처리됨
+                is_default_password=user_data.isDefaultPassword,  # 이미 alias로 처리됨
+                created_at=user_data.createdAt  # 이미 alias로 처리됨
+            )
         except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials"
             )
-        
-        user = await self.repository.find_user_by_username(token_data.username)
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials"
-            )
-        return user

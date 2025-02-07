@@ -20,9 +20,22 @@ class PersonRepository:
         """사용자를 생성합니다."""
         await self.connect()
         
+        # 다음 seq 값을 가져옵니다
+        db = await DatabaseConnection.get_db()
+        counter = await db.counters.find_one_and_update(
+            {"_id": "person_id"},
+            {"$inc": {"seq": 1}},
+            upsert=True,
+            return_document=True
+        )
+        
         person_dict = person_data.dict()
-        person_dict["created_at"] = datetime.utcnow()
-        person_dict["images"] = []
+        person_dict.update({
+            "seq": counter["seq"],
+            "createdAt": datetime.utcnow(),
+            "images": [],
+            "isDeleted": False  # false -> False
+        })
         
         result = await self.collection.insert_one(person_dict)
         person_dict["id"] = str(result.inserted_id)
@@ -61,7 +74,7 @@ class PersonRepository:
         await self.connect()
         update_data = {k: v for k, v in person_data.dict(exclude_unset=True).items()}
         if update_data:
-            update_data["updated_at"] = datetime.utcnow()
+            update_data["updatedAt"] = datetime.utcnow() # updated_at -> updatedAt
             result = await self.collection.update_one(
                 {"_id": person_id},
                 {"$set": update_data}
@@ -70,19 +83,87 @@ class PersonRepository:
                 return await self.get_person_by_id(person_id)
         return None
 
-    async def delete_person(self, person_id: str) -> bool:
-        """사용자를 삭제합니다."""
+    async def delete_person(self, seq: int) -> bool:
+        """사용자를 소프트 삭제합니다."""
         await self.connect()
-        result = await self.collection.delete_one({"_id": person_id})
-        return result.deleted_count > 0
+        
+        # seq로 조회 조건 생성
+        query = {"seq": seq, "isDeleted": False}
+            
+        # 소프트 딜리트를 위한 업데이트
+        result = await self.collection.update_one(
+            query,
+            {
+                "$set": {
+                    "deletedAt": datetime.utcnow(),
+                    "isDeleted": True,  # true -> False
+                    "updatedAt": datetime.utcnow()
+                }
+            }
+        )
+        return result.modified_count > 0
 
-    async def add_person_image(self, person_id: str, image_info: ImageInfo) -> Optional[Person]:
+    async def add_person_image(self, person_id: str = None, name: str = None, image_info: ImageInfo = None) -> Optional[Person]:
         """사용자 이미지를 추가합니다."""
         await self.connect()
+        
+        # id나 name으로 조회 조건 생성
+        query = {}
+        if person_id:
+            query["_id"] = person_id
+        if name:
+            query["name"] = name
+            
+        if not query:
+            return None
+            
+        # 이미지 추가
         result = await self.collection.update_one(
-            {"_id": person_id},
-            {"$push": {"images": image_info.dict()}}
+            query,
+            {
+                "$push": {"images": image_info.dict()},
+                "$set": {"updatedAt": datetime.utcnow()}
+            }
         )
+        
         if result.modified_count:
-            return await self.get_person_by_id(person_id)
+            # id로 조회한 경우
+            if person_id:
+                return await self.get_person_by_id(person_id)
+            # name으로 조회한 경우 
+            elif name:
+                person_data = await self.collection.find_one({"name": name})
+                if person_data:
+                    person_data["id"] = str(person_data.pop("_id"))
+                    return Person(**person_data)
+        return None
+
+    async def delete_person_by_name(self, name: str) -> bool:
+        """이름으로 사용자를 삭제합니다."""
+        await self.connect()
+        print(f"Attempting to delete person with name: {name}")  # 디버깅용 로그
+        result = await self.collection.update_one(
+            {"name": name, "isDeleted": False},
+            {
+                "$set": {
+                    "deletedAt": datetime.now(),
+                    "isDeleted": True,  # true -> True
+                    "updatedAt": datetime.now()
+                }
+            }
+        )
+        print(f"Delete result: {result.modified_count}")  # 디버깅용 로그
+        return result.modified_count > 0
+
+    async def get_person_by_name(self, name: str) -> Optional[Person]:
+        """이름으로 사용자를 조회합니다."""
+        await self.connect()
+        print(f"Searching for person with name: {name}")  # 디버깅용 로그
+        query = {"name": name, "isDeleted": False}  # MongoDB에서는 False로 충분합니다
+        print(f"Query: {query}")  # 디버깅용 로그
+        person_data = await self.collection.find_one(query)
+        print(f"Found person data: {person_data}")  # 디버깅용 로그
+        if person_data:
+            person_data["id"] = str(person_data.pop("_id"))
+            return Person(**person_data)
         return None
