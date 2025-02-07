@@ -1,5 +1,5 @@
 /*
-250207 신현학 수정
+250207 수정
 - 키보드 토픽 /key_pulisher -> /key_input
 - 기존 /ssafy/key_input -> /robot_1/key_input
 - 로봇 status 토픽 구독
