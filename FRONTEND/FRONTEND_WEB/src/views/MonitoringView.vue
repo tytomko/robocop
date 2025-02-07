@@ -1,7 +1,7 @@
 <template>
-  <div class="realtime-monitoring">
-    <div class="monitoring-header">
-      <h2>실시간 모니터링</h2>
+  <div class="h-full flex flex-col gap-1.5 px-5 overflow-y-auto">
+    <div class="border-b pb-2 mb-4">
+      <h2 class="text-xl font-semibold">실시간 모니터링</h2>
     </div>
 
     <!-- 등록된 로봇 리스트-->
@@ -66,7 +66,6 @@ const loadRobotsWithNicknames = async () => {
 };
 
 onMounted(() => {
-  // robotsStore.loadRobots();
   loadRobotsWithNicknames(); // 닉네임 불러오기
   setupWebSocket();
 });
@@ -77,15 +76,3 @@ onUnmounted(() => {
   }
 })
 </script>
-
-<style scoped>
-.realtime-monitoring {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 5px 20px;
-  padding: 0 20px;
-  overflow-y: auto;
-}
-
-</style>
