@@ -11,6 +11,9 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
 find_package(robot_custom_interfaces REQUIRED)
 
 add_executable(velodyne_detection src/velodyne_detection.cpp)
@@ -20,9 +23,18 @@ ament_target_dependencies(velodyne_detection
   sensor_msgs
   geometry_msgs
   nav_msgs
+  visualization_msgs
+  PCL
+  pcl_conversions
   robot_custom_interfaces
   # tf2_geometry_msgs 등
 )
+
+install(TARGETS
+  velodyne_detection
+  DESTINATION lib/${PROJECT_NAME})
+
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
