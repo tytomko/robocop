@@ -59,6 +59,15 @@ def generate_launch_description():
         parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
     )
     
+    robot_vision_node = Node(
+        package='robot_vision_pkg',
+        executable='velodyne_detection',
+        name='velodyne_detection',
+        output='screen',
+        parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
+    )
+
+
     return LaunchDescription([
         robot_name_arg,
         robot_number_arg,
@@ -66,5 +75,6 @@ def generate_launch_description():
         turtlebot_launch,
         robot_status_node,
         global_path_planner_node,
-        robot_patrol_node
+        robot_patrol_node,
+        robot_vision_node
     ])

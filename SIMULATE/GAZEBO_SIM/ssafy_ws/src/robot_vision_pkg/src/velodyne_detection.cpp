@@ -36,11 +36,11 @@ const Eigen::Vector4f CROP_MAX(8.0, 2.0, 2.0, 0.0);
 
 // 객체 크기 조건 (바운딩 박스 생성 조건, 필요에 따라 조정)
 // (여기서는 y축, z축 조건으로 사용)
-const double object_min_y = 0.5; // 객체의 최소 높이  범위는 위의 Z축
+const double object_min_y = 0.2; // 객체의 최소 높이  범위는 위의 Z축
 const double object_max_y = 1.5; // 객체의 최대 높이 
 
-const double object_min_x = 0.5; // 객체의 최소 너비 범위는 위의 y축
-const double object_max_x = 2.5; // 객체의 최대 너비 
+const double object_min_x = 0.2; // 객체의 최소 너비 범위는 위의 y축
+const double object_max_x = 2.0; // 객체의 최대 너비 
 
 bool mode_allowed(const std::string &mode)
 {
