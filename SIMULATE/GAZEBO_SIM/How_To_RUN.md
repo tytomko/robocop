@@ -30,12 +30,12 @@ ros2 run robot_status_publisher robot_status_publisher --ros-args -p robot_name:
 
 ### 이동 코드
 ```bash
-ros2 run middle_teleop middle_teleop_node --ros-args -p robot_name:=ssafy -p robot_number:=1
+ros2 run robot_control_pkg middle_teleop_node --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
 ### 키보드 입력을 이동명령어로 바꾸는 코드
 ```bash
-ros2 run keyboard_input key_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
+ros2 run robot_control_pkg key_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
 # 3. 플래닝 패키지 실행
@@ -44,9 +44,9 @@ ros2 run keyboard_input key_publisher --ros-args -p robot_name:=ssafy -p robot_n
 ```bash
 ros2 run robot_planning_pkg global_path_planner --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
-# 4. patrol_pkg 
+# 4. control_pkg robot_patrol
 ```bash
-ros2 run robot_patrol_pkg robot_patrol --ros-args -p robot_name:=ssafy -p robot_number:=1
+ros2 run robot_control_pkg robot_patrol --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
 # 5. 서비스 콜 하기
@@ -87,4 +87,9 @@ ros2 service call /robot_1/resume robot_custom_interfaces/srv/Estop
 ### waiting 서비스
 ```bash
 ros2 service call /robot_1/waiting robot_custom_interfaces/srv/Waiting
+```
+
+### Manual 서비스(모드변경)
+```bash
+ros2 service call /robot_1/manual robot_custom_interfaces/srv/Manual 
 ```

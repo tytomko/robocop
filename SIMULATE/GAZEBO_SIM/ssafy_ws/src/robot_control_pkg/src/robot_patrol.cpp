@@ -176,6 +176,8 @@ private:
             save_path_queue_ = std::queue<Point>();
             // 다른 모드로 전환되었을 때는 patrol_state_를 NONE으로 초기화
             patrol_state_ = PatrolState::NONE;
+            // 비상정지 모드로 전환되었을 때는 로봇 정지
+            stop_robot();
         }
         else {
             // 다른 모드로 전환되었을 때는 patrol_state_를 NONE으로 초기화

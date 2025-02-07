@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(robot_patrol_pkg)
+project(robot_control_pkg)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -35,8 +35,28 @@ ament_target_dependencies(robot_patrol
   robot_custom_interfaces
 )
 
+add_executable(middle_teleop_node src/middle_teleop_node.cpp)
+ament_target_dependencies(middle_teleop_node
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  robot_custom_interfaces
+  tf2
+  # tf2_geometry_msgs 등
+)
+
+# 실행 파일 추가
+add_executable(key_publisher src/key_publisher.cpp)
+
+# 실행 파일에 필요한 의존성 추가
+ament_target_dependencies(key_publisher rclcpp std_msgs)
+
+
 install(TARGETS
   robot_patrol
+  middle_teleop_node
+  key_publisher
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
