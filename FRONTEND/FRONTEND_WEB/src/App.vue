@@ -1,35 +1,36 @@
 <template>
-  <div id="app">
-    <div class="app-container">
+  <div id="app" class="fixed inset-0 overflow-hidden">
+    <div class="flex w-full h-full overflow-hidden">
       <!-- 메인 컨텐츠 영역 -->
-      <div class="content-area">
+      <div class="flex flex-col flex-1 overflow-hidden">
         <!-- Navbar (로그인 페이지에서만 숨김) -->
-        <nav class="navbar" v-if="!isLoginPage">
-          <div class="navbar-container">
-            <div class="logo-area" @click="refreshPage">
-              <img src="@/assets/logo.png" alt="로고" class="logo">
-            </div>
-            <div class="navbar-links">
-              <router-link to="/" class="navbar-link">현황</router-link>
-              <router-link to="/camera" class="navbar-link">CCTV</router-link>
-              <router-link to="/control" class="navbar-link">제어</router-link>
-              <router-link to="/enrollment" class="navbar-link">등록</router-link>
-              <router-link to="/statistics" class="navbar-link">통계</router-link>
-              <router-link to="/settings" class="navbar-link">설정</router-link>
-            </div>
+        <nav 
+          v-if="!isLoginPage" 
+          class="bg-gradient-to-b from-blue-200 to-blue-50 px-10 h-[55px] flex items-center justify-between"
+        >
+          <div class="cursor-pointer" @click="refreshPage">
+            <img src="@/assets/logo.png" alt="로고" class="h-14">
+          </div>
+          <div class="flex space-x-8">
+            <router-link to="/" class="text-gray-800 font-bold text-lg hover:text-blue-600">현황</router-link>
+            <router-link to="/camera" class="text-gray-800 font-bold text-lg hover:text-blue-600">CCTV</router-link>
+            <router-link to="/control" class="text-gray-800 font-bold text-lg hover:text-blue-600">제어</router-link>
+            <router-link to="/enrollment" class="text-gray-800 font-bold text-lg hover:text-blue-600">등록</router-link>
+            <router-link to="/statistics" class="text-gray-800 font-bold text-lg hover:text-blue-600">통계</router-link>
+            <router-link to="/settings" class="text-gray-800 font-bold text-lg hover:text-blue-600">설정</router-link>
           </div>
         </nav>
 
-        <div class="main-container">
+        <div class="flex-1 px-5 overflow-hidden">
           <!-- Dynamic Page Content -->
-          <div class="content">
+          <div class="h-full overflow-hidden">
             <router-view />
           </div>
         </div>
       </div>
 
-      <!-- Sidebar Section (별도 컨테이너) -->
-      <div class="sidebar-area" v-if="!isLoginPage">
+      <!-- Sidebar Section (로그인 페이지에서 숨김) -->
+      <div v-if="!isLoginPage" class="w-[400px] bg-white border-l border-gray-300 overflow-hidden">
         <SidebarSection />
       </div>
     </div>
@@ -60,96 +61,13 @@ export default {
 </script>
 
 <style>
-/* 모든 요소의 스크롤바 제거 */
+/* 스크롤바 제거 */
 * {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
 
-/* Webkit 브라우저용 스크롤바 제거 */
 *::-webkit-scrollbar {
   display: none;
-}
-</style>
-
-<style scoped>
-/* 글로벌 스타일 */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  overflow: hidden;
-}
-
-#app {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-}
-
-.app-container {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.content-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.navbar {
-  background: linear-gradient(to bottom, #b0c4de, #f0f8ff);
-  padding: 5px 40px;
-  height: 45px;
-}
-
-.navbar-container {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-}
-
-.logo-area img {
-  height: 40px;
-  cursor: pointer;
-}
-
-.navbar-links {
-  display: flex;
-  gap: 30px;
-}
-
-.navbar-link {
-  color: #333;
-  font-weight: bold;
-  text-decoration: none;
-  font-size: 17px;
-}
-
-.main-container {
-  flex: 1;
-  padding: 0 20px;
-  overflow: hidden;
-}
-
-.content {
-  height: 100%;
-  overflow: hidden;
-}
-
-.sidebar-area {
-  width: 400px;
-  background: white;
-  border-left: 1px solid #ddd;
-  overflow: hidden;
 }
 </style>
