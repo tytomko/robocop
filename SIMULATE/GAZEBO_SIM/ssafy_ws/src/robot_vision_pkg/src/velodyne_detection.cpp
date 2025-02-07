@@ -26,13 +26,19 @@ using namespace std::chrono_literals;
 // 필터 및 클러스터링 상수 (개발자가 쉽게 변경할 수 있도록 Const 처리)
 constexpr float VOXEL_GRID_SIZE = 0.1f;  // Voxel 필터 리프 사이즈 (LiDAR_big_static 기준 0.1f)
 constexpr float CLUSTER_TOLERANCE = 0.7f; // 클러스터링 허용 오차
-constexpr int MIN_CLUSTER_SIZE = 10;      // 최소 클러스터 포인트 수
+constexpr int MIN_CLUSTER_SIZE = 15;      // 최소 클러스터 포인트 수
 
 // CropBox ROI (LiDAR_big_static 코드 기준)
 //전방10미터까지 좌우 2미터까지 높이 2미터 이내의 영역만 추출
 const Eigen::Vector4f CROP_MIN(0.0, -2.0, -0.4, 0.0);
 const Eigen::Vector4f CROP_MAX(10.0, 2.0, 2.0, 0.0);
 
+const double object_min_y = 0.5; // 객체의 최소 높이
+const double object_max_y = 10.0; // 객체의 최대 높이
+const double object_min_x = 0.3; // 객체의 최소 너비
+const double object_max_x = 10.0; // 객체의 최대 너비
+
+    
 class LidarSubscriber : public rclcpp::Node
 {
 public:
@@ -204,8 +210,7 @@ private:
       pcl::getMinMax3D(*clusters[i], min_p, max_p);
 
       // (조건 예시) 폭과 높이가 특정 범위일 때만 표시 (조건은 필요에 따라 수정)
-      if ((max_p[1] - min_p[1]) < 3.0 && (max_p[1] - min_p[1]) > 0.8 &&
-          (max_p[2] - min_p[2]) > 0.1 && (max_p[2] - min_p[2]) < 1.6)
+    if ((max_p[1] - min_p[1]) < object_max_y && (max_p[1] - min_p[1]) > object_min_y && (max_p[2] - min_p[2]) > object_min_x && (max_p[2] - min_p[2]) < object_max_x)
       {
         visualization_msgs::msg::Marker bbox_marker;
         bbox_marker.header = output.header;
