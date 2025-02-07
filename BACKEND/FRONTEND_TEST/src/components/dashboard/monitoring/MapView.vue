@@ -3,13 +3,7 @@
     <div class="map-header">
       <h3>맵 뷰</h3>
       <div class="map-controls">
-        <button class="control-btn" @click="zoomIn">
-          <span>+</span>
-        </button>
-        <button class="control-btn" @click="zoomOut">
-          <span>-</span>
-        </button>
-        <button class="control-btn" @click="resetView">
+        <button class="control-btn" @click="resetZoom">
           <span>↺</span>
         </button>
       </div>
@@ -25,15 +19,7 @@
         </select>
       </div>
       
-      <canvas 
-        ref="canvasRef"
-        class="map-canvas"
-        @mousedown="startDrag"
-        @mousemove="drag"
-        @mouseup="endDrag"
-        @mouseleave="endDrag"
-        @wheel="handleWheel"
-      ></canvas>
+      <canvas ref="chartRef"></canvas>
 
       <div v-if="loading" class="loading-overlay">
         <div class="spinner"></div>
@@ -44,15 +30,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
+import Chart from 'chart.js/auto'
+import zoomPlugin from 'chartjs-plugin-zoom'
 
-const canvasRef = ref(null)
+// Chart.js에 zoom 플러그인 등록
+Chart.register(zoomPlugin)
+
+const chartRef = ref(null)
+const chartInstance = ref(null)
 const selectedRobot = ref(localStorage.getItem('selectedRobot') || '')
 const loading = ref(true)
-const isDragging = ref(false)
-const lastPos = ref({ x: 0, y: 0 })
-const offset = ref({ x: 0, y: 0 })
-const scale = ref(1)
+const mapData = ref({
+  nodes: [],
+  links: [],
+  directed: false,
+  multigraph: false,
+  graph: {}
+})
 
 // 임시 로봇 데이터
 const robots = ref([
@@ -61,6 +57,120 @@ const robots = ref([
   { id: 'robot3', name: 'Robot 3' }
 ])
 
+// 차트 생성/업데이트 함수
+const updateChart = () => {
+  if (!chartRef.value) return
+  const ctx = chartRef.value.getContext('2d')
+  if (!ctx) return
+
+  try {
+    if (chartInstance.value) {
+      chartInstance.value.destroy()
+    }
+    
+    // 노드 데이터 준비
+    const nodeData = mapData.value.nodes.map(node => ({
+      x: node.id[0],
+      y: node.id[1]
+    }))
+
+    // 링크 데이터셋 준비
+    const linkDatasets = mapData.value.links.map((link, index) => ({
+      label: `Link ${index}`,
+      data: [
+        { x: link.source[0], y: link.source[1] },
+        { x: link.target[0], y: link.target[1] }
+      ],
+      showLine: true,
+      borderColor: '#666',
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false
+    }))
+
+    chartInstance.value = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Nodes',
+            data: nodeData,
+            backgroundColor: '#007bff',
+            pointRadius: 5,
+            pointHoverRadius: 8
+          },
+          ...linkDatasets
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            grid: {
+              color: '#ddd'
+            }
+          },
+          y: {
+            type: 'linear',
+            grid: {
+              color: '#ddd'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: (context) => {
+                return `(${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`
+              }
+            }
+          },
+          zoom: {
+            pan: {  // 패닝(이동) 관련 설정
+              enabled: true,
+              mode: 'xy',
+              threshold: 10
+            },
+            zoom: {   // 확대, 축소 관련 설정
+              wheel: {
+                enabled: true,
+                speed: 0.1
+              },
+              pinch: {
+                enabled: true
+              },
+              mode: 'xy',
+              drag: {
+                enabled: false
+              }
+            },
+            limits: {
+              x: {min: 'original', max: 'original'},
+              y: {min: 'original', max: 'original'}
+            }
+          }
+        }
+      }
+    })
+  } catch (error) {
+    console.error('차트 업데이트 중 오류 발생:', error)
+  }
+}
+
+// 줌 리셋 함수
+const resetZoom = () => {
+  if (chartInstance.value) {
+    chartInstance.value.resetZoom()
+  }
+}
+
 // 로봇 선택 처리
 const handleRobotSelection = () => {
   if (selectedRobot.value) {
@@ -68,160 +178,40 @@ const handleRobotSelection = () => {
   } else {
     localStorage.removeItem('selectedRobot')
   }
-  drawMap()
 }
 
-// 드래그 관련 함수들
-const startDrag = (event) => {
-  isDragging.value = true
-  lastPos.value = {
-    x: event.clientX,
-    y: event.clientY
+// 맵 데이터 가져오기
+const fetchMapData = async () => {
+  try {
+    loading.value = true
+    const response = await axios.get('http://localhost:8000/map')
+    mapData.value = response.data
+    updateChart()
+  } catch (error) {
+    console.error('맵 데이터 로딩 실패:', error)
+  } finally {
+    loading.value = false
   }
 }
 
-const drag = (event) => {
-  if (!isDragging.value) return
-
-  const deltaX = event.clientX - lastPos.value.x
-  const deltaY = event.clientY - lastPos.value.y
-  
-  offset.value = {
-    x: offset.value.x + deltaX,
-    y: offset.value.y + deltaY
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(async () => {
+  try {
+    await fetchMapData()
+    window.addEventListener('resize', () => {
+      requestAnimationFrame(updateChart)
+    })
+  } catch (error) {
+    console.error('컴포넌트 마운트 중 오류 발생:', error)
   }
-
-  lastPos.value = {
-    x: event.clientX,
-    y: event.clientY
-  }
-
-  drawMap()
-}
-
-const endDrag = () => {
-  isDragging.value = false
-}
-
-// 줌 관련 함수들
-const handleWheel = (event) => {
-  event.preventDefault()
-  const delta = event.deltaY * -0.01
-  const newScale = Math.min(Math.max(0.1, scale.value + delta), 5)
-  scale.value = newScale
-  drawMap()
-}
-
-const zoomIn = () => {
-  scale.value = Math.min(5, scale.value + 0.1)
-  drawMap()
-}
-
-const zoomOut = () => {
-  scale.value = Math.max(0.1, scale.value - 0.1)
-  drawMap()
-}
-
-const resetView = () => {
-  scale.value = 1
-  offset.value = { x: 0, y: 0 }
-  drawMap()
-}
-
-// 맵 그리기
-const drawMap = () => {
-  if (!canvasRef.value) return
-
-  const canvas = canvasRef.value
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  // 캔버스 크기 설정
-  const container = canvas.parentElement
-  if (!container) return
-
-  canvas.width = container.clientWidth
-  canvas.height = container.clientHeight
-
-  // 맵 데이터가 없으면 기본 그리드 표시
-  drawDefaultGrid(ctx, canvas.width, canvas.height)
-
-  // 선택된 로봇 위치 표시
-  if (selectedRobot.value) {
-    drawRobot(ctx, canvas.width/2, canvas.height/2)
-  }
-}
-
-// 기본 그리드 그리기
-const drawDefaultGrid = (ctx, width, height) => {
-  ctx.save()
-  ctx.translate(offset.value.x, offset.value.y)
-  ctx.scale(scale.value, scale.value)
-
-  ctx.clearRect(-width, -height, width * 3, height * 3)
-  ctx.strokeStyle = '#ddd'
-  ctx.lineWidth = 1
-
-  const gridSize = 50
-  const startX = Math.floor(-width/scale.value - offset.value.x)
-  const startY = Math.floor(-height/scale.value - offset.value.y)
-  const endX = Math.ceil(width/scale.value - offset.value.x)
-  const endY = Math.ceil(height/scale.value - offset.value.y)
-
-  // 수직선
-  for (let x = startX; x <= endX; x += gridSize) {
-    ctx.beginPath()
-    ctx.moveTo(x, startY)
-    ctx.lineTo(x, endY)
-    ctx.stroke()
-  }
-
-  // 수평선
-  for (let y = startY; y <= endY; y += gridSize) {
-    ctx.beginPath()
-    ctx.moveTo(startX, y)
-    ctx.lineTo(endX, y)
-    ctx.stroke()
-  }
-
-  ctx.restore()
-}
-
-// 로봇 그리기
-const drawRobot = (ctx, x, y) => {
-  ctx.save()
-  ctx.translate(offset.value.x + x * scale.value, offset.value.y + y * scale.value)
-  
-  // 로봇 본체
-  ctx.beginPath()
-  ctx.arc(0, 0, 15 * scale.value, 0, Math.PI * 2)
-  ctx.fillStyle = '#007bff'
-  ctx.fill()
-  
-  // 방향 표시
-  ctx.beginPath()
-  ctx.moveTo(0, 0)
-  ctx.lineTo(20 * scale.value, 0)
-  ctx.strokeStyle = 'white'
-  ctx.lineWidth = 2 * scale.value
-  ctx.stroke()
-  
-  ctx.restore()
-}
-
-// 컴포넌트 마운트/언마운트
-onMounted(() => {
-  window.addEventListener('resize', drawMap)
-  loading.value = false
 })
 
+// 컴포넌트 언마운트 시 정리
 onUnmounted(() => {
-  window.removeEventListener('resize', drawMap)
-})
-
-// 선택된 로봇이 변경될 때마다 맵 다시 그리기
-watch(selectedRobot, () => {
-  drawMap()
+  if (chartInstance.value) {
+    chartInstance.value.destroy()
+  }
+  window.removeEventListener('resize', updateChart)
 })
 </script>
 
@@ -246,35 +236,10 @@ watch(selectedRobot, () => {
   color: #333;
 }
 
-.map-controls {
-  display: flex;
-  gap: 10px;
-}
-
-.control-btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: #666;
-  transition: all 0.3s;
-}
-
-.control-btn:hover {
-  background: #f8f9fa;
-  color: #333;
-}
-
 .map-container {
   flex: 1;
   position: relative;
-  overflow: hidden;
+  padding: 20px;
 }
 
 .robot-selector {
@@ -297,13 +262,13 @@ watch(selectedRobot, () => {
   font-size: 14px;
 }
 
-.map-canvas {
-  width: 100%;
-  height: 100%;
-  cursor: grab;
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+  cursor: grab; /* 마우스 커서 스타일 변경 */
 }
 
-.map-canvas:active {
+canvas:active {
   cursor: grabbing;
 }
 
