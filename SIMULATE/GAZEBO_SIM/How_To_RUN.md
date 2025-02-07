@@ -88,3 +88,8 @@ ros2 service call /robot_1/resume robot_custom_interfaces/srv/Estop
 ```bash
 ros2 service call /robot_1/waiting robot_custom_interfaces/srv/Waiting
 ```
+
+### Manual 서비스(모드변경)
+```bash
+ros2 service call /robot_1/manual robot_custom_interfaces/srv/Manual 
+```
