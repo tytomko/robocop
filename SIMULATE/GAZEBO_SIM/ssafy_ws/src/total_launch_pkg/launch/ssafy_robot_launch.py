@@ -1,11 +1,20 @@
 import os
-
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+
+# 현재 켜지는 노드
+# 1. robot_status_publisher
+# 2. global_path_planner
+# 3. robot_patrol
+# 4. velodyne_detection
+# 5. turtlebot3_gazebo (나중에 Isaac sim으로 대체)
+# 6. middle_teleop (조종 명령어를 String형태로 받아서 움직이는 노드)
+##추가해야 하는 것
+# 7. rosbridge_websocket (웹에서 조종하기 위한 노드)
 
 def generate_launch_description():
     # Launch Argument 선언 (default 값 설정)
@@ -67,7 +76,13 @@ def generate_launch_description():
         parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
     )
 
-
+    middle_teleop_node = Node(
+        package='robot_control_pkg',
+        executable='middle_teleop_node',
+        name='middle_teleop_node',
+        output='screen',
+        parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
+    )
     return LaunchDescription([
         robot_name_arg,
         robot_number_arg,
@@ -76,5 +91,6 @@ def generate_launch_description():
         robot_status_node,
         global_path_planner_node,
         robot_patrol_node,
-        robot_vision_node
+        robot_vision_node,
+        middle_teleop_node
     ])
