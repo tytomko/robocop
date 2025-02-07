@@ -29,7 +29,7 @@ public:
     robot_num_ = this->get_parameter("robot_number").as_int();
 
     // 구독 및 발행 토픽 설정
-    std::string key_topic = "/robot_" + std::to_string(robot_num_) "/key_input";
+    std::string key_topic = "/robot_" + std::to_string(robot_num_) + "/key_input";
     std::string cmd_vel_topic = "/" + robot_name_ + "/cmd_vel";
     //std::string cmd_vel_topic = "/cmd_vel";
     std::string robot_status_topic = "/robot_" + std::to_string(robot_num_) + "/status";
@@ -147,7 +147,7 @@ private:
         cmd_vel_publisher_->publish(cmd_vel_msg);
     }
     else{
-        ROS_INFO("Not manual mode");
+        RCLCPP_ERROR(this->get_logger(), "Current Mode is not Manual mode");
     }
   }
   bool is_manual_mode = false;
