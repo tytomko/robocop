@@ -63,18 +63,9 @@ private:
   {
     // joystick 입력을 바탕으로 linear_velocity와 angular_velocity를 설정
     // msg->axes[1] = 앞뒤 이동 (좌/우 조작은 axes[0], 회전은 axes[3] 등)
-    // axes:
-    // - -0.0 왼쪽좌우
-    // - -0.0 왼족 상하
-    // - 1.0
-    // - -0.0 오른쪽 좌우
-    // - -0.0 오른쪽 상하
-    // - 1.0
-    // - 0.0
-    // - 0.0
 
     linear_vel_ = msg->axes[1] * MAX_LINEAR_SPEED;  // 앞뒤
-    angular_vel_ = msg->axes[3] * MAX_ANGULAR_SPEED; // 좌우 회전
+    angular_vel_ = msg->axes[0] * MAX_ANGULAR_SPEED; // 좌우 회전
   }
 
   void controlLoop()
