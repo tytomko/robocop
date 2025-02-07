@@ -33,10 +33,11 @@ constexpr int MIN_CLUSTER_SIZE = 15;      // 최소 클러스터 포인트 수
 const Eigen::Vector4f CROP_MIN(0.0, -2.0, -0.4, 0.0);
 const Eigen::Vector4f CROP_MAX(10.0, 2.0, 2.0, 0.0);
 
+//크기를 너무 느슨하거나 엄격하게 설정하면 원하는 객체를 인식하지 못할 수 있습니다.
 const double object_min_y = 0.5; // 객체의 최소 높이
-const double object_max_y = 10.0; // 객체의 최대 높이
+const double object_max_y = 3.0; // 객체의 최대 높이
 const double object_min_x = 0.3; // 객체의 최소 너비
-const double object_max_x = 10.0; // 객체의 최대 너비
+const double object_max_x = 3.0; // 객체의 최대 너비
 
     
 class LidarSubscriber : public rclcpp::Node
