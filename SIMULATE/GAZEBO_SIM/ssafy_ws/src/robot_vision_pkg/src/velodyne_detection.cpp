@@ -5,6 +5,7 @@
 #include "visualization_msgs/msg/marker.hpp" 
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "robot_custom_interfaces/srv/estop.hpp"
+#include "robot_custom_interfaces/msg/status.hpp" // status 메시지 타입
 
 // PCL 관련 헤더들
 #include <pcl/point_cloud.h>
@@ -23,43 +24,54 @@
 
 using namespace std::chrono_literals;
 
-// 필터 및 클러스터링 상수 (개발자가 쉽게 변경할 수 있도록 Const 처리)
-constexpr float VOXEL_GRID_SIZE = 0.1f;  // Voxel 필터 리프 사이즈 (LiDAR_big_static 기준 0.1f)
-constexpr float CLUSTER_TOLERANCE = 0.7f; // 클러스터링 허용 오차
-constexpr int MIN_CLUSTER_SIZE = 15;      // 최소 클러스터 포인트 수
+// 필터 및 클러스터링 상수
+constexpr float VOXEL_GRID_SIZE = 0.1f;   // Voxel 필터 리프 사이즈
+constexpr float CLUSTER_TOLERANCE = 0.7f;  // 클러스터링 허용 오차
+constexpr int MIN_CLUSTER_SIZE = 15;       // 최소 클러스터 포인트 수
 
-// CropBox ROI (LiDAR_big_static 코드 기준)
-//전방10미터까지 좌우 2미터까지 높이 2미터 이내의 영역만 추출
+// CropBox ROI (전방 10미터, 좌우 2미터, 높이 2미터 내의 영역)
+// X: 0 ~ 10, Y: -2 ~ 2, Z: -0.4 ~ 2 (여기서는 X 최대값 8로 제한)
 const Eigen::Vector4f CROP_MIN(0.0, -2.0, -0.4, 0.0);
-const Eigen::Vector4f CROP_MAX(10.0, 2.0, 2.0, 0.0);
+const Eigen::Vector4f CROP_MAX(8.0, 2.0, 2.0, 0.0);
 
-//크기를 너무 느슨하거나 엄격하게 설정하면 원하는 객체를 인식하지 못할 수 있습니다.
-const double object_min_y = 0.5; // 객체의 최소 높이
-const double object_max_y = 3.0; // 객체의 최대 높이
-const double object_min_x = 0.3; // 객체의 최소 너비
-const double object_max_x = 3.0; // 객체의 최대 너비
+// 객체 크기 조건 (바운딩 박스 생성 조건, 필요에 따라 조정)
+// (여기서는 y축, z축 조건으로 사용)
+const double object_min_y = 0.5; // 객체의 최소 높이  범위는 위의 Z축
+const double object_max_y = 1.5; // 객체의 최대 높이 
 
-    
+const double object_min_x = 0.5; // 객체의 최소 너비 범위는 위의 y축
+const double object_max_x = 2.5; // 객체의 최대 너비 
+
+bool mode_allowed(const std::string &mode)
+{
+  return (mode == "patrol" || mode == "homing" || mode == "navigate" || mode == "manual");
+}
+
 class LidarSubscriber : public rclcpp::Node
 {
 public:
   LidarSubscriber()
   : Node("lidar_subscriber"),
-    is_stopped_(false)
+    is_stopped_(false),
+    obstacle_detected_(false),
+    absent_time_recorded_(false)
   {
-    // robot_name 및 robot_number 파라미터 선언 (기본값 제공)
+    // 노드 시작 시각 저장 (초기 구동 시 정지 명령 지연을 위한 기준)
+    start_time_ = this->now();
+    
+    // robot_name 및 robot_number 파라미터 선언
     this->declare_parameter<std::string>("robot_name", "not_defined");
     this->declare_parameter<int>("robot_number", -1);
     std::string my_robot_name = this->get_parameter("robot_name").as_string();
     int my_robot_number = this->get_parameter("robot_number").as_int();
     
-    // 동적으로 토픽 및 서비스 이름 생성
+    // 토픽 및 서비스 이름 생성
     std::string velodyne_topic_name = "/" + my_robot_name + "/velodyne_points";
     std::string clustered_topic_name = my_robot_name + "/clustered_points";
     std::string filtered_topic_name = my_robot_name + "/filtered_points";
-
     std::string roi_topic_name = my_robot_name + "/roi_marker";
     std::string detected_objects_topic_name = my_robot_name + "/detected_objects";
+    std::string status_topic_name = "/robot_" + std::to_string(my_robot_number) + "/status";
     
     temp_stop_service_ = "/robot_" + std::to_string(my_robot_number) + "/temp_stop";
     resume_service_    = "/robot_" + std::to_string(my_robot_number) + "/resume";
@@ -72,23 +84,23 @@ public:
       std::bind(&LidarSubscriber::lidar_callback, this, std::placeholders::_1)
     );
 
-    // 클러스터 결과 (TotalCloud)를 발행하는 퍼블리셔 ("/Cluster/big_static")
+    // Status 토픽 구독 (상태 메시지: mode 업데이트)
+    status_subscription_ = this->create_subscription<robot_custom_interfaces::msg::Status>(
+      status_topic_name, 10,
+      std::bind(&LidarSubscriber::status_callback, this, std::placeholders::_1)
+    );
+
+    // 퍼블리셔 생성
     velodyne_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(clustered_topic_name, 1);
-
-    // 다운샘플링된 raw 데이터를 발행하는 퍼블리셔 ("/filtered_points")
     filtered_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(filtered_topic_name, 1);
-
-    // ROI Marker 퍼블리셔 ("/roi_marker")
     roi_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(roi_topic_name, 10);
-
-    // 인식한 객체 바운딩 박스 MarkerArray 퍼블리셔 ("/bounding_boxes")
     object_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(detected_objects_topic_name, 10);
 
-    // 서비스 클라이언트 생성 (/temp_stop, /resume)
+    // 서비스 클라이언트 생성
     temp_stop_client_ = this->create_client<robot_custom_interfaces::srv::Estop>(temp_stop_service_);
     resume_client_    = this->create_client<robot_custom_interfaces::srv::Estop>(resume_service_);
 
-    // 객체 부재 시 /resume 명령을 위한 타이머 (500ms 주기)
+    // 재개 타이머 생성
     resume_timer_ = this->create_wall_timer(
       500ms, std::bind(&LidarSubscriber::check_resume, this)
     );
@@ -97,21 +109,28 @@ public:
   }
 
 private:
-  // 포인트 클라우드 메시지 수신 콜백 함수
+  // Status 메시지 콜백: 현재 모드를 업데이트
+  void status_callback(const robot_custom_interfaces::msg::Status::SharedPtr msg)
+  {
+    current_mode_ = msg->mode;
+    RCLCPP_DEBUG(this->get_logger(), "Status mode updated: %s", current_mode_.c_str());
+  }
+
+  // 포인트 클라우드 콜백
   void lidar_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
   {
-    // 1. ROS 메시지를 intensity 채널이 있는 PCL 포인트 클라우드 (pcl::PointXYZI)로 변환
+    // 1. ROS 메시지를 pcl::PointXYZI 타입으로 변환
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::fromROSMsg(*msg, *cloud);
 
-    // 2. Voxel Grid 필터를 이용한 다운샘플링 (리프 사이즈: 0.1)
+    // 2. Voxel Grid 필터 적용
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::VoxelGrid<pcl::PointXYZI> voxel_filter;
     voxel_filter.setInputCloud(cloud);
     voxel_filter.setLeafSize(VOXEL_GRID_SIZE, VOXEL_GRID_SIZE, VOXEL_GRID_SIZE);
     voxel_filter.filter(*cloud_filtered);
 
-    // 2-1. 다운샘플링된 raw 데이터 발행 ("/filtered_points")
+    // 2-1. 다운샘플링된 raw 데이터 발행
     {
       pcl::PCLPointCloud2 pcl_filtered;
       pcl::toPCLPointCloud2(*cloud_filtered, pcl_filtered);
@@ -121,7 +140,7 @@ private:
       filtered_pub_->publish(filtered_msg);
     }
 
-    // 3. CropBox 필터를 이용해 전방 영역(ROI)만 추출 (min: CROP_MIN, max: CROP_MAX)
+    // 3. CropBox 필터로 ROI 추출
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_roi(new pcl::PointCloud<pcl::PointXYZI>);
     pcl::CropBox<pcl::PointXYZI> crop_filter;
     crop_filter.setInputCloud(cloud_filtered);
@@ -129,7 +148,7 @@ private:
     crop_filter.setMax(CROP_MAX);
     crop_filter.filter(*cloud_roi);
 
-    // **ROI 영역을 시각화하는 Marker 생성 및 발행**
+    // ROI 영역 시각화 (Marker)
     {
       visualization_msgs::msg::Marker roi_marker;
       roi_marker.header = msg->header;
@@ -137,28 +156,22 @@ private:
       roi_marker.id = 0;
       roi_marker.type = visualization_msgs::msg::Marker::CUBE;
       roi_marker.action = visualization_msgs::msg::Marker::ADD;
-      // ROI 중앙 계산: (CROP_MIN + CROP_MAX)/2
       roi_marker.pose.position.x = (CROP_MIN[0] + CROP_MAX[0]) / 2.0;
       roi_marker.pose.position.y = (CROP_MIN[1] + CROP_MAX[1]) / 2.0;
       roi_marker.pose.position.z = (CROP_MIN[2] + CROP_MAX[2]) / 2.0;
-      roi_marker.pose.orientation.x = 0.0;
-      roi_marker.pose.orientation.y = 0.0;
-      roi_marker.pose.orientation.z = 0.0;
       roi_marker.pose.orientation.w = 1.0;
-      // ROI 크기: CROP_MAX - CROP_MIN
       roi_marker.scale.x = CROP_MAX[0] - CROP_MIN[0];
       roi_marker.scale.y = CROP_MAX[1] - CROP_MIN[1];
       roi_marker.scale.z = CROP_MAX[2] - CROP_MIN[2];
-      // 색상 설정 (연두색, 반투명)
       roi_marker.color.r = 0.0;
       roi_marker.color.g = 1.0;
       roi_marker.color.b = 0.0;
       roi_marker.color.a = 0.3;
-      roi_marker.lifetime = rclcpp::Duration(0, 0); // 영구 표시
+      roi_marker.lifetime = rclcpp::Duration(0, 0);
       roi_marker_pub_->publish(roi_marker);
     }
 
-    // 4. 클러스터링: ROI 영역 내에서 KD-Tree 및 EuclideanClusterExtraction 이용
+    // 4. 클러스터링
     pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
     tree->setInputCloud(cloud_roi);
 
@@ -170,7 +183,7 @@ private:
     ec.setInputCloud(cloud_roi);
     ec.extract(cluster_indices);
 
-    // 5. 각 클러스터별로 TotalCloud 생성 (각 포인트 intensity에 클러스터 id 부여)
+    // 5. 각 클러스터별 TotalCloud 생성 및 클러스터 id 부여
     pcl::PointCloud<pcl::PointXYZI> TotalCloud;
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> clusters;
     clusters.clear();
@@ -192,7 +205,7 @@ private:
       cluster_id++;
     }
 
-    // 6. TotalCloud를 sensor_msgs::msg::PointCloud2로 변환하여 발행 ("/Cluster/big_static")
+    // 6. TotalCloud 발행 ("/clustered_points")
     pcl::PCLPointCloud2 pcl_pc2;
     pcl::toPCLPointCloud2(TotalCloud, pcl_pc2);
     sensor_msgs::msg::PointCloud2 output;
@@ -200,8 +213,7 @@ private:
     output.header = msg->header;
     velodyne_pub_->publish(output);
 
-    // 7. 각 클러스터에 대해 (조건 만족 시) 바운딩 박스 및 중심 계산 후 Marker 생성
-    //    인식한 객체(클러스터)의 크기에 맞는 바운딩 박스를 생성합니다.
+    // 7. 각 클러스터에 대해 바운딩 박스 생성 (MarkerArray)
     visualization_msgs::msg::MarkerArray bbox_marker_array;
     int marker_id = 0;
     for (size_t i = 0; i < clusters.size(); i++)
@@ -210,8 +222,9 @@ private:
       pcl::compute3DCentroid(*clusters[i], centroid);
       pcl::getMinMax3D(*clusters[i], min_p, max_p);
 
-      // (조건 예시) 폭과 높이가 특정 범위일 때만 표시 (조건은 필요에 따라 수정)
-    if ((max_p[1] - min_p[1]) < object_max_y && (max_p[1] - min_p[1]) > object_min_y && (max_p[2] - min_p[2]) > object_min_x && (max_p[2] - min_p[2]) < object_max_x)
+      // 조건: y축(높이)와 z축(너비) 조건을 이용 (필요에 따라 조정)
+      if ((max_p[1] - min_p[1]) < object_max_y && (max_p[1] - min_p[1]) > object_min_y &&
+          (max_p[2] - min_p[2]) > object_min_x && (max_p[2] - min_p[2]) < object_max_x)
       {
         visualization_msgs::msg::Marker bbox_marker;
         bbox_marker.header = output.header;
@@ -219,29 +232,21 @@ private:
         bbox_marker.id = marker_id++;
         bbox_marker.type = visualization_msgs::msg::Marker::CUBE;
         bbox_marker.action = visualization_msgs::msg::Marker::ADD;
-        // 중심: (min + max)/2
         bbox_marker.pose.position.x = (min_p[0] + max_p[0]) / 2.0;
         bbox_marker.pose.position.y = (min_p[1] + max_p[1]) / 2.0;
         bbox_marker.pose.position.z = (min_p[2] + max_p[2]) / 2.0;
-        // 회전: 기본 (0,0,0,1)
-        bbox_marker.pose.orientation.x = 0.0;
-        bbox_marker.pose.orientation.y = 0.0;
-        bbox_marker.pose.orientation.z = 0.0;
         bbox_marker.pose.orientation.w = 1.0;
-        // 크기: max - min
         bbox_marker.scale.x = max_p[0] - min_p[0];
         bbox_marker.scale.y = max_p[1] - min_p[1];
         bbox_marker.scale.z = max_p[2] - min_p[2];
-        // 색상 설정 (파란색, 약간 투명)
         bbox_marker.color.r = 0.0;
         bbox_marker.color.g = 0.0;
         bbox_marker.color.b = 1.0;
         bbox_marker.color.a = 0.5;
-        bbox_marker.lifetime = rclcpp::Duration(0, 0); // 영구 표시
+        bbox_marker.lifetime = rclcpp::Duration(0, 0);
         bbox_marker_array.markers.push_back(bbox_marker);
       }
     }
-    // bbox_marker_array가 비어있지 않으면 발행, 그렇지 않으면 기존 Marker 삭제 메시지 발행
     if (!bbox_marker_array.markers.empty())
     {
       object_pub_->publish(bbox_marker_array);
@@ -255,54 +260,76 @@ private:
       object_pub_->publish(delete_array);
     }
 
-    // 8. (기존) 클러스터(객체)가 존재하면 /temp_stop 서비스 호출, 없으면 마커 삭제 (ROI 및 중심 표시)
-    if (!clusters.empty())
+    // 7. (바운딩 박스 생성 후)
+    // bbox_marker_array가 비어있지 않으면 장애물이 있다고 판단합니다.
+    bool obstacles_exist = !bbox_marker_array.markers.empty();
+
+    // 8. 정지/재개 명령:
+    // 장애물이 있으면 (bbox_marker_array.markers가 비어있지 않으면) 정지 조건 검사,
+    // 없으면 장애물 부재 처리.
+    if (obstacles_exist)
     {
-      last_object_time_ = this->now();
-      if (!is_stopped_)
+      if ((this->now() - start_time_).seconds() > 5.0)
       {
-        call_temp_stop_service();
-        is_stopped_ = true;
+        if (mode_allowed(current_mode_))
+        {
+          // 장애물이 존재하면 obstacle_detected_를 true로 유지
+          obstacle_detected_ = true;
+          // update last_object_time_
+          last_object_time_ = this->now();
+          if (!is_stopped_)
+          {
+            RCLCPP_INFO(this->get_logger(), "Stop command conditions met (bounding boxes exist). Calling /temp_stop service.");
+            call_temp_stop_service();
+            is_stopped_ = true;
+          }
+        }
       }
     }
     else
     {
+      // 장애물이 없으면, 장애물이 처음 사라진 경우에만 absent_start_time_ 기록
+      if (obstacle_detected_ && !absent_time_recorded_) {
+        absent_start_time_ = this->now();
+        absent_time_recorded_ = true;
+        RCLCPP_INFO(this->get_logger(), "Obstacles disappeared. Recording absent_start_time_.");
+      }
+      obstacle_detected_ = false;
+      // ROI Marker 삭제 처리
       visualization_msgs::msg::Marker delete_marker;
       delete_marker.action = visualization_msgs::msg::Marker::DELETEALL;
       roi_marker_pub_->publish(delete_marker);
     }
   }
 
-  // 객체가 사라진 지 2초 이상 경과하면 /resume 서비스 호출 (타이머 콜백)
+  // 타이머 콜백: 장애물이 2초 이상 지속적으로 사라진 경우 재개 명령 전송
   void check_resume()
   {
-    if (is_stopped_)
+    if (is_stopped_ && !obstacle_detected_)
     {
-      auto time_diff = this->now() - last_object_time_;
-      if (time_diff.seconds() > 2.0)
+      auto absent_duration = this->now() - absent_start_time_;
+      RCLCPP_INFO(this->get_logger(), "Absent duration: %f seconds", absent_duration.seconds());
+      if (absent_duration.seconds() > 2.0)
       {
+        RCLCPP_INFO(this->get_logger(), "No obstacles for %f seconds. Calling /resume service.", absent_duration.seconds());
         call_resume_service();
         is_stopped_ = false;
+        absent_time_recorded_ = false; // 재개 후 기록 초기화
       }
     }
   }
 
-  // /temp_stop 서비스 호출 (응답 확인 및 실패 시 재시도)
+  // /temp_stop 서비스 호출
   void call_temp_stop_service()
   {
     auto request = std::make_shared<robot_custom_interfaces::srv::Estop::Request>();
-    // 요청 데이터 추가 필요 시 설정
-
     RCLCPP_INFO(this->get_logger(), "Calling /temp_stop service");
     if (!temp_stop_client_->wait_for_service(1s))
     {
       RCLCPP_WARN(this->get_logger(), "/temp_stop service not available, retrying...");
-      this->create_wall_timer(500ms, [this]() {
-        call_temp_stop_service();
-      });
+      this->create_wall_timer(500ms, [this]() { call_temp_stop_service(); });
       return;
     }
-
     temp_stop_client_->async_send_request(
       request,
       [this](rclcpp::Client<robot_custom_interfaces::srv::Estop>::SharedFuture future)
@@ -326,22 +353,17 @@ private:
     );
   }
 
-  // /resume 서비스 호출 (응답 확인 및 실패 시 재시도)
+  // /resume 서비스 호출
   void call_resume_service()
   {
     auto request = std::make_shared<robot_custom_interfaces::srv::Estop::Request>();
-    // 요청 데이터 추가 필요 시 설정
-
     RCLCPP_INFO(this->get_logger(), "Calling /resume service");
     if (!resume_client_->wait_for_service(1s))
     {
       RCLCPP_WARN(this->get_logger(), "/resume service not available, retrying...");
-      this->create_wall_timer(500ms, [this]() {
-        call_resume_service();
-      });
+      this->create_wall_timer(500ms, [this]() { call_resume_service(); });
       return;
     }
-
     resume_client_->async_send_request(
       request,
       [this](rclcpp::Client<robot_custom_interfaces::srv::Estop>::SharedFuture future)
@@ -367,21 +389,31 @@ private:
 
   // 멤버 변수
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_subscription_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_pub_;    // 클러스터링 결과 (TotalCloud)를 발행
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;    // 다운샘플링된 raw 데이터 (filtered_points)를 발행
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr roi_marker_pub_; // ROI Marker 발행
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr object_pub_;  // 인식한 객체의 바운딩 박스 MarkerArray 발행
+  rclcpp::Subscription<robot_custom_interfaces::msg::Status>::SharedPtr status_subscription_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr velodyne_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr roi_marker_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr object_pub_;
   rclcpp::Client<robot_custom_interfaces::srv::Estop>::SharedPtr temp_stop_client_;
   rclcpp::Client<robot_custom_interfaces::srv::Estop>::SharedPtr resume_client_;
   rclcpp::TimerBase::SharedPtr resume_timer_;
 
-  // 서비스 이름 (동적으로 설정)
   std::string temp_stop_service_;
   std::string resume_service_;
 
-  // 객체 정지 상태 및 마지막 객체 검출 시간
   bool is_stopped_;
   rclcpp::Time last_object_time_;
+  rclcpp::Time start_time_;
+  rclcpp::Time absent_start_time_; // 장애물 부재 시작 시각
+
+  // 현재 상태 모드 (예: "patrol", "homing", "navigate", "manual" 등)
+  std::string current_mode_;
+
+  // 장애물 감지 여부 플래그
+  bool obstacle_detected_;
+
+  // 장애물 부재 시각 기록 여부
+  bool absent_time_recorded_;
 };
 
 int main(int argc, char **argv)
