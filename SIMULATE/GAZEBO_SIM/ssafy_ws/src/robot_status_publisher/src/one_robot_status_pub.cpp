@@ -59,7 +59,7 @@ public:
         status_message.battery = 75.0f;  // 초기 배터리 값
         status_message.temperatures = {55.0f};  // 초기 온도 값
         status_message.network = 100.0f;  // 초기 네트워크 상태 값
-        status_message.mode = "waiting";
+        status_message.mode = "waiting"; // 초기 모드: 대기
         status_message.is_active = true;
 
         // 토픽 설정
@@ -222,10 +222,11 @@ private:
     {
         auto now = std::chrono::steady_clock::now();
 
-        // 배터리 감소 로직 (1분마다 1% 감소)
+        // 배터리 감소 로직 (1분마다 0.1% 감소)
         if (std::chrono::duration_cast<std::chrono::minutes>(now - last_battery_update_time_).count() >= 1) {
-            if (status_message.battery > 0.0f) {
-                status_message.battery -= 1.0f;
+            if (status_message.battery > 0.0) {
+                // status_message.battery에서 1.0을 빼고, 소수점 한 자리까지 반올림
+                status_message.battery = std::round(int((status_message.battery * 10.0 - 1))) / 10.0;
             }
             last_battery_update_time_ = now;
         }
@@ -234,12 +235,12 @@ private:
         static std::random_device rd;
         static std::mt19937 gen(rd());
 
-        // 온도 및 네트워크 상태 초기값
+        // 온도 및 네트워크 상태 초기값 (이전 상태를 유지하기 위해 static 사용)
         static float temperature = 55.0f;
         static float network = 100.0f;
         static float network_trend = 0.0f;
 
-        // 온도 변화: 작은 변동 추가 (±0.5°C)
+        // 온도 변화: 작은 변동 추가 (±0.5°C 정도)
         std::normal_distribution<float> temp_noise(0.0f, 0.3f); // 표준 편차 0.3
         temperature += temp_noise(gen);
         temperature = std::clamp(temperature, 50.0f, 70.0f); // 현실적인 온도 범위 유지
@@ -253,7 +254,7 @@ private:
         network = std::round(network * 1000.0f) / 1000.0f; // 소수점 3번째 자리까지 반올림
 
         // 상태 메시지 업데이트
-        status_message.temperatures = {temperature};
+        status_message.temperatures = { temperature };
         status_message.network = network;
 
         // 상태 메시지 발행
