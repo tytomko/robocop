@@ -3,13 +3,15 @@
     <div class="page-header">
       <h2>설정</h2>
       <div class="header-actions">
-        <button @click="openChangePasswordModal" class="password-reset">비밀번호 재설정</button>
+        <button @click="isChangePasswordModalOpen = true" class="password-reset">비밀번호 재설정</button>
         <button @click="logout" class="logout">로그아웃</button>
         <button @click="saveSettings" class="save-button" :disabled="saving">
           <i class="fas fa-save"></i> 저장
         </button>
       </div>
     </div>
+
+    <PasswordChange :isOpen="isChangePasswordModalOpen" @close="isChangePasswordModalOpen = false" />
 
     <div class="settings-grid">
       <!-- 일반 설정 -->
@@ -141,38 +143,16 @@
     </div>
   </div>
 
-  <!--비밀번호 변경 모달-->
-  <div v-if="isChangePasswordModalOpen" class="modal-overlay">
-    <div class="modal-content">
-      <h3>비밀번호 변경</h3>
-      <div class="form-group">
-        <label>현재 비밀번호</label>
-        <input type="password" v-model="passwordForm.currentPassword" placeholder="현재 비밀번호" />
-      </div>
-      <div class="form-group">
-        <label>새 비밀번호</label>
-        <input type="password" v-model="passwordForm.newPassword" placeholder="새 비밀번호" />
-      </div>
-      <div class="form-group">
-        <label>새 비밀번호 확인</label>
-        <input type="password" v-model="passwordForm.confirmPassword" placeholder="새 비밀번호 확인" />
-      </div>
-      <div class="modal-actions">
-        <button @click="changePassword" :disabled="saving">비밀번호 변경</button>
-        <button @click="closeChangePasswordModal" class="cancel-button">취소</button>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
+import PasswordChange from '@/components/settings/PasswordChange.vue';
+import { useUser } from '@/composables/useUser';
 
-const router = useRouter();
 const saving = ref(false);
 const isChangePasswordModalOpen = ref(false);
+const { logout } = useUser(); // useUser.js에서 logout 함수 가져오기
 
 // 설정 상태
 const settings = ref({
@@ -212,160 +192,9 @@ const saveSettings = async () => {
   }
 }
 
-const logout = async () => {
-  try {
-    // 로그아웃 API 호출
-    await axios.post('https://robocop-backend-app.fly.dev/api/v1/auth/logout', null, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-      }
-    });
-
-    // 클라이언트 측에서 토큰 제거
-    localStorage.removeItem('accessToken'); // Access Token 삭제
-    localStorage.removeItem('refreshToken'); // Refresh Token 삭제
-
-    // Axios 기본 Authorization 헤더 제거
-    delete axios.defaults.headers.common['Authorization'];
-
-    // 사용자에게 알림 및 페이지 이동
-    alert('로그아웃 되었습니다.');
-    router.push('/login'); // 로그인 페이지로 리다이렉트
-  } catch (error) {
-    console.error('로그아웃 실패:', error);
-    alert('로그아웃에 실패했습니다.');
-  }
-};
-
-const passwordForm = ref({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-});
-
-const changePassword = async () => {
-  // 비밀번호 확인 검증
-  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    alert('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.');
-    return;
-  }
-
-  saving.value = true;
-  try {
-    // API 호출
-    const response = await axios.post(
-      'https://robocop-backend-app.fly.dev/api/v1/auth/change-password',
-      {
-        currentPassword: passwordForm.value.currentPassword,
-        newPassword: passwordForm.value.newPassword,
-        confirmPassword: passwordForm.value.confirmPassword
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      }
-    );
-
-    alert('비밀번호가 성공적으로 변경되었습니다.');
-    closeChangePasswordModal();
-
-  } catch (error) {
-  console.error('비밀번호 변경 실패:', error.response?.data || error.message);
-  alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다. 다시 시도해주세요.');
-  } finally {
-    saving.value = false;
-  }
-};
-
-// 모달 열기
-const openChangePasswordModal = () => {
-  isChangePasswordModalOpen.value = true;
-};
-
-// 모달 닫기
-const closeChangePasswordModal = () => {
-  isChangePasswordModalOpen.value = false;
-};
-
 </script>
 
 <style scoped>
-/* Modal 관련 스타일 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 400px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  position: relative;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.modal-actions button {
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  background-color: #007BFF;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.modal-actions button:hover {
-  background-color: #0056b3;
-}
-
-/* 라벨과 입력 필드를 수평으로 배치 */
-.modal-content .form-group {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.modal-content label {
-  font-weight: bold;
-  margin-right: 10px;
-  flex-basis: 30%;
-}
-
-.modal-content input {
-  width: 65%;
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-}
-
-/* 취소 버튼 */
-.cancel-button {
-  background: #ccc;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
 /* 설정 페이지 레이아웃 */
 .settings-container {
   padding: 20px;

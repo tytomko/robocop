@@ -66,7 +66,7 @@ watch(selectedRobots, (newRobots) => {
 <style scoped>
 .cctv-view {
   padding: 20px;
-  height: 100vh; /* 화면의 전체 높이를 사용하도록 설정 */
+  height: 90vh; /* 화면의 전체 높이를 사용하도록 설정 */
   overflow-y: auto; /* 세로 스크롤 활성화 */
 }
 
