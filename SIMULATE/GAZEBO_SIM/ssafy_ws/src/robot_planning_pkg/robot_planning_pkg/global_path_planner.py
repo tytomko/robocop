@@ -37,9 +37,13 @@ class GlobalPathPlanner(Node):
         pose_topic = f"/robot_{robot_number}/utm_pose"
         global_path_topic = f"/robot_{robot_number}/global_path"
         approach_path_topic = f"/robot_{robot_number}/approach_path"
-        homing_service = f"/robot_{robot_number}/homing"
-        navigate_service = f"/robot_{robot_number}/navigate"
-        patrol_service = f"/robot_{robot_number}/patrol"
+        
+        # 서비스명을 다르게하던가 해야함.
+        # status에 들어가는 서비스랑 이름이 같아서 충돌남
+        # 따라서 _plan을 붙여서 서비스명을 다르게 해줌
+        homing_service = f"/robot_{robot_number}/homing_plan"
+        navigate_service = f"/robot_{robot_number}/navigate_plan"
+        patrol_service = f"/robot_{robot_number}/patrol_plan"
 
         # 구독자, 퍼블리셔, 서비스 서버 생성
         self.pose_sub = self.create_subscription(
