@@ -1,23 +1,24 @@
 <template>
-  <div id="app" class="fixed inset-0 overflow-hidden">
+  <div id="app" class="fixed inset-0 overflow-hidden bg-gray-100">
     <div class="flex w-full h-full overflow-hidden">
       <!-- 메인 컨텐츠 영역 -->
       <div class="flex flex-col flex-1 overflow-hidden">
         <!-- Navbar (로그인 페이지에서만 숨김) -->
         <nav 
           v-if="!isLoginPage" 
-          class="bg-gradient-to-b from-blue-200 to-blue-50 px-10 h-[55px] flex items-center justify-between"
+          class="bg-gray-900 text-white px-10 h-[55px] flex items-center justify-between shadow-md"
+          style="font-family: 'Noto Sans KR', sans-serif;"
         >
           <div class="cursor-pointer" @click="refreshPage">
-            <img src="@/assets/logo.png" alt="로고" class="h-14">
+            <img src="@/assets/whitelogo.png" alt="로고" class="h-14">
           </div>
           <div class="flex space-x-8">
-            <router-link to="/" class="text-gray-800 font-bold text-lg hover:text-blue-600">현황</router-link>
-            <router-link to="/camera" class="text-gray-800 font-bold text-lg hover:text-blue-600">CCTV</router-link>
-            <router-link to="/control" class="text-gray-800 font-bold text-lg hover:text-blue-600">제어</router-link>
-            <router-link to="/enrollment" class="text-gray-800 font-bold text-lg hover:text-blue-600">등록</router-link>
-            <router-link to="/statistics" class="text-gray-800 font-bold text-lg hover:text-blue-600">통계</router-link>
-            <router-link to="/settings" class="text-gray-800 font-bold text-lg hover:text-blue-600">설정</router-link>
+            <router-link to="/" class="font-normal text-base hover:text-blue-400">현황</router-link>
+            <router-link to="/camera" class="font-normal text-base hover:text-blue-400">CCTV</router-link>
+            <router-link to="/control" class="font-normal text-base hover:text-blue-400">제어</router-link>
+            <router-link to="/enrollment" class="font-normal text-base hover:text-blue-400">등록</router-link>
+            <router-link to="/statistics" class="font-normal text-base hover:text-blue-400">통계</router-link>
+            <router-link to="/settings" class="font-normal text-base hover:text-blue-400">설정</router-link>
           </div>
         </nav>
 

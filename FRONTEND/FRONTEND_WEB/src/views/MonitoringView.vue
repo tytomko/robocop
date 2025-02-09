@@ -1,7 +1,7 @@
 <template>
-  <div class="h-full flex flex-col gap-1.5 px-5 overflow-y-auto">
+  <div class="h-full flex flex-col gap-1.5 px-5 overflow-y-auto bg-gray-100">
     <div class="border-b pb-2 mb-4">
-      <h2 class="text-xl font-semibold">실시간 모니터링</h2>
+      <h2 class="text-xl font-semibold text-gray-800">실시간 모니터링</h2>
     </div>
 
     <!-- 등록된 로봇 리스트-->

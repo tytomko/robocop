@@ -9,12 +9,14 @@
       <div v-for="robot in visibleRobots" :key="robot.id" class="relative bg-white rounded-lg p-4 border shadow-sm">
         <!-- X 버튼 -->
         <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-800" @click="hideRobot(robot.id)">✖</button>
+
+        <!-- 상태 표시 위치 조정 -->
+        <span class="absolute top-2 right-10 px-2 py-1 text-xs font-semibold rounded-full" :class="getStatusClass(robot.status)">
+          {{ getStatusLabel(robot.status) }}
+        </span>
         
         <div class="flex justify-between items-center mb-4">
           <span class="font-bold">{{ robot.nickname || robot.name }}</span>
-          <span class="px-2 py-1 text-xs font-semibold rounded-full" :class="getStatusClass(robot.status)">
-            {{ getStatusLabel(robot.status) }}
-          </span>
         </div>
         
         <div class="space-y-2">
