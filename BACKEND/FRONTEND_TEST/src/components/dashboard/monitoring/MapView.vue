@@ -2,26 +2,18 @@
   <div class="map-view">
     <div class="map-header">
       <h3>맵 뷰</h3>
-      <div class="map-controls">
-        <button class="control-btn" @click="resetZoom">
-          <span>↺</span>
-        </button>
-      </div>
     </div>
 
     <div class="map-container">
-      <div class="robot-selector">
-        <select v-model="selectedRobot" class="robot-select" @change="handleRobotSelection">
-          <option value="">로봇 선택</option>
-          <option v-for="robot in robots" :key="robot.id" :value="robot.id">
-            {{ robot.name }}
-          </option>
-        </select>
-      </div>
-      
-      <canvas ref="chartRef"></canvas>
+      <v-chart 
+        class="chart" 
+        :option="chartOption" 
+        ref="chartRef" 
+        autoresize
+        @click="handleNodeClick"
+      />
 
-      <!-- 선택된 노드들 정보 표시 수정 -->
+      <!-- 선택된 노드들 정보 표시 -->
       <div v-if="selectedNodes.length > 0" class="selected-node-info">
         <h4>선택된 노드 ({{ selectedNodes.length }})</h4>
         <div v-for="(node, index) in selectedNodesInfo" :key="index" class="node-info">
@@ -40,257 +32,200 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { 
+  GraphicComponent, 
+  GridComponent, 
+  TooltipComponent,
+  DataZoomComponent,
+  ToolboxComponent
+} from 'echarts/components'
+import { ScatterChart, LinesChart } from 'echarts/charts'
+import VChart from 'vue-echarts'
 import axios from 'axios'
-import Chart from 'chart.js/auto'
-import zoomPlugin from 'chartjs-plugin-zoom'
 
-// Chart.js에 zoom 플러그인 등록
-Chart.register(zoomPlugin)
-
-const chartRef = ref(null)
-const chartInstance = ref(null)
-const selectedRobot = ref(localStorage.getItem('selectedRobot') || '')
-const loading = ref(true)
-const mapData = ref({
-  nodes: [],
-  links: [],
-  directed: false,
-  multigraph: false,
-  graph: {}
-})
-
-// 임시 로봇 데이터
-const robots = ref([
-  { id: 'robot1', name: 'Robot 1' },
-  { id: 'robot2', name: 'Robot 2' },
-  { id: 'robot3', name: 'Robot 3' }
+// ECharts 컴포넌트 등록
+use([
+  CanvasRenderer,
+  GraphicComponent,
+  GridComponent,
+  TooltipComponent,
+  DataZoomComponent,
+  ToolboxComponent,
+  ScatterChart,
+  LinesChart
 ])
 
-// 선택된 노드들을 배열로 관리하도록 수정
+const chartRef = ref(null)
+const loading = ref(true)
 const selectedNodes = ref([])
+const mapData = ref({
+  nodes: [],
+  links: []
+})
 
-// 노드 선택 처리 함수 수정
-const toggleNodeSelection = (node) => {
-  const index = selectedNodes.value.findIndex(n => 
-    n.id[0] === node.id[0] && n.id[1] === node.id[1]
-  )
-  
-  if (index === -1) {
-    selectedNodes.value.push(node)
-  } else {
-    selectedNodes.value.splice(index, 1)
-  }
-
-  // 차트를 완전히 다시 그리기
-  updateChart()
-}
-
-// 차트 생성 함수와 업데이트 함수 분리
-const createChart = () => {
-  if (!chartRef.value) return
-  const ctx = chartRef.value.getContext('2d')
-  if (!ctx || !mapData.value?.nodes) return
-
-  try {
-    if (chartInstance.value) {
-      chartInstance.value.destroy()
-    }
-    
-    // 노드 데이터 준비
-    const nodeData = mapData.value.nodes
-      .filter(node => node && node.id && Array.isArray(node.id) && node.id.length >= 2)
-      .map(node => ({
-        x: node.id[0],
-        y: node.id[1]
-      }))
-
-    // 링크 데이터셋 준비
-    const linkDatasets = (mapData.value.links || [])
-      .filter(link => link && link.source && link.target)
-      .map((link, index) => ({
-        label: `Link ${index}`,
-        data: [
-          { x: link.source[0], y: link.source[1] },
-          { x: link.target[0], y: link.target[1] }
-        ],
-        showLine: true,
-        borderColor: '#666',
-        borderWidth: 1,
-        pointRadius: 0,
-        fill: false,
-        interaction: {
-          mode: 'nearest',
-          intersect: false
-        }
-      }))
-
-    chartInstance.value = new Chart(ctx, {
-      type: 'scatter',
-      data: {
-        datasets: [
-          {
-            label: 'Nodes',
-            data: nodeData,
-            backgroundColor: (context) => {
-              if (!context || typeof context.dataIndex === 'undefined' || !mapData.value?.nodes) {
-                return '#007bff'
-              }
-              const index = context.dataIndex
-              const node = mapData.value.nodes[index]
-              if (!node || !node.id) {
-                return '#007bff'
-              }
-              return selectedNodes.value.some(selectedNode => 
-                selectedNode.id[0] === node.id[0] && 
-                selectedNode.id[1] === node.id[1]
-              ) ? '#ff4081' : '#007bff'
-            },
-            pointRadius: (context) => {
-              if (!context || typeof context.dataIndex === 'undefined' || !mapData.value?.nodes) {
-                return 5
-              }
-              const index = context.dataIndex
-              const node = mapData.value.nodes[index]
-              if (!node || !node.id) {
-                return 5
-              }
-              return selectedNodes.value.some(selectedNode => 
-                selectedNode.id[0] === node.id[0] && 
-                selectedNode.id[1] === node.id[1]
-              ) ? 8 : 5
-            },
-            pointHoverRadius: 12,
-            interaction: {
-              mode: 'point',
-              intersect: true
-            }
-          },
-          ...linkDatasets
-        ]
-      },
-      options: {
-        animation: {
-          duration: 1  // 매우 짧은 애니메이션 (0으로 하면 업데이트가 안될 수 있음)
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'point',
-          intersect: true
-        },
-        scales: {
-          x: {
-            type: 'linear',
-            position: 'bottom',
-            grid: {
-              color: '#ddd'
-            }
-          },
-          y: {
-            type: 'linear',
-            grid: {
-              color: '#ddd'
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            enabled: true,
-            mode: 'point',
-            callbacks: {
-              label: (context) => {
-                if (!context || !mapData.value?.nodes || typeof context.dataIndex === 'undefined') {
-                  return ''
-                }
-                const node = mapData.value.nodes[context.dataIndex]
-                if (!node || !node.id) {
-                  return ''
-                }
-                return `노드 좌표: (${context.parsed.x.toFixed(2)}, ${context.parsed.y.toFixed(2)})`
-              }
-            }
-          },
-          zoom: {
-            pan: {
-              enabled: true,
-              mode: 'xy'
-            },
-            zoom: {
-              wheel: {
-                enabled: true,
-                speed: 0.1
-              },
-              pinch: {
-                enabled: true
-              },
-              mode: 'xy'
-            },
-            limits: {
-              x: {min: -Infinity, max: Infinity},
-              y: {min: -Infinity, max: Infinity}
-            }
-          }
-        },
-        onClick: (event, elements) => {
-          if (!elements || !mapData.value?.nodes) return
-          
-          if (elements.length > 0) {
-            const element = elements[0]
-            if (element.datasetIndex === 0 && 
-                typeof element.index !== 'undefined' && 
-                element.index < mapData.value.nodes.length) {
-              const node = mapData.value.nodes[element.index]
-              if (node && node.id) {
-                toggleNodeSelection(node)
-              }
-            }
-          }
-        }
+// 차트 옵션 computed 속성
+const chartOption = computed(() => ({
+  animation: false,
+  tooltip: {
+    trigger: 'item',
+    formatter: (params) => {
+      if (params.componentSubType === 'scatter') {
+        return `좌표: (${params.data[0].toFixed(2)}, ${params.data[1].toFixed(2)})`
       }
-    })
-  } catch (error) {
-    console.error('차트 생성 중 오류 발생:', error)
-    selectedNodes.value = []
+      return ''
+    }
+  },
+  toolbox: {
+    feature: {
+      restore: {},
+      dataZoom: {
+        yAxisIndex: 'none'
+      }
+    },
+    right: 20,
+    top: 20
+  },
+  dataZoom: [
+    {
+      type: 'inside',
+      xAxisIndex: [0],
+      yAxisIndex: [0],
+      minSpan: 1,
+      maxSpan: 100
+    },
+    {
+      type: 'inside',
+      xAxisIndex: [0],
+      yAxisIndex: [0],
+      minSpan: 1,
+      maxSpan: 100
+    }
+  ],
+  xAxis: {
+    type: 'value',
+    scale: true,
+    axisLine: { onZero: false }
+  },
+  yAxis: {
+    type: 'value',
+    scale: true,
+    axisLine: { onZero: false }
+  },
+  series: [
+    // 엣지(연결선) 표시
+    {
+      type: 'lines',
+      coordinateSystem: 'cartesian2d',
+      data: mapData.value.links.map(link => ({
+        coords: [
+          [link.source[0], link.source[1]],
+          [link.target[0], link.target[1]]
+        ]
+      })),
+      lineStyle: {
+        color: '#666',
+        width: 1,
+        opacity: 0.6
+      },
+      zlevel: 1
+    },
+    // 노드 표시
+    {
+      type: 'scatter',
+      data: mapData.value.nodes.map(node => node.id),
+      symbolSize: (value, params) => {
+        // 선택된 노드는 더 크게 표시
+        return selectedNodes.value.some(selected => 
+          selected.id[0] === value[0] && selected.id[1] === value[1]
+        ) ? 15 : 8
+      },
+      itemStyle: {
+        color: (params) => {
+          const node = mapData.value.nodes[params.dataIndex]
+          // 선택된 노드는 다른 색상으로 표시
+          return selectedNodes.value.some(selected => 
+            selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+          ) ? '#ff4081' : '#007bff'
+        }
+      },
+      emphasis: {
+        scale: 1.5,  // 마우스 오버 시 크기 증가
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.3)'
+        }
+      },
+      zlevel: 2
+    }
+  ]
+}))
+
+// 노드 선택 처리
+const handleNodeClick = (params) => {
+  if (params.componentSubType === 'scatter') {
+    const clickedNode = mapData.value.nodes[params.dataIndex]
+    
+    if (clickedNode) {
+      const index = selectedNodes.value.findIndex(node => 
+        node.id[0] === clickedNode.id[0] && node.id[1] === clickedNode.id[1]
+      )
+      
+      if (index === -1) {
+        selectedNodes.value.push(clickedNode)
+      } else {
+        selectedNodes.value.splice(index, 1)
+      }
+
+      // 차트 즉시 업데이트
+      if (chartRef.value) {
+        chartRef.value.setOption({
+          series: [
+            // 엣지(연결선) 시리즈는 유지
+            chartOption.value.series[0],
+            {
+              type: 'scatter',
+              data: mapData.value.nodes.map(node => node.id),
+              symbolSize: (value) => {
+                return selectedNodes.value.some(selected => 
+                  selected.id[0] === value[0] && selected.id[1] === value[1]
+                ) ? 15 : 8
+              },
+              itemStyle: {
+                color: (params) => {
+                  const node = mapData.value.nodes[params.dataIndex]
+                  return selectedNodes.value.some(selected => 
+                    selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+                  ) ? '#ff4081' : '#007bff'
+                }
+              },
+              emphasis: {
+                scale: 1.5,
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowColor: 'rgba(0, 0, 0, 0.3)'
+                }
+              },
+              zlevel: 2
+            }
+          ]
+        })
+      }
+    }
   }
 }
 
-// 차트 업데이트 함수 수정
-const updateChart = () => {
-  if (!chartInstance.value) {
-    createChart()
-    return
-  }
-
-  chartInstance.value.update()
-}
-
-// 줌 리셋 함수
-const resetZoom = () => {
-  if (chartInstance.value) {
-    chartInstance.value.resetZoom()
-  }
-}
-
-// 로봇 선택 처리
-const handleRobotSelection = () => {
-  if (selectedRobot.value) {
-    localStorage.setItem('selectedRobot', selectedRobot.value)
-  } else {
-    localStorage.removeItem('selectedRobot')
-  }
-}
-
-// fetchMapData 함수 수정
+// 맵 데이터 가져오기
 const fetchMapData = async () => {
   try {
     loading.value = true
     const response = await axios.get('http://localhost:8000/map')
-    mapData.value = response.data
-    createChart()  // 초기 차트 생성
+    mapData.value = {
+      nodes: response.data.nodes,
+      links: response.data.links
+    }
   } catch (error) {
     console.error('맵 데이터 로딩 실패:', error)
   } finally {
@@ -298,32 +233,34 @@ const fetchMapData = async () => {
   }
 }
 
-// onMounted 수정
-onMounted(async () => {
-  try {
-    await fetchMapData()
-    window.addEventListener('resize', () => {
-      createChart()  // 리사이즈 시 차트 재생성
-    })
-  } catch (error) {
-    console.error('컴포넌트 마운트 중 오류 발생:', error)
-  }
-})
-
-// 컴포넌트 언마운트 시 정리
-onUnmounted(() => {
-  if (chartInstance.value) {
-    chartInstance.value.destroy()
-  }
-  window.removeEventListener('resize', updateChart)
-})
-
-// 선택된 노드들의 정보를 표시하기 위한 computed 속성
+// 선택된 노드들 정보
 const selectedNodesInfo = computed(() => {
   return selectedNodes.value.map(node => ({
-    x: (node.id[0] || 0).toFixed(2),
-    y: (node.id[1] || 0).toFixed(2)
+    x: node.id[0].toFixed(2),
+    y: node.id[1].toFixed(2)
   }))
+})
+
+// 줌 리셋 함수 추가
+const resetZoom = () => {
+  if (chartRef.value) {
+    chartRef.value.setOption({
+      dataZoom: [
+        {
+          start: 0,
+          end: 100
+        },
+        {
+          start: 0,
+          end: 100
+        }
+      ]
+    })
+  }
+}
+
+onMounted(async () => {
+  await fetchMapData()
 })
 </script>
 
@@ -336,9 +273,6 @@ const selectedNodesInfo = computed(() => {
 }
 
 .map-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 20px;
   border-bottom: 1px solid #eee;
 }
@@ -354,34 +288,9 @@ const selectedNodesInfo = computed(() => {
   padding: 20px;
 }
 
-.robot-selector {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-}
-
-.robot-select {
-  width: 200px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  font-size: 14px;
-}
-
-canvas {
-  width: 100% !important;
-  height: 100% !important;
-  cursor: grab; /* 마우스 커서 스타일 변경 */
-}
-
-canvas:active {
-  cursor: grabbing;
+.chart {
+  width: 100%;
+  height: 100%;
 }
 
 .loading-overlay {
