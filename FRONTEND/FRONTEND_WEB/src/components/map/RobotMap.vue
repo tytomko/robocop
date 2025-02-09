@@ -1,5 +1,5 @@
 <template>
-  <div id="map" style="height: 500px;"></div>
+  <div id="map" class="h-[500px] relative z-0"></div>
 </template>
 
 <script setup>
@@ -24,14 +24,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* #map 컨테이너의 z-index를 낮춥니다. (원하는 값으로 조정) */
-#map {
-  position: relative;
-  z-index: 0;
-}
-
-/* 만약 Leaflet의 내부 pane 들이 여전히 위에 표시된다면 아래와 같이 override 해볼 수 있습니다.
-   (다른 요소와의 stacking 순서를 고려하여 적절한 값으로 조정하세요.) */
+/***** Leaflet 기본 스타일 유지 *****/
 .leaflet-pane {
   z-index: 0 !important;
 }
