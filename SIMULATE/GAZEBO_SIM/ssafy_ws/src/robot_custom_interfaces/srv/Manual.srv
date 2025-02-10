@@ -1,0 +1,4 @@
+# 수동조작모드로 변경
+---
+bool success
+string message
