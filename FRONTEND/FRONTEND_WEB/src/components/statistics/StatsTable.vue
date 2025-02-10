@@ -2,7 +2,7 @@
   <div class="mt-5">
     <table class="w-full border-collapse bg-white rounded-lg shadow-md overflow-hidden">
       <thead>
-        <tr class="bg-gray-100 text-center text-sm">
+        <tr class="bg-gray-300 text-center text-sm">
           <th class="p-3 border-b">선택</th>
           <th class="p-3 border-b">로봇 ID</th>
           <th class="p-3 border-b">작동 시간</th>
