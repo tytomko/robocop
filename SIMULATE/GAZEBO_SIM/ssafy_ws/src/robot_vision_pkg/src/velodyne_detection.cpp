@@ -29,10 +29,10 @@ constexpr float VOXEL_GRID_SIZE = 0.1f;   // Voxel 필터 리프 사이즈
 constexpr float CLUSTER_TOLERANCE = 0.7f;  // 클러스터링 허용 오차
 constexpr int MIN_CLUSTER_SIZE = 15;       // 최소 클러스터 포인트 수
 
-// CropBox ROI (전방 10미터, 좌우 2미터, 높이 2미터 내의 영역)
-// X: 0 ~ 10, Y: -2 ~ 2, Z: -0.4 ~ 2 (여기서는 X 최대값 8로 제한)
+// CropBox ROI (전방 5미터, 좌우 2미터, 높이 2미터 내의 영역)
+// X: 0 ~ 5, Y: -2 ~ 2, Z: -0.4 ~ 2 (여기서는 X 최대값 8로 제한)
 const Eigen::Vector4f CROP_MIN(0.0, -2.0, -0.4, 0.0);
-const Eigen::Vector4f CROP_MAX(8.0, 2.0, 2.0, 0.0);
+const Eigen::Vector4f CROP_MAX(5.0, 2.0, 2.0, 0.0);
 
 // 객체 크기 조건 (바운딩 박스 생성 조건, 필요에 따라 조정)
 // (여기서는 y축, z축 조건으로 사용)
@@ -271,7 +271,8 @@ private:
     {
       if ((this->now() - start_time_).seconds() > 5.0)
       {
-        if (mode_allowed(current_mode_))
+        // manual모드 에서는 정지 명령을 무시
+        if (current_mode_ != "manual" && mode_allowed(current_mode_))
         {
           // 장애물이 존재하면 obstacle_detected_를 true로 유지
           obstacle_detected_ = true;

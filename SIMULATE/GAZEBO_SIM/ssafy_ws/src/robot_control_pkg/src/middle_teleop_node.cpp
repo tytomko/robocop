@@ -150,7 +150,7 @@ private:
         static auto last_error_log_time = std::chrono::steady_clock::now();
         auto current_time = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(current_time - last_error_log_time).count() >= 1) {
-            RCLCPP_INFO(this->get_logger(), "Current Mode is not Manual mode");
+            //RCLCPP_INFO(this->get_logger(), "Current Mode is not Manual mode");
             last_error_log_time = current_time;
         }
     }

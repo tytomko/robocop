@@ -13,7 +13,7 @@
 
     <!-- 사용자 월드(예: turtlebot3_dqn_world) -->
     <!-- <include>
-      <uri>model://turtlebot3_dqn_world</uri>
+      <uri>model://turtlebot3_worlds</uri>
     </include> -->
 
     <!-- 로봇 모델 (ssafy_model) -->
