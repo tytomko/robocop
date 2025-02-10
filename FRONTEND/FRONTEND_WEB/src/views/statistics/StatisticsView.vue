@@ -1,35 +1,41 @@
 <template>
-  <div class="p-5">
-    <div class="dashboard flex gap-4 justify-center">
-      <div v-for="(metric, index) in metrics" :key="index"
-        class="p-4 shadow-md rounded-lg bg-white relative flex flex-col items-start w-52 border-l-8"
-        :class="metric.borderClass">
-        <p class="text-gray-700 text-sm">{{ metric.title }}</p>
-        <p class="text-2xl font-bold">{{ metric.count }}대</p>
+  <div class="h-screen flex flex-col">
+    <div class="p-5 flex-1 overflow-auto">
+      <div class="dashboard flex gap-4 justify-center">
+        <div v-for="(metric, index) in metrics" :key="index"
+          class="p-4 shadow-md rounded-lg bg-white relative flex flex-col items-start w-52 border-l-8"
+          :class="metric.borderClass">
+          <p class="text-gray-700 text-sm">{{ metric.title }}</p>
+          <p class="text-2xl font-bold">{{ metric.count }}대</p>
+        </div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filter-section my-5 flex flex-col md:flex-row gap-4 items-center">
+        <label for="robot-select" class="text-gray-700">로봇 선택:</label>
+        <select id="robot-select" v-model="selectedRobot" class="p-2 border rounded-lg">
+          <option value="all">모든 로봇</option>
+          <option v-for="robot in robots" :key="robot.id" :value="robot.id">
+            {{ robot.name }}
+          </option>
+        </select>
+
+        <!-- Date Range Picker -->
+        <label for="date-range" class="text-gray-700">기간 설정:</label>
+        <input type="date" v-model="startDate" class="p-2 border rounded-lg" /> ~ 
+        <input type="date" v-model="endDate" class="p-2 border rounded-lg" />
+      </div>
+
+      <!-- Charts -->
+      <div class="overflow-auto max-h-[65vh]">
+        <StatsChart :robots="filteredRobots" :selectedRobot="selectedRobot" class="my-5" />
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-auto max-h-[75vh]">
+        <StatsTable :robots="filteredRobots" :selectedRobot="selectedRobot" class="my-5" />
       </div>
     </div>
-
-    <!-- Filter Section -->
-    <div class="filter-section my-5 flex flex-col md:flex-row gap-4 items-center">
-      <label for="robot-select" class="text-gray-700">로봇 선택:</label>
-      <select id="robot-select" v-model="selectedRobot" class="p-2 border rounded-lg">
-        <option value="all">모든 로봇</option>
-        <option v-for="robot in robots" :key="robot.id" :value="robot.id">
-          {{ robot.name }}
-        </option>
-      </select>
-
-      <!-- Date Range Picker -->
-      <label for="date-range" class="text-gray-700">기간 설정:</label>
-      <input type="date" v-model="startDate" class="p-2 border rounded-lg" /> ~ 
-      <input type="date" v-model="endDate" class="p-2 border rounded-lg" />
-    </div>
-
-    <!-- Charts -->
-    <StatsChart :robots="filteredRobots" :selectedRobot="selectedRobot" class="my-5" />
-
-    <!-- Table -->
-    <StatsTable :robots="filteredRobots" :selectedRobot="selectedRobot" class="my-5" />
   </div>
 </template>
 

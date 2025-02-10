@@ -14,10 +14,9 @@
         </select>
       </div>
 
-      <div class="mode-toggle flex items-center">
-        <span class="mode-label text-lg font-semibold mr-4">수동</span>
-        <div class="toggle-switch relative inline-block w-24 h-12">
-          <!-- 여기에 id를 지정하여 label과 연결되도록 했습니다. -->
+      <div class="mode-toggle flex items-center space-x-3">
+        <span class="mode-label text-lg font-semibold">수동</span>
+        <div class="toggle-switch relative inline-block w-24 h-12 flex-shrink-0">
           <input 
             type="checkbox" 
             id="toggle" 
@@ -25,12 +24,11 @@
             @change="toggleMode"
             class="opacity-0 w-0 h-0"
           />
-          <!-- label의 for 속성이 input의 id와 연결되어야 합니다. -->
-          <label for="toggle" class="switch relative inline-block w-full h-full cursor-pointer rounded-full bg-gray-400 transition-all">
-            <span class="slider absolute top-0 left-0 w-10 h-10 bg-white rounded-full transition-transform"></span>
+          <label for="toggle" class="switch relative inline-block w-full h-full cursor-pointer rounded-full transition-all flex items-center">
+            <span class="slider absolute bg-white rounded-full"></span>
           </label>
         </div>
-        <span class="mode-label text-lg font-semibold ml-4">자동</span>
+        <span class="mode-label text-lg font-semibold">자동</span>
       </div>
     </div>
 
@@ -45,16 +43,16 @@
 
       <div v-else-if="mode === 'manual'" class="manual-mode flex justify-between items-start">
         <div class="cctv-and-controls flex flex-row items-center w-full">
-          <Cctv :robot="activeRobot" class="w-full h-96 bg-black" />
+          <Cctv :robot="activeRobot" class="w-full h-[490px] bg-black" />
 
           <div class="arrow-controls flex flex-col items-center ml-5">
             <div class="vertical-controls flex flex-col justify-center items-center mb-5">
-              <button :class="{ 'active': activeArrow === 'ArrowUp' }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 transition transform hover:scale-110">↑</button>
+              <button :class="{ 'active': activeArrows.has('ArrowUp') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 transition transform hover:scale-110">↑</button>
             </div>
             <div class="horizontal-controls flex justify-center">
-              <button :class="{ 'active': activeArrow === 'ArrowLeft' }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">←</button>
-              <button :class="{ 'active': activeArrow === 'ArrowDown' }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">↓</button>
-              <button :class="{ 'active': activeArrow === 'ArrowRight' }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">→</button>
+              <button :class="{ 'active': activeArrows.has('ArrowLeft') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">←</button>
+              <button :class="{ 'active': activeArrows.has('ArrowDown') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">↓</button>
+              <button :class="{ 'active': activeArrows.has('ArrowRight') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">→</button>
             </div>
           </div>
         </div>
@@ -71,50 +69,89 @@ import RobotMap from '@/components/map/RobotMap.vue'
 
 const robotsStore = useRobotsStore()
 
-// 선택된 로봇 ID (select의 v-model)
 const selectedRobotId = ref('')
 
-// activeRobot computed: 등록된 로봇이 존재할 때만 선택
 const activeRobot = computed(() => {
   return robotsStore.registered_robots.find(robot => String(robot.id) === String(selectedRobotId.value)) || null
 })
 
-// 제어 모드 (기본값 'auto' : 자동 주행 모드)
 const mode = ref('auto')
 
-// 키보드 입력으로 눌린 화살표 상태
-const activeArrow = ref(null)
+const activeArrows = ref(new Set()) // 여러 개의 방향키 저장
 
-// 키보드 이벤트 감지
 function handleKeyDown(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    activeArrow.value = event.key
+    activeArrows.value.add(event.key)
   }
 }
 
 function handleKeyUp(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    activeArrow.value = null
+    activeArrows.value.delete(event.key)
   }
 }
 
-// 모드 토글 스위치
 const isAutoMode = ref(true)
 function toggleMode() {
   mode.value = isAutoMode.value ? 'auto' : 'manual'
 }
 
-// 컴포넌트가 마운트될 때 로봇 데이터를 로드합니다.
 onMounted(() => {
   robotsStore.loadRobots()
 })
 </script>
 
 <style scoped>
-/* 추가적인 CSS를 사용하고 싶으면 아래에 넣을 수 있습니다. */
 .robot-control-page {
   min-height: 100vh;
 }
+
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 활성화된 상태 (초록색) */
+input:checked + .switch {
+  background-color: #4caf50;
+}
+
+/* 체크 상태일 때 슬라이더 이동 */
+input:checked + .switch .slider {
+  transform: translate(2.4rem, -50%); /* 오른쪽 끝까지 이동 */
+}
+
+/* 토글 버튼 기본 스타일 */
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: #d1d5db;
+  width: 5rem;  /* 80px */
+  height: 2.5rem; /* 40px */
+  border-radius: 9999px;
+  transition: background-color 0.3s ease-in-out;
+  position: relative;
+}
+
+/* 슬라이더 스타일 */
+.slider {
+  width: 2rem; /* 32px */
+  height: 2rem; /* 32px */
+  position: absolute;
+  top: 50%;
+  left: 0.3rem; /* 초기 위치 */
+  transform: translateY(-50%);
+  transition: transform 0.3s ease-in-out;
+}
+
 .arrow-controls button.active {
   font-weight: bold;
   background-color: #007bff;
@@ -123,21 +160,4 @@ onMounted(() => {
   box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
 }
 
-/* 토글 스위치 활성화 상태 배경 색 */
-.switch {
-  background-color: #d1d5db; /* 비활성화 상태 배경 색 */
-  transition: background-color 0.4s ease-in-out;
-}
-
-/* 체크된 상태에서 배경색과 슬라이더의 이동 */
-.switch input:checked + .slider {
-  transform: translateX(12px); /* 슬라이더 이동 */
-  background-color: #4caf50; /* 활성화 상태 배경 색 */
-}
-
-/* 슬라이더 애니메이션과 배경색 */
-.slider {
-  background-color: white; /* 기본 슬라이더 배경 색 */
-  transition: transform 0.4s ease, background-color 0.4s ease; /* 부드러운 애니메이션 */
-}
 </style>

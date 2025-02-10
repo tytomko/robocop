@@ -32,8 +32,8 @@
               <span :class="getStatusClass(robot.status)" class="px-2 py-1 rounded text-white">{{ getStatusLabel(robot.status) }}</span>
             </td>
             <td class="px-4 py-2">
-              <button v-if="robot.status !== 'breakdown'" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600" @click="setBreakdown(robot.id)">고장</button>
-              <button v-else class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" @click="setActive(robot.id)">가동</button>
+              <button v-if="robot.status !== 'breakdown'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="setBreakdown(robot.id)">고장</button>
+              <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="setActive(robot.id)">가동</button>
             </td>
           </tr>
         </tbody>
@@ -57,8 +57,9 @@ const getStatusClass = (status) => {
     stopped: 'bg-red-500',
     error: 'bg-red-600',
     idle: 'bg-gray-500',
-    returning: 'bg-black',
-    breakdown: 'bg-black'
+    returning: 'bg-teal-500',
+    breakdown: 'bg-red-500',
+    unserviceable: 'bg-black'
   };
   return statusClasses[status] || 'bg-yellow-500';
 };
@@ -71,7 +72,8 @@ const getStatusLabel = (status) => {
     error: '오류 발생',
     idle: '대기 중',
     returning: '복귀 중',
-    breakdown: '고장'
+    breakdown: '고장',
+    unserviceable: '사용 불가'
   };
   return labels[status] || status;
 };
