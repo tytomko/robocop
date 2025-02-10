@@ -2,6 +2,37 @@
   <div class="map-view">
     <div class="map-header">
       <h3>맵 뷰</h3>
+      <div class="map-controls">
+        <button 
+          :class="['control-btn', {'active': selectedNodes.length === 1}]"
+          :disabled="selectedNodes.length !== 1"
+          @click="handleNavigate"
+        >
+          <span class="icon">
+            <i class="mdi mdi-navigation"></i>
+          </span>
+          이동
+        </button>
+        <button 
+          :class="['control-btn', {'active': selectedNodes.length >= 2}]"
+          :disabled="selectedNodes.length < 2"
+          @click="handlePatrol"
+        >
+          <span class="icon">
+            <i class="mdi mdi-routes"></i>
+          </span>
+          순찰
+        </button>
+        <button 
+          class="control-btn reset-btn"
+          @click="resetSelection"
+        >
+          <span class="icon">
+            <i class="mdi mdi-refresh"></i>
+          </span>
+          리셋
+        </button>
+      </div>
     </div>
 
     <div class="map-container">
@@ -77,16 +108,6 @@ const chartOption = computed(() => ({
       }
       return ''
     }
-  },
-  toolbox: {
-    feature: {
-      restore: {},
-      dataZoom: {
-        yAxisIndex: 'none'
-      }
-    },
-    right: 20,
-    top: 20
   },
   dataZoom: [
     {
@@ -259,6 +280,60 @@ const resetZoom = () => {
   }
 }
 
+// 네비게이션 요청 처리
+const handleNavigate = async () => {
+  if (selectedNodes.value.length !== 1) return
+  
+  try {
+    const goal = {
+      x: selectedNodes.value[0].id[0],
+      y: selectedNodes.value[0].id[1],
+      theta: 0.0
+    }
+    
+    await axios.post('http://localhost:8000/call_service/navigate', {
+      goal
+    })
+    
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('Navigation request failed:', error)
+    // 에러 메시지 표시 로직 추가
+  }
+}
+
+// 순찰 요청 처리
+const handlePatrol = async () => {
+  if (selectedNodes.value.length < 2) return
+  
+  try {
+    const goals = selectedNodes.value.map(node => ({
+      x: node.id[0],
+      y: node.id[1],
+      theta: 0.0
+    }))
+    
+    await axios.post('http://localhost:8000/call_service/patrol', {
+      goals
+    })
+    
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('Patrol request failed:', error)
+    // 에러 메시지 표시 로직 추가
+  }
+}
+
+// 선택 초기화
+const resetSelection = () => {
+  selectedNodes.value = []
+  if (chartRef.value) {
+    chartRef.value.setOption({
+      series: chartOption.value.series
+    })
+  }
+}
+
 onMounted(async () => {
   await fetchMapData()
 })
@@ -273,13 +348,19 @@ onMounted(async () => {
 }
 
 .map-header {
-  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
   border-bottom: 1px solid #eee;
+  background-color: #f8f9fa;
 }
 
 .map-header h3 {
   margin: 0;
-  color: #333;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .map-container {
@@ -326,30 +407,96 @@ onMounted(async () => {
   top: 20px;
   right: 20px;
   background: white;
-  padding: 15px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .selected-node-info h4 {
-  margin: 0 0 10px 0;
-  color: #333;
-}
-
-.selected-node-info p {
-  margin: 5px 0;
-  color: #666;
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .node-info {
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #eee;
 }
 
-.node-info:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
+.node-info p {
+  margin: 4px 0;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.node-info p:first-child {
+  color: #2c3e50;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.map-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.control-btn {
+  min-width: 100px;
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.control-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.control-btn.active {
+  background-color: #1976d2;
+  color: white;
+}
+
+.control-btn.active:hover {
+  background-color: #1565c0;
+}
+
+.control-btn.reset-btn {
+  background-color: #ef5350;
+  color: white;
+}
+
+.control-btn.reset-btn:hover {
+  background-color: #e53935;
+}
+
+.control-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
 }
 </style> 
