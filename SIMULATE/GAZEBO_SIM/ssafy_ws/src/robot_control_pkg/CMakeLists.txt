@@ -48,15 +48,29 @@ ament_target_dependencies(middle_teleop_node
 
 # 실행 파일 추가
 add_executable(key_publisher src/key_publisher.cpp)
-
 # 실행 파일에 필요한 의존성 추가
 ament_target_dependencies(key_publisher rclcpp std_msgs)
+
+# 실행 파일 추가
+add_executable(joystick_control src/joystick_control.cpp)
+# 실행 파일에 필요한 의존성 추가
+ament_target_dependencies(joystick_control 
+  rclcpp 
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  robot_custom_interfaces
+  tf2
+  tf2_geometry_msgs
+  tf2_eigen
+)
 
 
 install(TARGETS
   robot_patrol
   middle_teleop_node
   key_publisher
+  joystick_control
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

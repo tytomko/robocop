@@ -29,6 +29,7 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <std_msgs/msg/float32.hpp>
@@ -77,6 +78,10 @@ public:
         std::string patrol_service = "/robot_" + std::to_string(robot_num) + "/patrol";
         std::string waiting_service = "/robot_" + std::to_string(robot_num) + "/waiting";
         std::string manual_service = "/robot_" + std::to_string(robot_num) + "/manual";
+
+        homing_plan_service = "/robot_" + std::to_string(robot_num) + "/homing_plan";
+        navigate_plan_service = "/robot_" + std::to_string(robot_num) + "/navigate_plan";
+        patrol_plan_service = "/robot_" + std::to_string(robot_num) + "/patrol_plan";
         RCLCPP_INFO(this->get_logger(),
             "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n Node initialized: robot_name='%s', robot_number=%d, imu_topic='%s', heading_topic='%s', status_topic='%s', gps_topic='%s' \n 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨\n",
             robot_name.c_str(), robot_num, imu_topic.c_str(), heading_topic.c_str(), status_topic.c_str(), gps_topic.c_str());
@@ -136,7 +141,9 @@ private:
     std::chrono::steady_clock::time_point last_gps_log_time_;
     std::chrono::steady_clock::time_point last_status_log_time_;
     std::chrono::steady_clock::time_point last_battery_update_time_;
-
+    std::string homing_plan_service;
+    std::string navigate_plan_service;
+    std::string patrol_plan_service;
     std::random_device rd;
     std::mt19937 gen{rd()};
 
@@ -337,10 +344,14 @@ private:
             response->message = "Homing service is allowed only in waiting mode.";
             return;
         }
+
         RCLCPP_INFO(this->get_logger(), "[HOMING] Switching to homing mode.");
         status_message.mode = "homing";
         publisher_status_->publish(status_message);
         response->success = true;
+
+        // homing_plan 서비스를 호출
+        call_homing_plan_service();
     }
 
     void navigate_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Navigate::Request> request,
@@ -352,11 +363,15 @@ private:
             response->message = "Navigate service is allowed only in waiting mode.";
             return;
         }
+
         RCLCPP_INFO(this->get_logger(), "[NAVIGATE] Switching to navigate mode. Goal: x=%.2f, y=%.2f, theta=%.2f", 
                     request->goal.x, request->goal.y, request->goal.theta);
         status_message.mode = "navigate";
         publisher_status_->publish(status_message);
         response->success = true;
+
+        // navigate_plan 서비스를 호출
+        call_navigate_plan_service(request->goal);
     }
 
     void patrol_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Patrol::Request> request,
@@ -368,15 +383,20 @@ private:
             response->message = "Patrol service is allowed only in waiting mode.";
             return;
         }
+
         std::ostringstream oss;
         oss << "[PATROL] Switching to patrol mode. Goals: ";
         for (const auto & goal : request->goals) {
             oss << "(" << goal.x << ", " << goal.y << ", " << goal.theta << ") ";
         }
         RCLCPP_INFO(this->get_logger(), "%s", oss.str().c_str());
+
         status_message.mode = "patrol";
         publisher_status_->publish(status_message);
         response->success = true;
+
+        // patrol_plan 서비스를 호출
+        call_patrol_plan_service(request->goals);
     }
 
     void waiting_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Waiting::Request> request,
@@ -402,6 +422,95 @@ private:
         status_message.mode = "manual";
         publisher_status_->publish(status_message);
         response->success = true;
+    }
+
+    void call_homing_plan_service(){
+        auto client = this->create_client<robot_custom_interfaces::srv::Homing>(homing_plan_service);
+
+        // 서비스가 응답할 때까지 반복 시도
+        while (!client->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_WARN(this->get_logger(), "[HOMING] Waiting for homing plan service...");
+            rclcpp::sleep_for(std::chrono::seconds(1));  // 1초 대기 후 재시도
+        }
+        
+        // 요청 객체 생성
+        auto request = std::make_shared<robot_custom_interfaces::srv::Homing::Request>();
+
+        // 비동기 요청 전송
+        client->async_send_request(request,
+            [this](rclcpp::Client<robot_custom_interfaces::srv::Homing>::SharedFuture future) {
+                try {
+                    auto response = future.get();
+                    if (response->success) {
+                        RCLCPP_INFO(this->get_logger(), "[HOMING] Homing plan executed successfully.");
+                    } else {
+                        RCLCPP_WARN(this->get_logger(), "[HOMING] Failed to execute homing plan: %s", response->message.c_str());
+                    }
+                } catch (const std::exception &e) {
+                    RCLCPP_ERROR(this->get_logger(), "[HOMING] Exception while calling homing plan service: %s", e.what());
+                }
+            }
+        );
+    }
+
+    void call_navigate_plan_service(const geometry_msgs::msg::Pose2D& goal){
+        auto client = this->create_client<robot_custom_interfaces::srv::Navigate>(navigate_plan_service);
+
+        // 서비스가 응답할 때까지 반복 시도
+        while (!client->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_WARN(this->get_logger(), "[NAVIGATE] Waiting for navigate plan service...");
+            rclcpp::sleep_for(std::chrono::seconds(1));  // 1초 대기 후 재시도
+        }
+
+        // 요청 객체 생성
+        auto request = std::make_shared<robot_custom_interfaces::srv::Navigate::Request>();
+        request->goal = goal;  // 요청에 목표 좌표 설정
+
+        // 비동기 요청 전송
+        client->async_send_request(request,
+            [this](rclcpp::Client<robot_custom_interfaces::srv::Navigate>::SharedFuture future) {
+                try {
+                    auto response = future.get();
+                    if (response->success) {
+                        RCLCPP_INFO(this->get_logger(), "[NAVIGATE] Navigate plan executed successfully.");
+                    } else {
+                        RCLCPP_WARN(this->get_logger(), "[NAVIGATE] Failed to execute navigate plan: %s", response->message.c_str());
+                    }
+                } catch (const std::exception &e) {
+                    RCLCPP_ERROR(this->get_logger(), "[NAVIGATE] Exception while calling navigate plan service: %s", e.what());
+                }
+            }
+        );
+    }
+
+    void call_patrol_plan_service(const std::vector<geometry_msgs::msg::Pose2D>& goals){
+        auto client = this->create_client<robot_custom_interfaces::srv::Patrol>(patrol_plan_service);
+
+        // 서비스가 응답할 때까지 반복 시도
+        while (!client->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_WARN(this->get_logger(), "[PATROL] Waiting for patrol plan service...");
+            rclcpp::sleep_for(std::chrono::seconds(1));  // 1초 대기 후 재시도
+        }
+
+        // 요청 객체 생성
+        auto request = std::make_shared<robot_custom_interfaces::srv::Patrol::Request>();
+        request->goals = goals;  // 요청에 목표 좌표 목록 설정
+
+        // 비동기 요청 전송
+        client->async_send_request(request,
+            [this](rclcpp::Client<robot_custom_interfaces::srv::Patrol>::SharedFuture future) {
+                try {
+                    auto response = future.get();
+                    if (response->success) {
+                        RCLCPP_INFO(this->get_logger(), "[PATROL] Patrol plan executed successfully.");
+                    } else {
+                        RCLCPP_WARN(this->get_logger(), "[PATROL] Failed to execute patrol plan: %s", response->message.c_str());
+                    }
+                } catch (const std::exception &e) {
+                    RCLCPP_ERROR(this->get_logger(), "[PATROL] Exception while calling patrol plan service: %s", e.what());
+                }
+            }
+        );
     }
 
 };
