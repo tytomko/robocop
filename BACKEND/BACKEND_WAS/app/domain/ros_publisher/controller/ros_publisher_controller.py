@@ -38,7 +38,7 @@ async def publish_right():
     await publish_message(command)
     return {"status": "success", "message": f"Published: {command}"}
 
-@router.post("/call_service/homing")    
+@router.post("/call-service/homing")
 def call_homing_endpoint():
     """로봇 호밍 서비스 호출"""
     try:
@@ -47,7 +47,7 @@ def call_homing_endpoint():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.post("/call_service/navigate")
+@router.post("/call-service/navigate")
 def call_navigate_endpoint(request: NavigateRequest):
     """로봇 네비게이션 서비스 호출"""
     try:
@@ -57,7 +57,7 @@ def call_navigate_endpoint(request: NavigateRequest):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.post("/call_service/patrol")
+@router.post("/call-service/patrol")
 def call_patrol_endpoint(request: PatrolRequest):
     """로봇 순찰 서비스 호출"""
     try:
@@ -69,5 +69,50 @@ def call_patrol_endpoint(request: PatrolRequest):
         }
         response = call_patrol_service(goals)
         return {"status": "success", "message": "Patrol service called successfully", "response": response}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.post("/call-service/estop")
+def call_estop_endpoint():
+    """로봇 긴급 정지 서비스 호출"""
+    try:
+        response = call_estop_service()
+        return {"status": "success", "message": "E-stop service called successfully", "response": response}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.post("/call-service/temp-stop")
+def call_temp_stop_endpoint():
+    """로봇 일시정지 서비스 호출"""
+    try:
+        response = call_temp_stop_service()
+        return {"status": "success", "message": "Temporary stop service called successfully", "response": response}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.post("/call-service/resume")
+def call_resume_endpoint():
+    """로봇 재개 서비스 호출"""
+    try:
+        response = call_resume_service()
+        return {"status": "success", "message": "Resume service called successfully", "response": response}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.post("/call-service/waiting")
+def call_waiting_endpoint():
+    """로봇 대기 서비스 호출"""
+    try:
+        response = call_waiting_service()
+        return {"status": "success", "message": "Waiting service called successfully", "response": response}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@router.post("/call-service/manual")
+def call_manual_endpoint():
+    """로봇 매뉴얼 모드 변경 서비스 호출"""
+    try:
+        response = call_manual_service()
+        return {"status": "success", "message": "Manual mode service called successfully", "response": response}
     except Exception as e:
         return {"status": "error", "message": str(e)}

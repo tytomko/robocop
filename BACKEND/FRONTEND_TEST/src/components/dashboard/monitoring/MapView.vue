@@ -24,6 +24,15 @@
           순찰
         </button>
         <button 
+          class="control-btn stop-btn"
+          @click="handleEstop"
+        >
+          <span class="icon">
+            <i class="mdi mdi-stop-circle"></i>
+          </span>
+          정지
+        </button>
+        <button 
           class="control-btn reset-btn"
           @click="resetSelection"
         >
@@ -31,6 +40,42 @@
             <i class="mdi mdi-refresh"></i>
           </span>
           리셋
+        </button>
+        <button 
+          class="control-btn pause-btn"
+          @click="handleTempStop"
+        >
+          <span class="icon">
+            <i class="mdi mdi-pause-circle"></i>
+          </span>
+          일시정지
+        </button>
+        <button 
+          class="control-btn play-btn"
+          @click="handleResume"
+        >
+          <span class="icon">
+            <i class="mdi mdi-play-circle"></i>
+          </span>
+          재생
+        </button>
+        <button 
+          class="control-btn wait-btn"
+          @click="handleWaiting"
+        >
+          <span class="icon">
+            <i class="mdi mdi-timer"></i>
+          </span>
+          대기
+        </button>
+        <button 
+          class="control-btn manual-btn"
+          @click="handleManual"
+        >
+          <span class="icon">
+            <i class="mdi mdi-gamepad"></i>
+          </span>
+          매뉴얼
         </button>
       </div>
     </div>
@@ -291,7 +336,7 @@ const handleNavigate = async () => {
       theta: 0.0
     }
     
-    await axios.post('http://localhost:8000/call_service/navigate', {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/navigate', {
       goal
     })
     
@@ -313,7 +358,7 @@ const handlePatrol = async () => {
       theta: 0.0
     }))
     
-    await axios.post('http://localhost:8000/call_service/patrol', {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/patrol', {
       goals
     })
     
@@ -331,6 +376,61 @@ const resetSelection = () => {
     chartRef.value.setOption({
       series: chartOption.value.series
     })
+  }
+}
+
+// E-stop 요청 처리 함수 추가
+const handleEstop = async () => {
+  try {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/estop')
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('E-stop request failed:', error)
+    // 에러 메시지 표시 로직 추가
+  }
+}
+
+// 일시정지 요청 처리 함수 추가
+const handleTempStop = async () => {
+  try {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/temp-stop')
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('Temporary stop request failed:', error)
+    // 에러 메시지 표시 로직 추가
+  }
+}
+
+// 재생 요청 처리 함수 추가
+const handleResume = async () => {
+  try {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/resume')
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('Resume request failed:', error)
+    // 에러 메시지 표시 로직 추가
+  }
+}
+
+// 대기 요청 처리 함수 추가
+const handleWaiting = async () => {
+  try {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/waiting')
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('Waiting request failed:', error)
+    // 에러 메시지 표시 로직 추가
+  }
+}
+
+// 매뉴얼 모드 요청 처리 함수 추가
+const handleManual = async () => {
+  try {
+    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/manual')
+    // 성공 메시지 표시 로직 추가
+  } catch (error) {
+    console.error('Manual mode request failed:', error)
+    // 에러 메시지 표시 로직 추가
   }
 }
 
@@ -486,6 +586,51 @@ onMounted(async () => {
 
 .control-btn.reset-btn:hover {
   background-color: #e53935;
+}
+
+.control-btn.stop-btn {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.control-btn.stop-btn:hover {
+  background-color: #b71c1c;
+}
+
+.control-btn.pause-btn {
+  background-color: #fb8c00;  /* 주황색 계열 */
+  color: white;
+}
+
+.control-btn.pause-btn:hover {
+  background-color: #f57c00;
+}
+
+.control-btn.play-btn {
+  background-color: #4caf50;  /* 초록색 계열 */
+  color: white;
+}
+
+.control-btn.play-btn:hover {
+  background-color: #43a047;
+}
+
+.control-btn.wait-btn {
+  background-color: #9c27b0;  /* 보라색 계열 */
+  color: white;
+}
+
+.control-btn.wait-btn:hover {
+  background-color: #7b1fa2;
+}
+
+.control-btn.manual-btn {
+  background-color: #2196f3;  /* 파란색 계열 */
+  color: white;
+}
+
+.control-btn.manual-btn:hover {
+  background-color: #1976d2;
 }
 
 .control-btn:hover:not(:disabled) {

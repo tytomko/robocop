@@ -96,3 +96,108 @@ def call_patrol_service(goals: dict):
     except Exception as e:
         logger.error(f"Failed to call patrol service: {e}")
         raise e
+
+def call_estop_service():
+    """ROS E-stop 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, '/robot_1/stop', 'robot_custom_interfaces/srv/Estop')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"E-stop Service Response: {response}")
+            return response
+        else:
+            logger.error("E-stop service response is None.")
+            raise Exception("E-stop service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call E-stop service: {e}")
+        raise e
+
+def call_temp_stop_service():
+    """ROS Temporary Stop 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, '/robot_1/temp_stop', 'robot_custom_interfaces/srv/Estop')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Temp Stop Service Response: {response}")
+            return response
+        else:
+            logger.error("Temp Stop service response is None.")
+            raise Exception("Temp Stop service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Temp Stop service: {e}")
+        raise e
+
+def call_resume_service():
+    """ROS Resume 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, '/robot_1/resume', 'robot_custom_interfaces/srv/Estop')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Resume Service Response: {response}")
+            return response
+        else:
+            logger.error("Resume service response is None.")
+            raise Exception("Resume service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Resume service: {e}")
+        raise e
+
+def call_waiting_service():
+    """ROS Waiting 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, '/robot_1/waiting', 'robot_custom_interfaces/srv/Waiting')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Waiting Service Response: {response}")
+            return response
+        else:
+            logger.error("Waiting service response is None.")
+            raise Exception("Waiting service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Waiting service: {e}")
+        raise e
+
+def call_manual_service():
+    """ROS Manual 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, '/robot_1/manual', 'robot_custom_interfaces/srv/Manual')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Manual Service Response: {response}")
+            return response
+        else:
+            logger.error("Manual service response is None.")
+            raise Exception("Manual service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Manual service: {e}")
+        raise e
