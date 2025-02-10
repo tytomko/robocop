@@ -67,6 +67,7 @@ public:
         std::string imu_topic = "/" + robot_name + "/imu";
         std::string gps_topic = "/" + robot_name + "/gps";
         std::string heading_topic = "/robot_" + std::to_string(robot_num) + "/heading";
+        std::string utm_topic = "/robot_" + std::to_string(robot_num) + "/utm_pose";
         std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
         std::string stop_service = "/robot_" + std::to_string(robot_num) + "/stop";
         // 일시 정지, 재개 서비스 토픽
@@ -94,7 +95,7 @@ public:
             gps_topic, 10, std::bind(&RobotStatusPublisher::gps_callback, this, std::placeholders::_1));
 
         publisher_utm_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-            "/robot_" + std::to_string(robot_num) + "/utm_pose", 10);
+            utm_topic, 10);
 
         publisher_heading_ = this->create_publisher<std_msgs::msg::Float32>(
             heading_topic, 10);
@@ -402,11 +403,26 @@ private:
     void waiting_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Waiting::Request> request,
                                 std::shared_ptr<robot_custom_interfaces::srv::Waiting::Response> response)
     {
-        RCLCPP_INFO(this->get_logger(), "[WAITING] Switching to waiting mode.");
-        status_message.mode = "waiting";
-        publisher_status_->publish(status_message);
-        response->success = true;
-        response->message = "Robot is waiting.";
+        if(status_message.mode == "waiting") {
+            RCLCPP_WARN(this->get_logger(), "🚨[WAITING] Robot is already in waiting mode.🚨");
+            response->success = false;
+            response->message = "Robot is already waiting.";
+            return;
+        }
+        if(status_message.mode == "emergency stop" || status_message.mode == "temp stop") {
+            // 비상 정지 또는 일시 정지 상태에서만 대기 모드로 변경 가능
+            RCLCPP_INFO(this->get_logger(), "🚨[WAITING] Switching to waiting mode.🚨");
+            status_message.mode = "waiting";
+            publisher_status_->publish(status_message);
+            response->success = true;
+            response->message = "Robot is waiting.";
+            return;
+        }
+
+        RCLCPP_WARN(this->get_logger(), "🚨[WARN] Robot is  %s mode. Only E-stop and temp stop can change waiting mode🚨", status_message.mode.c_str());
+        response->success = false;
+        response->message = "Robot is already waiting.";
+        return;
     }
 
     void manual_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Manual::Request> request,
@@ -415,7 +431,7 @@ private:
         if (status_message.mode != "waiting") {
             RCLCPP_WARN(this->get_logger(), "[MANUAL] Cannot switch to manual mode because robot is not in waiting mode.");
             response->success = false;
-            response->message = "Manual service is allowed only in waiting mode.";
+            response->message = "🚨Manual service is allowed only in waiting mode.🚨";
             return;
         }
         RCLCPP_INFO(this->get_logger(), "[MANUAL] Switching to manual mode.");
