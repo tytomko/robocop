@@ -444,7 +444,13 @@ private:
             return;
         }
         //전혀 다른 모드일 때도 무조건 로봇 정지
+        else if (current_mode_ == "manual") {
+            // 수동모드일 때는 로봇 정지안함
+            //stop_robot();
+            return;
+        }
         else {
+            // 다른 모드일 때는 로봇 정지
             stop_robot();
             return;
         }
@@ -512,7 +518,7 @@ private:
 
         // 1초 간격으로 로그 출력 (간격은 원하는 값으로 변경 가능)
         if (std::chrono::duration_cast<std::chrono::seconds>(current_time - last_log_time).count() >= 1) {
-            RCLCPP_INFO(this->get_logger(), "로봇 정지");
+            //RCLCPP_INFO(this->get_logger(), "로봇 정지");
             last_log_time = current_time;
         }
     }
