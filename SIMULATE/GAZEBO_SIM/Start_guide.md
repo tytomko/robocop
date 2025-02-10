@@ -152,7 +152,12 @@
 
 ## 4. 실행 방법
 
-### 런치파일실행
+### 가제보 실행
+```bash
+ros2 launch turtlebot3_gazebo tb3_imu_lidar_gps_burger.launch.py
+```
+
+### 런치파일실행 로봇별로실행
 ```bash
 ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=ssafy robot_number:=1
 ```
