@@ -403,11 +403,26 @@ private:
     void waiting_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Waiting::Request> request,
                                 std::shared_ptr<robot_custom_interfaces::srv::Waiting::Response> response)
     {
-        RCLCPP_INFO(this->get_logger(), "[WAITING] Switching to waiting mode.");
-        status_message.mode = "waiting";
-        publisher_status_->publish(status_message);
-        response->success = true;
-        response->message = "Robot is waiting.";
+        if(status_message.mode == "waiting") {
+            RCLCPP_WARN(this->get_logger(), "🚨[WAITING] Robot is already in waiting mode.🚨");
+            response->success = false;
+            response->message = "Robot is already waiting.";
+            return;
+        }
+        if(status_message.mode == "emergency stop" || status_message.mode == "temp stop") {
+            // 비상 정지 또는 일시 정지 상태에서만 대기 모드로 변경 가능
+            RCLCPP_INFO(this->get_logger(), "🚨[WAITING] Switching to waiting mode.🚨");
+            status_message.mode = "waiting";
+            publisher_status_->publish(status_message);
+            response->success = true;
+            response->message = "Robot is waiting.";
+            return;
+        }
+
+        RCLCPP_WARN(this->get_logger(), "🚨[WARN] Robot is  %s mode. Only E-stop and temp stop can change waiting mode🚨", status_message.mode.c_str());
+        response->success = false;
+        response->message = "Robot is already waiting.";
+        return;
     }
 
     void manual_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Manual::Request> request,
@@ -416,7 +431,7 @@ private:
         if (status_message.mode != "waiting") {
             RCLCPP_WARN(this->get_logger(), "[MANUAL] Cannot switch to manual mode because robot is not in waiting mode.");
             response->success = false;
-            response->message = "Manual service is allowed only in waiting mode.";
+            response->message = "🚨Manual service is allowed only in waiting mode.🚨";
             return;
         }
         RCLCPP_INFO(this->get_logger(), "[MANUAL] Switching to manual mode.");
