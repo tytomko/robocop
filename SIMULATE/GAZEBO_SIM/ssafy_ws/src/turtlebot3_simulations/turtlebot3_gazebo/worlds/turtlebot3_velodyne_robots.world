@@ -12,13 +12,15 @@
     </include>
 
     <!-- 사용자 월드(예: turtlebot3_dqn_world) -->
-    <include>
+    <!-- <include>
       <uri>model://turtlebot3_dqn_world</uri>
-    </include>
+    </include> -->
 
     <!-- 로봇 모델 (ssafy_model) -->
     <include>
-      <pose>0 -1.7 0.01 0.0 0.0 0.0</pose>
+
+      <pose>0 0 0.01 0.0 0.0 1.5708</pose>
+      <!-- <pose>0 0 0.01 0.0 0.0 0.0</pose> -->
       <uri>model://ssafy_model</uri>
     </include>
     
