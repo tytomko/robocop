@@ -14,30 +14,27 @@ auth_repository = AuthRepository()
 logger = logging.getLogger(__name__)
 
 async def create_admin_user():
-    """관리자 계정을 생성합니다."""
+    """Admin 계정이 없으면 생성합니다."""
+
     try:
-        # 먼저 admin 계정이 있는지 확인
-        existing_admin = await auth_repository.find_user_by_username(username="admin")
-        if existing_admin:
-            logger.info("Admin 계정이 이미 존재합니다.")
-            return
-
-
         logger.info("Admin 계정 생성 시도...")
-        admin_data = UserCreate(
-            username="admin",
-            password="admin1234",
-            role="admin"
-        )
-        await auth_service.create_user(admin_data)
-        logger.info("Admin 계정이 성공적으로 생성되었습니다.")
+        auth_service = AuthService()
+        admin = await auth_service.repository.find_user_by_username("admin")
+        
+        if not admin:
+            admin_user = User(
+                username="admin",
+                password="admin1234",
+                role="admin"
+            )
+            await auth_service.create_user(admin_user)
+            logger.info("Admin 계정이 생성되었습니다.")
+        else:
+            logger.info("Admin 계정이 이미 존재합니다.")
+            
     except Exception as e:
         logger.error(f"Admin 계정 생성 중 오류 발생: {str(e)}")
-        if "duplicate key error" not in str(e).lower():
-            logger.error(f"예상치 못한 오류: {str(e)}")
-            raise e
-        else:
-            logger.info("중복된 Admin 계정이 감지되었습니다.")
+        raise e
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     return await auth_service.verify_token(token)

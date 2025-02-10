@@ -3,6 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from ....infrastructure.database.connection import DatabaseConnection
 from ..models.person_models import Person, PersonCreate, PersonUpdate, ImageInfo
 from datetime import datetime
+from bson import ObjectId
 
 class PersonRepository:
     """사용자 저장소"""
@@ -34,7 +35,7 @@ class PersonRepository:
             "seq": counter["seq"],
             "createdAt": datetime.utcnow(),
             "images": [],
-            "isDeleted": False  # false -> False
+            "isDeleted": False
         })
         
         result = await self.collection.insert_one(person_dict)
@@ -103,40 +104,66 @@ class PersonRepository:
         )
         return result.modified_count > 0
 
-    async def add_person_image(self, person_id: str = None, name: str = None, image_info: ImageInfo = None) -> Optional[Person]:
-        """사용자 이미지를 추가합니다."""
+    async def get_next_image_number(self, person_id: str) -> int:
+        """해당 person의 다음 이미지 번호를 가져옵니다."""
+        await self.connect()
+        person = await self.collection.find_one({"_id": person_id})
+        if not person or "images" not in person:
+            return 1
+        return len(person["images"]) + 1
+
+    async def get_person_id_by_name(self, name: str) -> Optional[str]:
+        """이름으로 person의 id를 조회합니다."""
+        await self.connect()
+        person = await self.collection.find_one({"name": name, "isDeleted": False})
+        if person:
+            return str(person["_id"])
+        return None
+
+    async def add_person_image(self, identifier: str, image_info: ImageInfo, is_name: bool = False) -> Optional[Person]:
+        """사용자 이미지를 추가합니다.
+        Args:
+            identifier: person의 id 또는 name
+            image_info: 이미지 정보
+            is_name: identifier가 name인지 여부
+        """
         await self.connect()
         
-        # id나 name으로 조회 조건 생성
-        query = {}
-        if person_id:
-            query["_id"] = person_id
-        if name:
-            query["name"] = name
+        try:
+            # name으로 검색할 경우 id로 변환
+            person_id = await self.get_person_id_by_name(identifier) if is_name else identifier
+            if not person_id:
+                return None
             
-        if not query:
-            return None
+            # ObjectId로 변환 - 여기가 핵심
+            person_id = ObjectId(person_id) if isinstance(person_id, str) else person_id
             
-        # 이미지 추가
-        result = await self.collection.update_one(
-            query,
-            {
-                "$push": {"images": image_info.dict()},
-                "$set": {"updatedAt": datetime.utcnow()}
-            }
-        )
-        
-        if result.modified_count:
-            # id로 조회한 경우
-            if person_id:
-                return await self.get_person_by_id(person_id)
-            # name으로 조회한 경우 
-            elif name:
-                person_data = await self.collection.find_one({"name": name})
+            # 다음 이미지 번호 가져오기
+            next_image_number = await self.get_next_image_number(person_id)
+            
+            # 이미지 정보에 번호 추가
+            image_dict = image_info.dict()
+            image_dict["imageNumber"] = next_image_number
+            
+            # 이미지 추가
+            result = await self.collection.update_one(
+                {"_id": person_id},  # ObjectId로 변환된 id 사용
+                {
+                    "$push": {"images": image_dict},
+                    "$set": {"updatedAt": datetime.utcnow()}
+                }
+            )
+            
+            if result.modified_count:
+                person_data = await self.collection.find_one({"_id": person_id})
                 if person_data:
                     person_data["id"] = str(person_data.pop("_id"))
                     return Person(**person_data)
-        return None
+                
+            return None
+        except Exception as e:
+            print(f"Error in add_person_image: {str(e)}")  # 디버깅 추가
+            return None
 
     async def delete_person_by_name(self, name: str) -> bool:
         """이름으로 사용자를 삭제합니다."""
@@ -167,3 +194,34 @@ class PersonRepository:
             person_data["id"] = str(person_data.pop("_id"))
             return Person(**person_data)
         return None
+
+    async def get_person_images(self, identifier: str, is_name: bool = False) -> Optional[List[ImageInfo]]:
+        """사용자의 모든 이미지를 조회합니다."""
+        await self.connect()
+        
+        # name으로 검색할 경우 id로 변환
+        person_id = await self.get_person_id_by_name(identifier) if is_name else identifier
+        if not person_id:
+            return None
+            
+        person = await self.collection.find_one({"_id": person_id})
+        if person and "images" in person:
+            return [ImageInfo(**img) for img in person["images"]]
+        return []
+
+    async def delete_person_image(self, identifier: str, image_number: int, is_name: bool = False) -> bool:
+        """사용자의 특정 이미지를 삭제합니다."""
+        await self.connect()
+        
+        person_id = await self.get_person_id_by_name(identifier) if is_name else identifier
+        if not person_id:
+            return False
+            
+        result = await self.collection.update_one(
+            {"_id": person_id},
+            {
+                "$pull": {"images": {"imageNumber": image_number}},
+                "$set": {"updatedAt": datetime.utcnow()}
+            }
+        )
+        return result.modified_count > 0

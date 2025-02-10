@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, File, Form, UploadFile, Path, HTTPException
+from fastapi import APIRouter, File, Form, UploadFile, Path, HTTPException, Query
 from ..models.person_models import Person, PersonCreate, PersonUpdate, ImageInfo
 from ..service.person_service import PersonService
 from ....common.utils import create_success_response, create_error_response
@@ -7,6 +7,7 @@ import uuid
 
 router = APIRouter()
 person_service = PersonService()
+
 
 @router.on_event("startup")
 async def startup_event():
@@ -55,14 +56,31 @@ async def get_persons():
     except Exception as e:
         return create_error_response(str(e))
     
-@router.post("/{person_id}/images")
+
+
+
+@router.post("/{identifier}/images")
 async def add_person_image(
-    person_id: int = Path(..., description="Person ID"),
-    image: UploadFile = File(...)
+    identifier: str = Path(..., description="Person ID 또는 이름"),
+    person_position: str = Form(..., description="Person Position"),
+    image: UploadFile = File(...),
+    is_name: bool = Form(False, description="identifier가 이름인지 여부")
 ):
-    """Person에 이미지를 추가합니다."""
+    """Person에 이미지를 추가합니다.
+    
+    Args:
+        identifier: Person의 ID 또는 이름
+        person_position: 직급/직책
+        image: 업로드할 이미지 파일
+        is_name: identifier가 이름인지 여부 (기본값: False)
+    """
     try:
-        person = await person_service.add_person_image(person_id, image)
+        person = await person_service.add_person_image(
+            identifier=identifier,
+            person_position=person_position,
+            image=image,
+            is_name=is_name
+        )
         return create_success_response(
             data=person,
             message="이미지가 성공적으로 추가되었습니다"
@@ -72,9 +90,11 @@ async def add_person_image(
     except Exception as e:
         return create_error_response(str(e))
 
-@router.put("/{person_id}")
+
+
+@router.put("/{identifier}")
 async def update_person(
-    person_id: int = Path(..., description="Person ID"),
+    identifier: str = Path(..., description="Person ID or Name"),
     name: str = Form(...),
     department: Optional[str] = Form(None),
     position: Optional[str] = Form(None),
@@ -90,7 +110,7 @@ async def update_person(
             email=email,
             phone=phone
         )
-        person = await person_service.update_person(person_id, person_data)
+        person = await person_service.update_person(identifier, person_data)
         if not person:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
         return create_success_response(
@@ -117,5 +137,35 @@ async def delete_person(
         )
     except HTTPException as e:
         return create_error_response(str(e))
+    except Exception as e:
+        return create_error_response(str(e))
+
+@router.get("/{identifier}/images")
+async def get_person_images(
+    identifier: str = Path(..., description="Person ID 또는 이름"),
+    is_name: bool = Query(False, description="identifier가 이름인지 여부")
+):
+    """Person의 모든 이미지를 조회합니다."""
+    try:
+        images = await person_service.get_person_images(identifier, is_name)
+        return create_success_response(
+            data=images,
+            message="이미지 목록을 성공적으로 조회했습니다"
+        )
+    except Exception as e:
+        return create_error_response(str(e))
+
+@router.delete("/{identifier}/images/{image_number}")
+async def delete_person_image(
+    identifier: str = Path(..., description="Person ID 또는 이름"),
+    image_number: int = Path(..., description="삭제할 이미지 번호"),
+    is_name: bool = Query(False, description="identifier가 이름인지 여부")
+):
+    """Person의 특정 이미지를 삭제합니다."""
+    try:
+        await person_service.delete_person_image(identifier, image_number, is_name)
+        return create_success_response(
+            message="이미지가 성공적으로 삭제되었습니다"
+        )
     except Exception as e:
         return create_error_response(str(e))

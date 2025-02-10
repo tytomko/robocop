@@ -4,9 +4,10 @@ from pydantic import BaseModel, Field
 
 class ImageInfo(BaseModel):
     """이미지 정보 모델"""
-    imageId: str
-    url: str = Field(..., description="이미지 URL")
-    uploadedAt: datetime = Field(default_factory=datetime.utcnow, alias="uploaded_at", description="업로드 시간")
+    imageId: str = Field(..., description="이미지 파일명")  # person_1_1.jpg 형식
+    url: str = Field(..., description="이미지 URL")  # 전체 경로
+    uploadedAt: datetime = Field(default_factory=datetime.utcnow, description="업로드 시간")
+    imageNumber: int = Field(..., description="동일 인물의 n번째 이미지")
 
     class Config:
         populate_by_name = True

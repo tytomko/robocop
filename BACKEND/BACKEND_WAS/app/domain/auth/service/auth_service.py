@@ -24,37 +24,28 @@ class AuthService:
         """비밀번호를 해시화합니다."""
         return pwd_context.hash(password)
 
-    async def create_user(self, user_data: UserCreate) -> User:
-        """새로운 사용자를 생성합니다."""
-        # 비밀번호 해시화
-        hashed_password = self.get_password_hash(user_data.password)
-        
-        # 사용자 데이터 준비
-        user_dict = {
-            "username": user_data.username,
-            "hashedPassword": hashed_password,
-            "role": user_data.role,
-            "isActive": True,
-            "isDefaultPassword": True,
-            "createdAt": datetime.now()
-        }
-        del user_dict["password"]  # 원본 비밀번호 제거
-        
-        # 사용자 생성
-        return await self.repository.create_user(user_dict)
+    async def create_user(self, user_data: User) -> User:
+        try:
+            if not user_data.password:
+                raise HTTPException(status_code=400, detail="비밀번호는 필수입니다")
+            
+            # 비밀번호 해싱
+            user_data.hashedPassword = self.security_service.hash_password(user_data.password)
+            user_data.password = None  # 평문 비밀번호 제거
+            
+            return await self.repository.create_user(user_data.dict(exclude_none=True))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     async def create_admin_user(self):
         admin = await self.repository.find_user_by_username("admin")
         if not admin:
-            admin_user = {
-                "username": "admin",
-                "hashedPassword": security_service.get_password_hash("admin1234"),
-                "role": "admin",
-                "isActive": True,
-                "isDefaultPassword": True,
-                "createdAt": datetime.now()
-            }
-            await self.repository.create_user(admin_user)
+            admin_user = User(
+                username="admin",
+                password="admin1234",
+                role="admin"
+            )
+            return await self.create_user(admin_user)
 
     async def authenticate_user(self, username: str, password: str):
         user = await self.repository.find_user_by_username(username)
