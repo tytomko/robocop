@@ -1,8 +1,7 @@
 <template>
-    <!-- 알림 아이콘 (오른쪽 최상단 고정) -->
-    <div class="fixed top-4 right-4 cursor-pointer z-50 flex items-center justify-center" @click="toggleNotifications">
-      <!-- 종 아이콘 (빈 종 ↔ 꽉 찬 종) -->
-      <div class="relative">
+  <div :class="wrapperClass">
+    <div :class="containerClasses" @click="toggleNotifications">
+      <div class="relative bg-white p-1 rounded-full">
         <i :class="bellIconClass"></i>
         <!-- 알림 배지 -->
         <span v-if="unreadCount > 0"
@@ -11,10 +10,8 @@
         </span>
       </div>
     </div>
-  
     <!-- 알림 토글창 -->
-    <div v-if="isNotificationsOpen"
-      class="fixed top-12 right-6 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn">
+    <div v-if="isNotificationsOpen" :class="dropdownClasses">
       <ul class="list-none p-0">
         <li v-for="(notification, index) in notifications" :key="index"
           class="flex items-center gap-3 p-3 border-b border-gray-200 cursor-pointer text-sm hover:bg-gray-100">
@@ -29,71 +26,94 @@
         </li>
       </ul>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed, onMounted } from 'vue';
-  
-  const notifications = ref([]);
-  const isNotificationsOpen = ref(false);
-  
-  /** 🔔 종 모양 동적 변경 */
-  const bellIconClass = computed(() => {
-    return isNotificationsOpen.value
-      ? "fa-solid fa-bell text-black text-2xl"
-      : "fa-regular fa-bell text-black text-2xl";
-  });
-  
-  /** 알림 이미지 동적 변경 */
-  const getNotificationImage = (message) => {
-    if (message.includes("거수자를 발견하였습니다")) {
-      return "/images/unknown.png";
-    } else if (message.includes("새 로봇이 등록되었습니다")) {
-      return "/images/robot.png";
-    }
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, defineProps } from 'vue';
+
+const props = defineProps({
+  inline: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const notifications = ref([]);
+const isNotificationsOpen = ref(false);
+
+const bellIconClass = computed(() => {
+  return isNotificationsOpen.value
+    ? "fa-solid fa-bell text-black text-2xl"
+    : "fa-regular fa-bell text-black text-2xl";
+});
+
+const getNotificationImage = (message) => {
+  if (message.includes("거수자를 발견하였습니다")) {
     return "/images/unknown.png";
-  };
-  
-  /** 알림 시간 (더미 데이터) */
-  const getTimeAgo = (index) => {
-    const timeList = ["방금 전", "1시간 전", "3시간 전", "1일 전", "3일 전", "1주 전"];
-    return timeList[index % timeList.length];
-  };
-  
-  /** 알림 추가 */
-  const addNotification = (message) => {
-    notifications.value.unshift({ message, isRead: false });
-    if (notifications.value.length > 7) {
-      notifications.value.pop();
-    }
-  };
-  
-  const unreadCount = computed(() => {
-    return notifications.value.filter(notification => !notification.isRead).length;
-  });
-  
-  const toggleNotifications = () => {
-    if (!isNotificationsOpen.value) {
-      notifications.value.forEach(notification => (notification.isRead = true));
-    }
-    isNotificationsOpen.value = !isNotificationsOpen.value;
-  };
-  
-  onMounted(() => {
-    addNotification("거수자를 발견하였습니다");
-    addNotification("새 로봇이 등록되었습니다");
-  });
-  </script>
-  
-  <style scoped>
-  @keyframes slideIn {
-    from {
-      transform: translateY(-10px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
+  } else if (message.includes("새 로봇이 등록되었습니다")) {
+    return "/images/robot.png";
   }
-  </style>
+  return "/images/unknown.png";
+};
+
+const getTimeAgo = (index) => {
+  const timeList = ["방금 전", "1시간 전", "3시간 전", "1일 전", "3일 전", "1주 전"];
+  return timeList[index % timeList.length];
+};
+
+const addNotification = (message) => {
+  notifications.value.unshift({ message, isRead: false });
+  if (notifications.value.length > 7) {
+    notifications.value.pop();
+  }
+};
+
+const unreadCount = computed(() => {
+  return notifications.value.filter(notification => !notification.isRead).length;
+});
+
+const toggleNotifications = () => {
+  if (!isNotificationsOpen.value) {
+    notifications.value.forEach(notification => (notification.isRead = true));
+  }
+  isNotificationsOpen.value = !isNotificationsOpen.value;
+};
+
+// wrapperClass: inline 모드라면 relative inline-block으로 감싸서 dropdown 위치 기준을 제공
+const wrapperClass = computed(() => {
+  return props.inline ? "relative inline-block" : "";
+});
+
+// containerClasses: inline 모드이면 일반 flex 컨테이너, 기본 모드에서는 fixed 위치 지정
+const containerClasses = computed(() => {
+  return props.inline
+    ? "flex items-center justify-center cursor-pointer"
+    : "fixed top-2 right-8 flex items-center justify-center cursor-pointer z-50";
+});
+
+// dropdownClasses: inline 모드이면 아이콘 바로 아래 왼쪽, 아니면 기존 fixed 위치
+const dropdownClasses = computed(() => {
+  return props.inline
+    ? "absolute top-full left-0 mt-2 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn"
+    : "fixed top-12 right-6 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn";
+});
+
+onMounted(() => {
+  addNotification("거수자를 발견하였습니다");
+  addNotification("새 로봇이 등록되었습니다");
+});
+</script>
+
+<style scoped>
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+</style>
