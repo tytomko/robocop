@@ -24,6 +24,8 @@
 5. **mrpt-apps**  
    - velodyne 관련 라이브러리
 
+6. **Eigen3**
+   - ???
 ---
 
 ## 2. 파일 구조
@@ -254,6 +256,16 @@ sudo apt-get install libgeographic-dev
 sudo pip3 install scikit-learn
 sudo pip3 install networkx
 pip install "numpy<1.25.0"
+```
+
+```bash
+sudo apt-get update
+sudo apt-get install libeigen3-dev
+```
+
+```bash
+sudo apt-get update
+sudo apt-get install ros-humble-geographic-msgs
 ```
 
 ---
