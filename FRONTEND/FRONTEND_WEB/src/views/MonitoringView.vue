@@ -127,27 +127,17 @@
     </div>
 
     <!-- 설정 모달(닉네임/상태 변경) -->
-    <div v-if="showNicknameModal" class="modal">
+    <div v-if="showNicknameModal" class="settings-modal">
       <div class="modal-content">
-        <h3>로봇 설정</h3>
+        <div class="modal-header">
+          <h3>로봇 설정</h3>
+        </div>
         <label>로봇명: </label>
         <input v-model="selectedRobotForNickname.nickname" placeholder="로봇명을 설정하세요" />
+
         <div class="modal-buttons">
           <button @click="setRobotNickname(selectedRobotForNickname.id, selectedRobotForNickname.nickname)">저장</button>
           <button @click="closeNicknameModal" class="close-btn">닫기</button>
-        </div>
-        <!-- 로봇 상태 변경 버튼 -->
-        <div class="robot-actions break">
-          <button 
-            class="action-btn breakdown" 
-            @click="changeRobotStatus(robot.id, 'breakdown')">
-            고장
-          </button>
-          <button 
-            class="action-btn active" 
-            @click="changeRobotStatus(robot.id, 'active')">
-            재가동
-          </button>
         </div>
       </div>
     </div>
@@ -192,16 +182,6 @@ const hideRobot = (robotId) => {
   hiddenRobots.value.push(robotId)
 }
 
-// 로봇 관리 버튼
-const manageRobots = () => {
-  robotsStore.loadRobots() // 로봇 목록 불러오기
-  robotsStore.openRobotManagementModal() // 모달 열기
-}
-
-const closeModal = () => {
-  robotsStore.closeRobotManagementModal()
-}
-
 // 상태 클래스 주기
 const getStatusClass = (status) => {
   return `status-badge ${status}`
@@ -215,37 +195,20 @@ const getStatusLabel = (status) => {
     stopped: '정지 중',
     error: '오류 발생',
     idle: '대기 중',
-    returning: '복귀 중'
+    returning: '복귀 중',
+    breakdown: '고장'
   }
   return labels[status] || status
 }
 
-// 센서 레이블
-const getSensorLabel = (sensor) => {
-  const labels = {
-    lidar: 'LiDAR',
-    camera: '카메라',
-    battery: '배터리',
-    motor: '모터'
-  }
-  return labels[sensor] || sensor
-}
-
-// 배터리 색상
+// 배터리 색상 반환
 const getBatteryColor = (battery) => {
   battery = Number(battery);
-
-  if (battery >= 80) {
-    return 'green';  // 배터리가 충분히 많음 (안전)
-  } else if (battery >= 50) {
-    return 'yellowgreen';  // 배터리가 줄어들기 시작 (양호)
-  } else if (battery >= 30) {
-    return 'orange';  // 충전 필요 경고 (주의)
-  } else if (battery >= 15) {
-    return 'orangered';  // 충전 거의 필요 (경고)
-  } else {
-    return 'red';  // 배터리 부족 (위험)
-  }
+  if (battery >= 80) return 'green';
+  if (battery >= 50) return 'yellowgreen';
+  if (battery >= 30) return 'orange';
+  if (battery >= 15) return 'orangered';
+  return 'red';
 }
 
 // 로봇 제어 함수
@@ -277,16 +240,6 @@ const emergencyStop = async (robotId) => {
   }
 };
 
-// 로봇 상태 변경 처리
-const changeRobotStatus = async (robotId, newStatus) => {
-  try {
-    await robotsStore.updateRobotStatus(robotId, newStatus);
-    console.log(`${newStatus}로 상태 변경됨`);
-  } catch (err) {
-    console.error('상태 변경 실패:', err);
-  }
-};
-
 // 상세 페이지 이동 함수
 const goToDetailPage = (robotId) => {
   router.push(`/${robotId}`);
@@ -308,9 +261,8 @@ const setupWebSocket = async () => {
   }
 };
 
-// 로봇 데이터를 불러오고 닉네임 적용
+// 로봇 데이터 불러오기 및 닉네임 설정
 const loadRobotsWithNicknames = async () => {
-  await robotsStore.loadRobots(); // 로봇 목록 불러오기
   robots.value = robotsStore.registered_robots.map(robot => {
     return {
       ...robot,
@@ -350,12 +302,8 @@ const closeNicknameModal = () => {
 onMounted(() => {
   // robotsStore.loadRobots();
   loadRobotsWithNicknames(); // 닉네임 불러오기
+  setupWebSocket();
 });
-
-// 컴포넌트 마운트/언마운트 시 WebSocket 연결/해제
-onMounted(() => {
-  setupWebSocket()
-})
 
 onUnmounted(() => {
   if (webSocketService.isConnected()) {
@@ -413,13 +361,6 @@ onUnmounted(() => {
   align-items: center;
   padding: 5px 15px;
   border-bottom: 1px solid #eee;
-}
-
-.section-handle {
-  cursor: move;
-  padding: 0 10px;
-  color: #666;
-  font-size: 18px;
 }
 
 .section-header h4 {
@@ -541,33 +482,6 @@ onUnmounted(() => {
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
-.sensor-status {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.sensor-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.sensor-badge.normal {
-  background: #28a745;
-  color: white;
-}
-
-.sensor-badge.warning {
-  background: #ffc107;
-  color: #000;
-}
-
-.sensor-badge.error {
-  background: #dc3545;
-  color: white;
-}
-
 .action-btn {
   flex: 1;
   padding: 8px;
@@ -592,13 +506,6 @@ onUnmounted(() => {
 }
 
 /* 로봇 상태 변경 버튼 */
-.robot-actions.break {
-  display: flex;
-  gap: 10px;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
 .robot-actions .action-btn {
   flex: 1;
   padding: 10px;
@@ -607,15 +514,6 @@ onUnmounted(() => {
   font-size: 14px;
   cursor: pointer;
   color: white;
-}
-
-.action-btn {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
 }
 
 /* 상세 페이지 버튼 스타일 */
@@ -725,12 +623,13 @@ onUnmounted(() => {
   background: #c82333;
 }
 
-/* 고장 버튼 (빨간색) */
-.robot-actions .action-btn.breakdown {
-  background: #dc3545;
+/* 고장 버튼 */
+.action-btn.breakdown {
+  background: #dc3545; /* 빨간색 */
+  color: white;
 }
 
-.robot-actions .action-btn.breakdown:hover {
+.action-btn.breakdown:hover {
   background: #c82333;
 }
 
@@ -741,7 +640,6 @@ onUnmounted(() => {
   margin-bottom: 15px;
 }
 
-/* 버튼 스타일 */
 .modal-buttons {
   display: flex;
   justify-content: flex-end;
@@ -781,7 +679,7 @@ onUnmounted(() => {
   display: inline-block;
 }
 
-.modal {
+.settings-modal {
   position: fixed;
   top: 0;
   left: 0;

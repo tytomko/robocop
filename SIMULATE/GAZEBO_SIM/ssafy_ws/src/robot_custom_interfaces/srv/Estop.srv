@@ -4,3 +4,4 @@
 # /resume 이름으로 보내면 재개
 ---
 bool success
+string message

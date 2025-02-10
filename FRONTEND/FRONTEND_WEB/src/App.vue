@@ -11,6 +11,9 @@
             </div>
             <div class="navbar-links">
               <router-link to="/" class="navbar-link">현황</router-link>
+              <router-link to="/camera" class="navbar-link">CCTV</router-link>
+              <router-link to="/control" class="navbar-link">제어</router-link>
+              <router-link to="/enrollment" class="navbar-link">등록</router-link>
               <router-link to="/settings" class="navbar-link">설정</router-link>
             </div>
           </div>
@@ -24,9 +27,9 @@
         </div>
       </div>
 
-      <!-- Streaming Section (별도 컨테이너) -->
-      <div class="streaming-area" v-if="!isLoginPage">
-        <StreamingSection />
+      <!-- Sidebar Section (별도 컨테이너) -->
+      <div class="sidebar-area" v-if="!isLoginPage">
+        <SidebarSection />
       </div>
     </div>
   </div>
@@ -35,17 +38,22 @@
 <script>
 import { useRoute } from "vue-router";
 import { computed } from "vue";
-import StreamingSection from "@/components/dashboard/monitoring/StreamingSection.vue";
+import SidebarSection from "@/components/dashboard/SidebarSection.vue";
 
 export default {
   components: {
-    StreamingSection,
+    SidebarSection,
   },
   setup() {
     const route = useRoute();
     const isLoginPage = computed(() => route.path === "/login");
 
-    return { isLoginPage };
+    // 새로고침 대신 localhost:3000으로 이동
+    const refreshPage = () => {
+      window.location.href = "http://localhost:3000";
+    };
+
+    return { isLoginPage, refreshPage };
   },
 };
 </script>
@@ -137,7 +145,7 @@ body {
   overflow: hidden;
 }
 
-.streaming-area {
+.sidebar-area {
   width: 400px;
   background: white;
   border-left: 1px solid #ddd;

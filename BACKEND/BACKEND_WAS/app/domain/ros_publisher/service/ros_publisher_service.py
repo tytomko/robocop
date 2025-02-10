@@ -2,14 +2,10 @@ import json
 import asyncio
 import logging
 import roslibpy
+from .ros_bridge_connection import RosBridgeConnection
 
-HOST = "192.168.100.34"
-# HOST = "localhost"
-ROSBRIDGE_URI = f"ws://{HOST}:9090"
 TOPIC_NAME = "/ssafy/key_publisher"
 PUBLISH_INTERVAL = 2  # 2초마다 발행
-
-running = True  # 루프 실행 플래그
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,9 +14,9 @@ logger = logging.getLogger(__name__)
 async def publish_message(message: str):
     """ROS 토픽에 단일 메시지 발행"""
     try:
-        # ROSBridge 연결
-        client = roslibpy.Ros(host=HOST, port=9090)
-        client.run()  # WebSocket 연결
+        # 싱글톤 ROS Bridge 클라이언트 가져오기
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
 
         # 토픽에 메시지 발행
         publisher = roslibpy.Topic(client, TOPIC_NAME, 'std_msgs/String')
@@ -29,44 +25,74 @@ async def publish_message(message: str):
         # 메시지 발행
         publisher.publish(ros_message)
         logger.info(f"ROS 토픽에 메시지 발행: {message}")
-
-        client.terminate()  # WebSocket 종료
+        
+        # 토픽 연결 해제
+        publisher.unadvertise()
+        
     except Exception as e:
         logger.error(f"메시지 발행 실패: {e}")
+        raise e
 
 # 서비스 호출 함수
-async def call_service():
+def call_homing_service():
     """ROS 서비스 호출"""
     try:
-        # ROSBridge 연결
-        client = roslibpy.Ros(host=HOST, port=9090)
-        client.run()  # WebSocket 연결
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
 
-        # 서비스 설정
         service = roslibpy.Service(client, '/robot_1/homing', 'robot_custom_interfaces/srv/Homing')
-        request = roslibpy.ServiceRequest()  # 서비스에 전달할 요청
+        request = roslibpy.ServiceRequest()
 
-        # 서비스 호출 (비동기)
         response = service.call(request)
         if response is not None:
             logger.info(f"Service Response: {response}")
+            return response
         else:
             logger.error("Service response is None.")
-        
-        client.terminate()  # WebSocket 종료
+            raise Exception("Service response is None")
+            
     except Exception as e:
         logger.error(f"Failed to call service: {e}")
+        raise e
 
-# 2초마다 메시지를 ROS 토픽에 발행하는 비동기 루프
-async def publish_loop():
-    """2초마다 메시지를 ROS 토픽에 발행하는 비동기 루프"""
-    global running
-    running = True
-    while running:
-        await publish_message("UP")
-        await asyncio.sleep(PUBLISH_INTERVAL)
+def call_navigate_service(goal: dict):
+    """ROS Navigate 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
 
-def stop_publishing():
-    """발행 중지"""
-    global running
-    running = False
+        service = roslibpy.Service(client, '/robot_1/navigate', 'robot_custom_interfaces/srv/Navigate')
+        request = roslibpy.ServiceRequest(goal)
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Navigate Service Response: {response}")
+            return response
+        else:
+            logger.error("Navigate service response is None.")
+            raise Exception("Navigate service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call navigate service: {e}")
+        raise e
+
+def call_patrol_service(goals: dict):
+    """ROS Patrol 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, '/robot_1/patrol', 'robot_custom_interfaces/srv/Patrol')
+        request = roslibpy.ServiceRequest(goals)
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Patrol Service Response: {response}")
+            return response
+        else:
+            logger.error("Patrol service response is None.")
+            raise Exception("Patrol service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call patrol service: {e}")
+        raise e

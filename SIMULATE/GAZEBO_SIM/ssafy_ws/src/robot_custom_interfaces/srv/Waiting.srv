@@ -1,0 +1,4 @@
+# 대기 서비스 목적지 도착시 대기
+---
+bool success
+string message
