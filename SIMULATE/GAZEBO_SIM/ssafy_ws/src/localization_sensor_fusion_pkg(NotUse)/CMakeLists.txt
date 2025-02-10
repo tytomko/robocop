@@ -62,6 +62,11 @@ target_link_libraries(ukf_node
   ${Boost_LIBRARIES}
 )
 
+install(TARGETS
+  ukf_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # include 폴더 추가 (헤더 파일 경로)
 include_directories(
   include

@@ -1,7 +1,7 @@
 /**********************************
-    Created on : 24th April 2020 
-    Author     : Krishna Sandeep
-    Ported to ROS2 by: [작성자 이름]
+    Created on : 10th Jan  2024
+    Ported to ROS2 by: Shin Hyeon-hak 
+    Github : Carepediem324
 **********************************/
 
 #ifndef UKF_UKF_H
@@ -11,7 +11,9 @@
 #include "sensor_msgs/msg/imu.hpp"
 #include "sensor_msgs/msg/nav_sat_fix.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-
+#include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <string>
 #include <utility>
 #include <Eigen/Dense>
@@ -61,10 +63,16 @@ private:
 
     void initVehicleState(const double yaw);         // 초기 state 설정
     void predict();                                  // 예측 단계
-    Vector5d applyMotionModel(Vector5d vec);         // 모션 모델 적용
+    // 수정된 선언 (const reference 사용)
+    Vector5d applyMotionModel(const Vector5d & vec);  // 모션 모델 적용
+
     void correct(const double x, const double y);    // 보정 단계
     void publishVehicleState();                      // Odometry 메시지로 상태 퍼블리시
-
+    static double normalizeAngle(double angle) {
+        while (angle >  M_PI) angle -= 2.0 * M_PI;
+        while (angle < -M_PI) angle += 2.0 * M_PI;
+        return angle;
+    }
     // ROS2 Node pointer
     rclcpp::Node::SharedPtr node_;
 
@@ -73,13 +81,27 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gnss_sub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr vel_mps_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr vel_kmph_pub_;
+
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr heading_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr utm_pub_;
+    // 타이머 (ROS2에서는 create_wall_timer 사용)
+    rclcpp::TimerBase::SharedPtr _timer;
     // 토픽 이름
     string _imu_topic, _gnss_topic, _odom_topic;
+    string _vel_kmph_topic, _vel_mps_topic; // 선속도 토픽 이름
+
+    string heading_topic;
+    string utm_topic;
     // 노이즈 분산 등 파라미터
     double _noise_var_pos, _noise_var_yaw, _noise_var_vel, _noise_var_meas;
     bool _init_state_provided;
     double _init_x, _init_y, _init_yaw, _init_velx, _init_vely;
     double _init_var_pos, _init_var_yaw, _init_var_vel;
+    
+    double _curr_altitude; // 고도 값을 저장할 멤버 변수 추가
+    double _latest_heading;
 
     VehicleState _curr_state, _predicted_state;
     pair<double, double> _init_utm, _curr_utm;       // (easting, northing)

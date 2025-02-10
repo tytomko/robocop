@@ -67,6 +67,7 @@ public:
         std::string imu_topic = "/" + robot_name + "/imu";
         std::string gps_topic = "/" + robot_name + "/gps";
         std::string heading_topic = "/robot_" + std::to_string(robot_num) + "/heading";
+        std::string utm_topic = "/robot_" + std::to_string(robot_num) + "/utm_pose";
         std::string status_topic = "/robot_" + std::to_string(robot_num) + "/status";
         std::string stop_service = "/robot_" + std::to_string(robot_num) + "/stop";
         // 일시 정지, 재개 서비스 토픽
@@ -94,7 +95,7 @@ public:
             gps_topic, 10, std::bind(&RobotStatusPublisher::gps_callback, this, std::placeholders::_1));
 
         publisher_utm_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-            "/robot_" + std::to_string(robot_num) + "/utm_pose", 10);
+            utm_topic, 10);
 
         publisher_heading_ = this->create_publisher<std_msgs::msg::Float32>(
             heading_topic, 10);

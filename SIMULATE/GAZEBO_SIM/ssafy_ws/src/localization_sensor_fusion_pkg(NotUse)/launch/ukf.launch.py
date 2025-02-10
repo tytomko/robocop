@@ -15,6 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#/**********************************
+#    Created on : 10th Jan  2024
+#    Ported to ROS2 by: Shin Hyeon-hak 
+#    Github : Carepediem324
+#**********************************/
+
 from launch import LaunchDescription
 import launch_ros.actions
 
@@ -29,7 +35,11 @@ def generate_launch_description():
                 'init_state_provided': False,
                 'imu_topic': '/ssafy/imu',
                 'gnss_topic': '/ssafy/gps',
-                'odom_topic': '/ssafy/odometry'
+                'odom_topic': '/ssafy/odometry',
+                'vel_mps_topic': '/ssafy/velocity_mps',
+                'vel_kmph_topic': '/ssafy/velocity_kmph',
+                'heading_topic': '/robot_1/heading',
+                'utm_topic': '/robot_1/utm_pose'
             }]
         )
     ])
