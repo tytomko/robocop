@@ -3,12 +3,12 @@
     <div class="robot-selection-and-mode flex justify-between items-center mb-5">
       <div class="robot-selection">
         <label for="robot-select" class="font-semibold">로봇 선택:</label>
-        <select id="robot-select" v-model="selectedRobotId" class="mt-2 p-2 border border-gray-300 rounded-md w-48">
+        <select id="robot-select" v-model="selectedRobotSeq" class="mt-2 p-2 border border-gray-300 rounded-md w-48">
           <option disabled value="">선택해주세요</option>
           <option 
             v-for="robot in robotsStore.registered_robots" 
-            :key="robot.id" 
-            :value="robot.id">
+            :key="robot.seq" 
+            :value="robot.seq">
             {{ robot.nickname || robot.name }}
           </option>
         </select>
@@ -69,10 +69,10 @@ import RobotMap from '@/components/map/RobotMap.vue'
 
 const robotsStore = useRobotsStore()
 
-const selectedRobotId = ref('')
+const selectedRobotSeq = ref('')
 
 const activeRobot = computed(() => {
-  return robotsStore.registered_robots.find(robot => String(robot.id) === String(selectedRobotId.value)) || null
+  return robotsStore.registered_robots.find(robot => String(robot.seq) === String(selectedRobotSeq.value)) || null
 })
 
 const mode = ref('auto')

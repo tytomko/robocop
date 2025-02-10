@@ -60,7 +60,7 @@ const loadRobotsWithNicknames = async () => {
   robots.value = robotsStore.registered_robots.map(robot => {
     return {
       ...robot,
-      nickname: localStorage.getItem(`robot_nickname_${robot.id}`) || robot.name
+      nickname: localStorage.getItem(`robot_nickname_${robot.seq}`) || robot.name
     };
   });
 };

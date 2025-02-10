@@ -5,8 +5,8 @@
       <h3 class="text-lg font-semibold mb-2">기본 정보</h3>
       <p><strong>상태:</strong> {{ getStatusLabel(robot.status) }}</p>
       <p><strong>배터리:</strong> {{ robot.battery }}%</p>
-      <p><strong>네트워크 상태:</strong> {{ robot.network }}</p>
-      <p><strong>작동 시작 시간:</strong> {{ robot.starttime }}</p>
+      <p><strong>네트워크 상태:</strong> {{ robot.networkStatus }}</p>
+      <p><strong>작동 시작 시간:</strong> {{ robot.startAt }}</p>
     </div>
     <hr class="border-gray-300 my-4">
 
@@ -45,26 +45,28 @@ defineProps({
 
 const getStatusLabel = (status) => {
   const labels = {
-    active: '활동 중',
+    navigating: '이동 중',
     charging: '충전 중',
-    stopped: '정지 중',
-    error: '오류 발생',
-    idle: '대기 중',
-    returning: '복귀 중',
-    breakdown: '고장'
+    emergencyStopped: '정지 중',
+    error: '고장',
+    waiting: '대기 중',
+    homing: '복귀 중',
+    patrolling: '순찰 중'
   };
   return labels[status] || status;
 };
 
-const getSensorLabel = (sensor) => {
-  const sensorLabels = {
-    temperature: '온도',
-    humidity: '습도',
-    proximity: '근접 센서',
-    camera: '카메라',
-    lidar: '라이다'
+const getStatusClass = (status) => {
+  const statusClasses = {
+    charging: 'bg-green-500',
+    navigating: 'bg-blue-500',
+    patrolling: 'bg-blue-500',
+    emergencyStopped: 'bg-red-500',
+    error: 'bg-red-600',
+    waiting: 'bg-gray-500',
+    homing: 'bg-teal-500',
   };
-  return sensorLabels[sensor] || sensor;
+  return statusClasses[status] || 'bg-yellow-500';
 };
 
 const getSensorClass = (status) => {

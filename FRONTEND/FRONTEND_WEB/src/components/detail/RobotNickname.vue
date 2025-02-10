@@ -27,7 +27,7 @@ const props = defineProps({
 const emit = defineEmits(['save', 'close']);
 
 const saveNickname = () => {
-  emit('save', props.robot.id, props.robot.nickname);
+  emit('save', props.robot.seq, props.robot.nickname);
 };
 
 const closeModal = () => {

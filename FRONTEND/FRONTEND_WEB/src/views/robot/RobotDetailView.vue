@@ -3,8 +3,8 @@
     <div class="robot-header flex items-center gap-3">
       <h1 v-if="robot" class="text-xl font-bold">
         {{ robot.nickname || robot.name }} 
-        <span class="text-sm" :class="robot.is_active ? 'text-green-500' : 'text-red-500'">
-          ({{ robot.is_active ? '활성화' : '비활성화' }})
+        <span class="text-sm" :class="robot.isActive ? 'text-green-500' : 'text-red-500'">
+          ({{ robot.isActive ? '활성화' : '비활성화' }})
         </span>
       </h1>
       <button @click="openNicknameModal(robot)" class="text-gray-700 text-lg hover:text-gray-900">
@@ -39,17 +39,17 @@ import RobotInfo from '@/components/detail/RobotInfo.vue';
 const route = useRoute();
 const router = useRouter();
 const robotsStore = useRobotsStore();
-const robotId = route.params.robotId;
+const seq = route.params.seq;
 
 const robot = computed(() => {
-  return robotsStore.registered_robots.find(r => r.id == robotId) || null;
+  return robotsStore.registered_robots.find(r => r.seq == seq) || null;
 });
 
 const showNicknameModal = ref(false);
 const selectedRobotForNickname = ref(null);
 
 const openNicknameModal = (robot) => {
-  selectedRobotForNickname.value = { id: robot.id, nickname: robot.nickname || '' };
+  selectedRobotForNickname.value = { id: robot.seq, nickname: robot.nickname || '' };
   showNicknameModal.value = true;
 };
 
@@ -57,10 +57,10 @@ const closeNicknameModal = () => {
   showNicknameModal.value = false;
 };
 
-const setRobotNickname = (robotId, nickname) => {
-  localStorage.setItem(`robot_nickname_${robotId}`, nickname);
+const setRobotNickname = (seq, nickname) => {
+  localStorage.setItem(`robot_nickname_${seq}`, nickname);
   
-  const robotIndex = robotsStore.registered_robots.findIndex(r => r.id === robotId);
+  const robotIndex = robotsStore.registered_robots.findIndex(r => r.seq === seq);
   if (robotIndex !== -1) {
     robotsStore.registered_robots[robotIndex].nickname = nickname;
   }

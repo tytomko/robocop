@@ -23,17 +23,17 @@
         </thead>
         <tbody>
           <tr v-for="robot in robots" :key="robot.id" class="border border-gray-200">
-            <td class="px-4 py-2">{{ robot.id }}</td>
+            <td class="px-4 py-2">{{ robot.seq }}</td>
             <td class="px-4 py-2">{{ robot.nickname || robot.name }}</td>
             <td class="px-4 py-2">{{ robot.ipAddress }}</td>
             <td class="px-4 py-2">{{ robot.battery }}%</td>
-            <td class="px-4 py-2">{{ robot.location }}</td>
+            <td class="px-4 py-2">{{ robot.position }}</td>
             <td class="px-4 py-2">
               <span :class="getStatusClass(robot.status)" class="px-2 py-1 rounded text-white">{{ getStatusLabel(robot.status) }}</span>
             </td>
             <td class="px-4 py-2">
-              <button v-if="robot.status !== 'breakdown'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="setBreakdown(robot.id)">고장</button>
-              <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="setActive(robot.id)">가동</button>
+              <button v-if="robot.status !== 'error'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="setBreakdown(robot.seq)">고장</button>
+              <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="setActive(robot.seq)">가동</button>
             </td>
           </tr>
         </tbody>
@@ -52,37 +52,35 @@ const emit = defineEmits(['close', 'openAddRobotModal', 'setBreakdown', 'setActi
 
 const getStatusClass = (status) => {
   const statusClasses = {
-    active: 'bg-green-500',
-    charging: 'bg-blue-500',
-    stopped: 'bg-red-500',
+    charging: 'bg-green-500',
+    navigating: 'bg-blue-500',
+    patrolling: 'bg-blue-500',
+    emergencyStopped: 'bg-red-500',
     error: 'bg-red-600',
-    idle: 'bg-gray-500',
-    returning: 'bg-teal-500',
-    breakdown: 'bg-red-500',
-    unserviceable: 'bg-black'
+    waiting: 'bg-gray-500',
+    homing: 'bg-teal-500',
   };
   return statusClasses[status] || 'bg-yellow-500';
 };
 
 const getStatusLabel = (status) => {
   const labels = {
-    active: '활동 중',
+    navigating: '이동 중',
     charging: '충전 중',
-    stopped: '정지 중',
-    error: '오류 발생',
-    idle: '대기 중',
-    returning: '복귀 중',
-    breakdown: '고장',
-    unserviceable: '사용 불가'
+    emergencyStopped: '정지 중',
+    error: '고장',
+    waiting: '대기 중',
+    homing: '복귀 중',
+    patrolling: '순찰 중'
   };
   return labels[status] || status;
 };
 
-const setBreakdown = (robotId) => {
-  emit('setBreakdown', robotId);
+const setBreakdown = (robotSeq) => {
+  emit('setBreakdown', robotSeq);
 };
 
-const setActive = (robotId) => {
-  emit('setActive', robotId);
+const setActive = (robotSeq) => {
+  emit('setActive', robotSeq);
 };
 </script>

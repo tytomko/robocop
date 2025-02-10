@@ -6,9 +6,9 @@
     
     <!-- 로봇 상태 목록 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-for="robot in visibleRobots" :key="robot.id" class="relative bg-white rounded-lg p-4 border shadow-sm">
+      <div v-for="robot in visibleRobots" :key="robot.seq" class="relative bg-white rounded-lg p-4 border shadow-sm">
         <!-- X 버튼 -->
-        <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-600" @click="hideRobot(robot.id)">✖</button>
+        <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-600" @click="hideRobot(robot.seq)">✖</button>
 
         <!-- 로봇 이름과 상태 표시를 나란히 배치 -->
         <div class="flex items-center mt-2">
@@ -28,7 +28,7 @@
           </div>
           <div>
             <span class="text-sm text-gray-600">현재 위치</span>
-            <span class="block text-gray-800 font-medium">{{ robot.location }}</span>
+            <span class="block text-gray-800 font-medium">{{ robot.position }}</span>
           </div>
           <div>
             <span class="text-sm text-gray-600">IP 주소</span>
@@ -37,15 +37,15 @@
         </div>
         
         <div class="flex gap-2 mt-4">
-          <button class="flex-1 py-2 rounded text-white text-sm bg-gray-700 hover:bg-gray-800" @click="returnRobot(robot.id)">
+          <button class="flex-1 py-2 rounded text-white text-sm bg-gray-700 hover:bg-gray-800" @click="returnRobot(robot.seq)">
             복귀 명령
           </button>
-          <button class="flex-1 py-2 rounded text-white text-sm" :class="getEmergencyClass(robot.status)" @click="emergencyStop(robot.id)">
-            {{ robot.status === 'active' ? '비상 정지' : '가동 시작' }}
+          <button class="flex-1 py-2 rounded text-white text-sm" :class="getEmergencyClass(robot.status)" @click="emergencyStop(robot.seq)">
+            {{ robot.status === 'navigating' ? '비상 정지' : '가동 시작' }}
           </button>
         </div>
         
-        <button class="mt-2 w-full py-2 rounded bg-gray-900 text-white text-sm hover:bg-gray-800" @click="goToDetailPage(robot.id)">
+        <button class="mt-2 w-full py-2 rounded bg-gray-900 text-white text-sm hover:bg-gray-800" @click="goToDetailPage(robot.seq)">
           상세 페이지
         </button>
       </div>
@@ -69,24 +69,23 @@ const robotsStore = useRobotsStore();
 const robots = computed(() => robotsStore.registered_robots);
 const hiddenRobots = ref([]);
 
-const visibleRobots = computed(() => robots.value.filter(robot => !hiddenRobots.value.includes(robot.id)));
+const visibleRobots = computed(() => robots.value.filter(robot => !hiddenRobots.value.includes(robot.seq)));
 
-const hideRobot = (robotId) => hiddenRobots.value.push(robotId);
+const hideRobot = (robotSeq) => hiddenRobots.value.push(robotSeq);
 
 const getStatusClass = (status) => {
   return {
-    'bg-green-500 text-white': status === 'active',
-    'bg-blue-500 text-white': status === 'charging',
-    'bg-red-500 text-white': status === 'stopped' || status === 'breakdown',
-    'bg-gray-500 text-white': status === 'idle',
-    'bg-black text-white': status === 'unserviceable',
-    'bg-teal-500 text-white': status === 'returning'
+    'bg-green-500 text-white': status === 'charging',
+    'bg-blue-500 text-white': status === 'patrolling' || status === 'navigating',
+    'bg-red-500 text-white': status === 'emergencyStopped' || status === 'error',
+    'bg-gray-500 text-white': status === 'waiting',
+    'bg-black text-white': status === 'homing'
   };
 };
 
 const getStatusLabel = (status) => ({
-  active: '활동 중', charging: '충전 중', stopped: '정지 중', error: '오류 발생',
-  idle: '대기 중', returning: '복귀 중', breakdown: '고장', unserviceable : '사용 불가'
+  navigating: '이동 중', charging: '충전 중', emergencyStopped: '정지 중', error: '고장',
+  waiting: '대기 중', homing: '복귀 중', patrolling: '순찰 중'
 }[status] || status);
 
 const getBatteryClass = (battery) => {
@@ -98,30 +97,30 @@ const getBatteryClass = (battery) => {
 
 const getEmergencyClass = (status) => {
   return {
-    'bg-red-600 hover:bg-red-700': status === 'active',
+    'bg-red-600 hover:bg-red-700': status === 'navigating' || status === 'patrolling',
     'bg-emerald-500 hover:bg-emerald-600': status !== 'active'
   };
 };
 
-const returnRobot = async (robotId) => {
-  if (!robotId) return;
+const returnRobot = async (robotSeq) => {
+  if (!robotSeq) return;
   try {
-    const robot = robotsStore.registered_robots.find((r) => r.id === robotId);
-    if (robot) robot.status = 'returning';
+    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
+    if (robot) robot.status = 'homing';
   } catch (err) {
     console.error('로봇 복귀 명령 에러:', err);
   }
 };
 
-const emergencyStop = async (robotId) => {
-  if (!robotId) return;
+const emergencyStop = async (robotSeq) => {
+  if (!robotSeq) return;
   try {
-    const robot = robotsStore.registered_robots.find((r) => r.id === robotId);
-    if (robot) robot.status = robot.status === 'active' ? 'stopped' : 'active';
+    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
+    if (robot) robot.status = robot.status === 'navigating' ? 'emergencyStopped' : 'navigating';
   } catch (err) {
     console.error('비상 정지 명령 에러:', err);
   }
 };
 
-const goToDetailPage = (robotId) => router.push(`/${robotId}`);
+const goToDetailPage = (robotSeq) => router.push(`/${robotSeq}`);
 </script>
