@@ -23,7 +23,7 @@
             <router-link to="/control" class="font-normal text-base hover:text-blue-400">제어</router-link>
             <router-link to="/enrollment" class="font-normal text-base hover:text-blue-400">등록</router-link>
             <router-link to="/statistics" class="font-normal text-base hover:text-blue-400">통계</router-link>
-            <router-link to="/settings" class="font-normal text-base hover:text-blue-400">설정</router-link>
+            <router-link to="/settings" class="font-normal text-base hover:text-blue-400">관리</router-link>
             <!-- 사이드바 확장 상태일 때만 네비게이션 바에서 알림 아이콘 표시 -->
             <AlarmNotification inline v-if="!isSidebarCollapsed" class="ml-4" />
           </div>
