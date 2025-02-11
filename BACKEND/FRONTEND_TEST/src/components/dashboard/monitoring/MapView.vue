@@ -336,14 +336,12 @@ const handleNavigate = async () => {
       theta: 0.0
     }
     
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/navigate', {
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/navigate', {
       goal
     })
     
-    // 성공 메시지 표시 로직 추가
   } catch (error) {
     console.error('Navigation request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
@@ -358,14 +356,12 @@ const handlePatrol = async () => {
       theta: 0.0
     }))
     
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/patrol', {
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/patrol', {
       goals
     })
     
-    // 성공 메시지 표시 로직 추가
   } catch (error) {
     console.error('Patrol request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
@@ -379,58 +375,48 @@ const resetSelection = () => {
   }
 }
 
-// E-stop 요청 처리 함수 추가
+// E-stop 요청 처리
 const handleEstop = async () => {
   try {
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/estop')
-    // 성공 메시지 표시 로직 추가
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/estop')
   } catch (error) {
     console.error('E-stop request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
-// 일시정지 요청 처리 함수 추가
+// 일시정지 요청 처리
 const handleTempStop = async () => {
   try {
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/temp-stop')
-    // 성공 메시지 표시 로직 추가
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/temp-stop')
   } catch (error) {
     console.error('Temporary stop request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
-// 재생 요청 처리 함수 추가
+// 재생 요청 처리
 const handleResume = async () => {
   try {
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/resume')
-    // 성공 메시지 표시 로직 추가
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/resume')
   } catch (error) {
     console.error('Resume request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
-// 대기 요청 처리 함수 추가
+// 대기 요청 처리
 const handleWaiting = async () => {
   try {
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/waiting')
-    // 성공 메시지 표시 로직 추가
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/waiting')
   } catch (error) {
     console.error('Waiting request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
-// 매뉴얼 모드 요청 처리 함수 추가
+// 매뉴얼 모드 요청 처리
 const handleManual = async () => {
   try {
-    await axios.post('http://localhost:8000/api/v1/ros-publisher/call-service/manual')
-    // 성공 메시지 표시 로직 추가
+    await axios.post('http://localhost:8000/api/v1/robot_1/call-service/manual')
   } catch (error) {
     console.error('Manual mode request failed:', error)
-    // 에러 메시지 표시 로직 추가
   }
 }
 
