@@ -1,8 +1,17 @@
 <template>
   <div id="app" class="fixed inset-0 overflow-hidden bg-gray-100">
     <div class="flex w-full h-full overflow-hidden">
+      <!-- Left Sidebar -->
+      <!-- [1] 왼쪽 사이드바 -->
+      <ListSidebarSection
+        v-if="!isLoginPage"
+        :is-collapsed="isLeftSidebarCollapsed"
+        @toggle-left-sidebar="toggleLeftSidebar"
+      />
+
       <!-- Main Content -->
       <div class="flex flex-col flex-1 overflow-hidden">
+
         <!-- Navbar -->
         <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-10 h-[55px] flex items-center justify-between">
           <div class="cursor-pointer" @click="refreshPage">
@@ -25,9 +34,9 @@
         </div>
       </div>
 
-      <!-- Sidebar -->
+      <!-- Right Sidebar -->
       <div v-if="!isLoginPage" :class="sidebarClasses">
-        <SidebarSection :isCollapsed="isSidebarCollapsed" @toggle-sidebar="toggleSidebar" />
+        <MapSidebarSection :isCollapsed="isSidebarCollapsed" @toggle-sidebar="toggleSidebar" />
       </div>
     </div>
 
@@ -39,8 +48,9 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import SidebarSection from "@/components/dashboard/SidebarSection.vue";
+import MapSidebarSection from "@/components/dashboard/MapSidebarSection.vue";
 import AlarmNotification from "@/components/dashboard/AlarmNotification.vue";
+import ListSidebarSection from "./components/dashboard/ListSidebarSection.vue";
 
 const route = useRoute();
 const isLoginPage = computed(() => route.path === "/login");
@@ -52,6 +62,20 @@ const isSidebarCollapsed = ref(storedState ? storedState === "true" : false);
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
   localStorage.setItem("sidebar-collapsed", isSidebarCollapsed.value);
+  setTimeout(() => {
+    window.dispatchEvent(new Event("resize"));
+  }, 350);
+};
+
+// [왼쪽 사이드바] 접기/펼치기 상태
+const storedLeftState = localStorage.getItem("left-sidebar-collapsed");
+const isLeftSidebarCollapsed = ref(storedLeftState ? storedLeftState === "true" : false);
+
+// [왼쪽 사이드바] 토글 함수
+const toggleLeftSidebar = () => {
+  isLeftSidebarCollapsed.value = !isLeftSidebarCollapsed.value;
+  localStorage.setItem("left-sidebar-collapsed", isLeftSidebarCollapsed.value);
+  // 크기 변경 이후 차트나 지도 등이 리사이즈되도록 resize 이벤트 트리거
   setTimeout(() => {
     window.dispatchEvent(new Event("resize"));
   }, 350);

@@ -10,8 +10,8 @@
           @change="handleRobotSelection"
           multiple
         >
-          <option v-for="robot in robotsStore.registered_robots" :key="robot.id" :value="robot.id">
-            {{ robot.name }}
+          <option v-for="robot in robotsStore.registered_robots" :key="robot.seq" :value="robot.seq">
+            {{ robot.nickname }}
           </option>
         </select>
       </div>
@@ -19,11 +19,11 @@
       <!-- 선택된 로봇 카메라들 (화면 내에서 크기 자동 조정) -->
       <div v-if="selectedRobots.length > 0" :class="gridClass" class="video-container">
         <Cctv
-          v-for="robotId in selectedRobots"
-          :key="robotId"
-          :cameraName="'카메라 ' + robotId"
+          v-for="robotSeq in selectedRobots"
+          :key="robotSeq"
+          :cameraName="'카메라 ' + robotSeq"
           :cameraStatus="'연결 대기 중'"
-          :streamInfo="streamInfoMap[robotId]"
+          :streamInfo="streamInfoMap[robotSeq]"
           class="video-item"
         />
         <div v-if="selectedRobots.length === 3" class="video-item empty"></div>
@@ -57,8 +57,8 @@ const gridClass = computed(() => {
 
 // 로봇 선택 후 상태 변경
 const handleRobotSelection = () => {
-  selectedRobots.value.forEach(robotId => {
-    streamInfoMap.value[robotId] = robotsStore.getStreamInfo(robotId)
+  selectedRobots.value.forEach(robotSeq => {
+    streamInfoMap.value[robotSeq] = robotsStore.getStreamInfo(robotSeq)
   })
 }
 

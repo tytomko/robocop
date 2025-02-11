@@ -1,29 +1,40 @@
 <template>
-  <div class="w-full h-full relative">
-    <!-- 확장 상태일 때만 내부 콘텐츠 렌더링 -->
-    <template v-if="!isCollapsed">
-      <div class="flex flex-col gap-1 bg-gray-100 flex-1">
+  <div class="relative h-full">
+    <!-- 사이드바 컨테이너 (오른쪽 고정, 너비를 애니메이션으로 변경) -->
+    <div
+      class="absolute top-0 right-0 h-full bg-gray-100 border-l border-gray-200 transition-all duration-300 ease-in-out overflow-auto"
+      :class="isCollapsed ? 'w-0' : 'w-[400px]'"
+    >
+      <!-- 실제 사이드바 내부 콘텐츠 -->
+      <div class="flex flex-col gap-1 min-h-full">
         <div class="bg-white">
           <div class="flex items-center mb-2 p-4 border-b border-gray-200 bg-white">
-            <h3 class="m-0 text-gray-800 font-bold text-base">실시간 로봇 현황</h3>
+            <h3 class="m-0 text-gray-800 font-bold text-base">
+              실시간 로봇 현황
+            </h3>
           </div>
           <div class="p-4 flex flex-col gap-5">
             <RobotMap />
           </div>
         </div>
       </div>
-    </template>
-    <!-- 토글 버튼은 항상 표시 -->
-    <button class="toggle-button" @click="toggleSidebar" :class="{ 'collapsed': isCollapsed }">
+    </div>
+
+    <!-- 토글 버튼 (사이드바 왼쪽에 배치) -->
+    <button
+      class="toggle-button"
+      @click="toggleSidebar"
+      :class="{ collapsed: isCollapsed }"
+    >
       {{ isCollapsed ? '⏴' : '⏵' }}
     </button>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
 import RobotMap from '@/components/map/RobotMap.vue';
 import { useRobotsStore } from '@/stores/robots';
+import { onMounted } from 'vue';
 
 const props = defineProps({
   isCollapsed: {
@@ -31,16 +42,17 @@ const props = defineProps({
     default: false,
   },
 });
-const emit = defineEmits(["toggle-sidebar"]);
+const emit = defineEmits(['toggle-sidebar']);
 
 const toggleSidebar = () => {
-  emit("toggle-sidebar");
+  emit('toggle-sidebar');
 };
 
+// 로봇 데이터 스토어 (예: Pinia)
 const robotsStore = useRobotsStore();
 onMounted(() => {
   robotsStore.loadRobots();
-  const savedRobot = localStorage.getItem("selectedRobot");
+  const savedRobot = localStorage.getItem('selectedRobot');
   if (savedRobot) {
     robotsStore.selectedRobot = savedRobot;
   }
@@ -48,6 +60,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 토글 버튼의 위치/스타일 (원하는 대로 조정) */
 .toggle-button {
   position: absolute;
   top: 50%;
@@ -66,21 +79,10 @@ onMounted(() => {
   font-size: 16px;
   font-weight: bold;
   color: #555;
-  transition: background-color 0.3s, transform 0.3s;
+  transition: background-color 0.3s;
 }
 
-/* 버튼에 마우스를 올릴 때 */
 .toggle-button:hover {
   background-color: #e1e1e1;
-}
-
-/* 사이드바가 확장된 경우에만 아이콘 변경 */
-.toggle-button:hover::before {
-  content: "⏵";
-}
-
-/* 사이드바가 축소된 경우 아이콘 유지 */
-.toggle-button.collapsed:hover::before {
-  content: "⏴";
 }
 </style>
