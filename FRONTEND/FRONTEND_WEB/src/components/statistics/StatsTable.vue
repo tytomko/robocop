@@ -12,10 +12,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="record in filteredRecords" :key="record.id" class="text-center text-sm border-b">
+        <tr v-for="record in filteredRecords" :key="record.seq" class="text-center text-sm border-b">
           <td class="p-2"><input type="checkbox" class="form-checkbox" /></td>
-          <td class="p-2">{{ record.name }}</td>
-          <td class="p-2">{{ record.startTime }}</td>
+          <td class="p-2">{{ record.nickname }}</td>
+          <td class="p-2">{{ record.startAt }}</td>
           <td class="p-2"><button class="px-3 py-1 bg-blue-500 text-white rounded">다운로드</button></td>
           <td class="p-2"><button class="px-3 py-1 bg-blue-500 text-white rounded">다운로드</button></td>
           <td class="p-2"><button class="px-3 py-1 bg-blue-500 text-white rounded">다운로드</button></td>
@@ -35,6 +35,6 @@ const props = defineProps({
 
 // 선택한 로봇에 따라 필터링된 테이블 데이터 반환
 const filteredRecords = computed(() => {
-  return props.selectedRobot === 'all' ? props.robots : props.robots.filter(robot => robot.id === props.selectedRobot)
+  return props.selectedRobot === 'all' ? props.robots : props.robots.filter(robot => robot.seq === props.selectedRobot)
 })
 </script>

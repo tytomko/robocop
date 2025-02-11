@@ -22,7 +22,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="robot in robots" :key="robot.id" class="border border-gray-200">
+          <tr v-for="robot in robots" :key="robot.seq" class="border border-gray-200">
             <td class="px-4 py-2">{{ robot.seq }}</td>
             <td class="px-4 py-2">{{ robot.nickname || robot.name }}</td>
             <td class="px-4 py-2">{{ robot.ipAddress }}</td>

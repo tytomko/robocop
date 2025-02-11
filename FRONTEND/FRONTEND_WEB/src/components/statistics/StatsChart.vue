@@ -41,7 +41,7 @@ const initCharts = () => {
   const ctxBattery = batteryChartRef.value.getContext('2d')
 
   const activityData = props.robots.map(robot => {
-    const startTime = new Date(robot.starttime)
+    const startTime = new Date(robot.startAt)
     const currentTime = new Date()
     return (currentTime - startTime) / (1000 * 60 * 60)
   })
@@ -51,7 +51,7 @@ const initCharts = () => {
   activityChartInstance = new Chart(ctxActivity, {
     type: 'bar',
     data: {
-      labels: props.robots.map(robot => robot.name),
+      labels: props.robots.map(robot => robot.nickname),
       datasets: [{
         label: '활동 시간 (시간)',
         data: activityData,
@@ -68,7 +68,7 @@ const initCharts = () => {
   batteryChartInstance = new Chart(ctxBattery, {
     type: 'bar',
     data: {
-      labels: props.robots.map(robot => robot.name),
+      labels: props.robots.map(robot => robot.nickname),
       datasets: [{
         label: '배터리 (%)',
         data: batteryData,
