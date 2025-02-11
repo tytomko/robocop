@@ -11,22 +11,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 메시지를 발행하는 함수 (roslibpy 사용)
-async def publish_message(message: str):
+async def publish_message(robot_id: str, message: str):
     """ROS 토픽에 단일 메시지 발행"""
     try:
-        # 싱글톤 ROS Bridge 클라이언트 가져오기
         ros_connection = RosBridgeConnection()
         client = ros_connection.client
 
-        # 토픽에 메시지 발행
-        publisher = roslibpy.Topic(client, TOPIC_NAME, 'std_msgs/String')
+        topic_name = f"/{robot_id}/key_publisher"
+        publisher = roslibpy.Topic(client, topic_name, 'std_msgs/String')
         ros_message = roslibpy.Message({'data': message})
         
-        # 메시지 발행
         publisher.publish(ros_message)
         logger.info(f"ROS 토픽에 메시지 발행: {message}")
         
-        # 토픽 연결 해제
         publisher.unadvertise()
         
     except Exception as e:
@@ -34,13 +31,13 @@ async def publish_message(message: str):
         raise e
 
 # 서비스 호출 함수
-def call_homing_service():
+def call_homing_service(robot_id: str):
     """ROS 서비스 호출"""
     try:
         ros_connection = RosBridgeConnection()
         client = ros_connection.client
 
-        service = roslibpy.Service(client, '/robot_1/homing', 'robot_custom_interfaces/srv/Homing')
+        service = roslibpy.Service(client, f'/{robot_id}/homing', 'robot_custom_interfaces/srv/Homing')
         request = roslibpy.ServiceRequest()
 
         response = service.call(request)
@@ -55,13 +52,13 @@ def call_homing_service():
         logger.error(f"Failed to call service: {e}")
         raise e
 
-def call_navigate_service(goal: dict):
+def call_navigate_service(robot_id: str, goal: dict):
     """ROS Navigate 서비스 호출"""
     try:
         ros_connection = RosBridgeConnection()
         client = ros_connection.client
 
-        service = roslibpy.Service(client, '/robot_1/navigate', 'robot_custom_interfaces/srv/Navigate')
+        service = roslibpy.Service(client, f'/{robot_id}/navigate', 'robot_custom_interfaces/srv/Navigate')
         request = roslibpy.ServiceRequest(goal)
 
         response = service.call(request)
@@ -76,13 +73,13 @@ def call_navigate_service(goal: dict):
         logger.error(f"Failed to call navigate service: {e}")
         raise e
 
-def call_patrol_service(goals: dict):
+def call_patrol_service(robot_id: str, goals: dict):
     """ROS Patrol 서비스 호출"""
     try:
         ros_connection = RosBridgeConnection()
         client = ros_connection.client
 
-        service = roslibpy.Service(client, '/robot_1/patrol', 'robot_custom_interfaces/srv/Patrol')
+        service = roslibpy.Service(client, f'/{robot_id}/patrol', 'robot_custom_interfaces/srv/Patrol')
         request = roslibpy.ServiceRequest(goals)
 
         response = service.call(request)
@@ -95,4 +92,109 @@ def call_patrol_service(goals: dict):
             
     except Exception as e:
         logger.error(f"Failed to call patrol service: {e}")
+        raise e
+
+def call_estop_service(robot_id: str):
+    """ROS E-stop 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, f'/{robot_id}/stop', 'robot_custom_interfaces/srv/Estop')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"E-stop Service Response: {response}")
+            return response
+        else:
+            logger.error("E-stop service response is None.")
+            raise Exception("E-stop service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call E-stop service: {e}")
+        raise e
+
+def call_temp_stop_service(robot_id: str):
+    """ROS Temporary Stop 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, f'/{robot_id}/temp_stop', 'robot_custom_interfaces/srv/Estop')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Temp Stop Service Response: {response}")
+            return response
+        else:
+            logger.error("Temp Stop service response is None.")
+            raise Exception("Temp Stop service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Temp Stop service: {e}")
+        raise e
+
+def call_resume_service(robot_id: str):
+    """ROS Resume 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, f'/{robot_id}/resume', 'robot_custom_interfaces/srv/Estop')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Resume Service Response: {response}")
+            return response
+        else:
+            logger.error("Resume service response is None.")
+            raise Exception("Resume service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Resume service: {e}")
+        raise e
+
+def call_waiting_service(robot_id: str):
+    """ROS Waiting 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, f'/{robot_id}/waiting', 'robot_custom_interfaces/srv/Waiting')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Waiting Service Response: {response}")
+            return response
+        else:
+            logger.error("Waiting service response is None.")
+            raise Exception("Waiting service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Waiting service: {e}")
+        raise e
+
+def call_manual_service(robot_id: str):
+    """ROS Manual 서비스 호출"""
+    try:
+        ros_connection = RosBridgeConnection()
+        client = ros_connection.client
+
+        service = roslibpy.Service(client, f'/{robot_id}/manual', 'robot_custom_interfaces/srv/Manual')
+        request = roslibpy.ServiceRequest()
+
+        response = service.call(request)
+        if response is not None:
+            logger.info(f"Manual Service Response: {response}")
+            return response
+        else:
+            logger.error("Manual service response is None.")
+            raise Exception("Manual service response is None")
+            
+    except Exception as e:
+        logger.error(f"Failed to call Manual service: {e}")
         raise e

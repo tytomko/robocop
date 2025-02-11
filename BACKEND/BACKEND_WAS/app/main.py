@@ -59,7 +59,7 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
 app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
 # app.include_router(person_router, eprefix="/api/v1/persons", tags=["persons"])
-app.include_router(ros_publisher_router, tags=["ros_publisher"]) # 0206 test
+app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
 app.include_router(map_router, tags=["map"])
 
 @app.on_event("startup")
