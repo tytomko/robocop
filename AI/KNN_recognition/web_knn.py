@@ -3,7 +3,20 @@ import cv2
 import pickle
 import numpy as np
 import time
-import keyboard
+from ultralytics import YOLO
+
+# YOLOv8 모델 로드
+model = YOLO("yolov8n.pt").to("cuda")
+
+# COCO 클래스 목록 확인 (딕셔너리 형태)
+class_names = model.names  # {0: "person", 1: "bicycle", ...}
+
+# 보행자(person)의 클래스 ID 찾기
+person_class_id = None
+for class_id, class_name in class_names.items():
+    if class_name == "person":
+        person_class_id = class_id
+        break
 
 # KNN 모델 로드 (numpy._core 에러시 해당 환경에서 모델 재학습해야함)
 MODEL_PATH = "trained_knn_model.clf"
@@ -19,7 +32,7 @@ def predict(frame, knn_clf, distance_threshold=0.38):
     실시간 얼굴 인식을 위한 함수
     """
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    face_locations = face_recognition.face_locations(rgb_frame)
+    face_locations = face_recognition.face_locations(rgb_frame, model='cnn')
     face_encodings = face_recognition.face_encodings(rgb_frame, known_face_locations=face_locations)
     
     if len(face_encodings) == 0:
@@ -46,20 +59,33 @@ while True:
     if not ret:
         print("Error: 카메라에서 영상을 읽을 수 없습니다.")
         break
-    # 프레임의 해상도를 50%로 축소
-    #frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 
-    if keyboard.is_pressed("a"):
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('a'):
         print("수하를 시작합니다")
         isCheckStart = True
     
-    predictions = predict(frame, knn_clf)
     
+
+    # YOLO 실행
+    results = model(frame, verbose=False)
+    # 검출 결과 중 보행자(person)만 필터링
+    for result in results:
+        for box in result.boxes:
+            if int(box.cls) == person_class_id:  # person 클래스 ID만 선택
+                x1, y1, x2, y2 = map(int, box.xyxy[0])  # 바운딩 박스 좌표
+                confidence = box.conf[0].item()  # 신뢰도
+                
+                # 신뢰도가 50% 이상인 경우만 표시
+                if confidence > 0.5:
+                    label = f"Person: {confidence:.2f}"
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    # face_recognition
+    predictions = predict(frame, knn_clf)
+    # 얼굴 검출, 신원 확인
     for name, (top, right, bottom, left), distance in predictions:
-        top *= 1
-        right *= 1
-        bottom *= 1
-        left *= 1
 
         # 얼굴을 감싸는 박스 그리기
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 1)
@@ -79,7 +105,7 @@ while True:
             if distance <= 0.38:
                 power = 10 / distance
                 isCheckCount += power
-            print(time.time() - check_time)
+            #print(time.time() - check_time)
             if time.time() - check_time >= 10:
                 isCheckNow = False
                 isFindEnemy = True #나중에 함수로 대체
@@ -92,7 +118,7 @@ while True:
     # FPS 계산
     frame_count += 1
     elapsed_time = time.time() - start_time
-    if elapsed_time > 1:
+    if True:
         fps = frame_count / elapsed_time
         # 프레임에 FPS 표시
         cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
