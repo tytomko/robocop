@@ -10,7 +10,7 @@
         </button>
       </div>
     </div>
-    
+
     <div class="settings-grid">
       <!-- 일반 설정 -->
       <div class="settings-card">
@@ -48,34 +48,24 @@
           <div class="form-group">
             <label>알림 사용</label>
             <div class="toggle-switch">
-              <input
-                type="checkbox"
-                v-model="settings.notifications.enabled"
-                :id="'notifications-enabled'"
-              />
+              <input type="checkbox" v-model="settings.notifications.enabled" :id="'notifications-enabled'" />
               <label :for="'notifications-enabled'"></label>
             </div>
           </div>
-          <div class="form-group" v-if="settings.notifications.enabled">
-            <label>이메일 알림</label>
-            <div class="toggle-switch">
-              <input
-                type="checkbox"
-                v-model="settings.notifications.email"
-                :id="'notifications-email'"
-              />
-              <label :for="'notifications-email'"></label>
+          <div v-if="settings.notifications.enabled">
+            <div class="form-group">
+              <label>이메일 알림</label>
+              <div class="toggle-switch">
+                <input type="checkbox" v-model="settings.notifications.email" :id="'notifications-email'" />
+                <label :for="'notifications-email'"></label>
+              </div>
             </div>
-          </div>
-          <div class="form-group" v-if="settings.notifications.enabled">
-            <label>푸시 알림</label>
-            <div class="toggle-switch">
-              <input
-                type="checkbox"
-                v-model="settings.notifications.push"
-                :id="'notifications-push'"
-              />
-              <label :for="'notifications-push'"></label>
+            <div class="form-group">
+              <label>푸시 알림</label>
+              <div class="toggle-switch">
+                <input type="checkbox" v-model="settings.notifications.push" :id="'notifications-push'" />
+                <label :for="'notifications-push'"></label>
+              </div>
             </div>
           </div>
         </div>
@@ -98,21 +88,19 @@
           <div class="form-group">
             <label>자동 백업</label>
             <div class="toggle-switch">
-              <input
-                type="checkbox"
-                v-model="settings.data.autoBackup"
-                :id="'data-autobackup'"
-              />
+              <input type="checkbox" v-model="settings.data.autoBackup" :id="'data-autobackup'" />
               <label :for="'data-autobackup'"></label>
             </div>
           </div>
-          <div class="form-group" v-if="settings.data.autoBackup">
-            <label>백업 주기</label>
-            <select v-model="settings.data.backupInterval">
-              <option value="daily">매일</option>
-              <option value="weekly">매주</option>
-              <option value="monthly">매월</option>
-            </select>
+          <div v-if="settings.data.autoBackup">
+            <div class="form-group">
+              <label>백업 주기</label>
+              <select v-model="settings.data.backupInterval">
+                <option value="daily">매일</option>
+                <option value="weekly">매주</option>
+                <option value="monthly">매월</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -124,11 +112,7 @@
           <div class="form-group">
             <label>2단계 인증</label>
             <div class="toggle-switch">
-              <input
-                type="checkbox"
-                v-model="settings.security.twoFactor"
-                :id="'security-twofactor'"
-              />
+              <input type="checkbox" v-model="settings.security.twoFactor" :id="'security-twofactor'" />
               <label :for="'security-twofactor'"></label>
             </div>
           </div>
@@ -144,11 +128,7 @@
           <div class="form-group">
             <label>IP 접근 제한</label>
             <div class="toggle-switch">
-              <input
-                type="checkbox"
-                v-model="settings.security.ipRestriction"
-                :id="'security-iprestriction'"
-              />
+              <input type="checkbox" v-model="settings.security.ipRestriction" :id="'security-iprestriction'" />
               <label :for="'security-iprestriction'"></label>
             </div>
           </div>
@@ -161,7 +141,7 @@
     </div>
   </div>
 
-<!--비밀번호 변경 폼-->
+  <!--비밀번호 변경 모달-->
   <div v-if="isChangePasswordModalOpen" class="modal-overlay">
     <div class="modal-content">
       <h3>비밀번호 변경</h3>
@@ -178,9 +158,7 @@
         <input type="password" v-model="passwordForm.confirmPassword" placeholder="새 비밀번호 확인" />
       </div>
       <div class="modal-actions">
-        <button @click="changePassword" :disabled="saving">
-          <i class="fa" aria-hidden="true">비밀번호 변경</i> 
-        </button>
+        <button @click="changePassword" :disabled="saving">비밀번호 변경</button>
         <button @click="closeChangePasswordModal" class="cancel-button">취소</button>
       </div>
     </div>
@@ -308,20 +286,12 @@ const openChangePasswordModal = () => {
 // 모달 닫기
 const closeChangePasswordModal = () => {
   isChangePasswordModalOpen.value = false;
-  resetPasswordForm();
 };
-
-// 비밀번호 입력 필드 초기화
-const resetPasswordForm = () => {
-  passwordForm.value.currentPassword = '';
-  passwordForm.value.newPassword = '';
-  passwordForm.value.confirmPassword = '';
-};  
 
 </script>
 
 <style scoped>
-
+/* Modal 관련 스타일 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -352,7 +322,7 @@ const resetPasswordForm = () => {
 
 .modal-actions button {
   padding: 10px 20px;
-  border-radius: 12px;  /* 둥글게 설정 */
+  border-radius: 12px;
   border: 1px solid #ddd;
   background-color: #007BFF;
   color: white;
@@ -361,7 +331,7 @@ const resetPasswordForm = () => {
 }
 
 .modal-actions button:hover {
-  background-color: #0056b3; /* hover 시 배경 색 */
+  background-color: #0056b3;
 }
 
 /* 라벨과 입력 필드를 수평으로 배치 */
@@ -370,23 +340,24 @@ const resetPasswordForm = () => {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px; /* 각 입력창 간격 */
+  margin-bottom: 15px;
 }
 
 .modal-content label {
   font-weight: bold;
-  margin-right: 10px; /* 라벨과 입력창 사이의 간격 */
-  flex-basis: 30%; /* 라벨이 차지할 비율 */
+  margin-right: 10px;
+  flex-basis: 30%;
 }
 
 .modal-content input {
-  width: 65%; /* 입력 필드의 너비 */
+  width: 65%;
   padding: 10px;
   border-radius: 5px;
   border: 1px solid #ccc;
   font-size: 16px;
 }
 
+/* 취소 버튼 */
 .cancel-button {
   background: #ccc;
   border: none;
@@ -395,9 +366,9 @@ const resetPasswordForm = () => {
   cursor: pointer;
 }
 
+/* 설정 페이지 레이아웃 */
 .settings-container {
   padding: 20px;
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -414,6 +385,7 @@ const resetPasswordForm = () => {
   gap: 10px;
 }
 
+/* 설정 카드 */
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -434,6 +406,7 @@ const resetPasswordForm = () => {
   font-size: 18px;
 }
 
+/* 폼 관련 스타일 */
 .settings-form {
   display: flex;
   flex-direction: column;
@@ -503,6 +476,7 @@ const resetPasswordForm = () => {
   transform: translateX(26px);
 }
 
+/* 로딩 스피너 */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -532,12 +506,12 @@ const resetPasswordForm = () => {
 /* 버튼 기본 스타일 */
 button {
   padding: 10px 20px;
-  border-radius: 12px;  /* 둥글게 설정 */
+  border-radius: 12px;
   border: 1px solid #ddd;
   color: white;
   font-size: 16px;
   cursor: pointer;
-  margin-right: 10px;  /* 버튼 간의 간격 */
+  margin-right: 10px;
 }
 
 /* 비밀번호 재설정 버튼 스타일 */
@@ -566,15 +540,15 @@ button.logout:active {
   background-color: #c6341a;
 }
 
+/* 저장 버튼 스타일 */
 .save-button {
   padding: 10px 20px;
-  border-radius: 12px;  /* 둥글게 설정 */
+  border-radius: 12px;
   border: 1px solid #ddd;
   background: #4CAF50;
   color: white;
   font-size: 16px;
   cursor: pointer;
-  margin-right: 10px;  /* 버튼 간의 간격 */
 }
 
 .save-button:hover {
@@ -585,5 +559,4 @@ button.logout:active {
   background: #ccc;
   cursor: not-allowed;
 }
-
 </style> 

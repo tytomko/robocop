@@ -76,6 +76,8 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "strstream": "cpp"
+        "strstream": "cpp",
+        "*.ipp": "cpp",
+        "core": "cpp"
     }
 }
