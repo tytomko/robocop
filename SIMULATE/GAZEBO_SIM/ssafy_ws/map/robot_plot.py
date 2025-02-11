@@ -8,71 +8,22 @@ import json
 import networkx as nx
 import os
 import math
+from functools import partial
 
-class PathVisualizer(Node):
-    def __init__(self):
-        super().__init__('path_visualizer')
-        self.plot_size = 25.0  # 플롯 가시화 범위
-        # ─── 구독자 설정 ─────────────────────────────────────────────────────────────────
-        self.pose_sub = self.create_subscription(
-            PoseStamped,
-            '/robot_1/utm_pose',
-            self.pose_callback,
-            10
-        )
-        
-        self.global_path_sub = self.create_subscription(
-            NavPath,
-            '/robot_1/global_path',
-            self.global_path_callback,
-            10
-        )
-        
-        self.approach_path_sub = self.create_subscription(
-            NavPath,
-            '/robot_1/approach_path',
-            self.approach_path_callback,
-            10
-        )
-        
-        self.heading_sub = self.create_subscription(
-            Float32,
-            '/robot_1/heading',
-            self.heading_callback,
-            10
-        )
-        
-        self.target_pose_sub = self.create_subscription(
-            Point,
-            '/robot_1/target_point',
-            self.target_pose_callback,
-            10
-        )
+class MultiRobotPathVisualizer(Node):
+    def __init__(self, num_robots):
+        super().__init__('multi_robot_path_visualizer')
+        self.num_robots = num_robots
+        self.robots = {}
 
-        self.target_heading_sub = self.create_subscription(
-            Float32,
-            '/robot_1/target_heading',
-            self.target_heading_callback,
-            10
-        )
-
-        # ─── 그래프 로드 (배경 지도) ──────────────────────────────────────────────────────
+        # ─── 그래프 로드 (배경 지도) ─────────────────────────────
         self.load_graph_data("global_map.json")
 
-        # ─── 내부 상태 값 초기화 ─────────────────────────────────────────────────────────
-        self.current_x = None
-        self.current_y = None
-        self.current_heading = None
-
-        self.target_x = None
-        self.target_y = None
-        self.target_heading = None
-
-        # ─── Matplotlib 설정 (인터랙티브 모드) ──────────────────────────────────────────
+        # ─── Matplotlib 설정 (인터랙티브 모드) ─────────────────
         plt.ion()
         self.fig, self.ax = plt.subplots(figsize=(8, 8))
-        
-        # 배경 그래프(지도) 표시
+
+        # 배경 지도(그래프) 표시
         if self.G is not None:
             self.pos = {node: node for node in self.G.nodes()}
             nx.draw(
@@ -84,35 +35,74 @@ class PathVisualizer(Node):
                 edge_color='gray', 
                 with_labels=False
             )
+            # 배경 지도에 맞춰 축 범위를 고정 (예시: 그래프의 노드 좌표의 최소/최대값으로 설정)
+            all_x = [coord[0] for coord in self.G.nodes()]
+            all_y = [coord[1] for coord in self.G.nodes()]
+            self.ax.set_xlim(min(all_x) - 5, max(all_x) + 5)
+            self.ax.set_ylim(min(all_y) - 5, max(all_y) + 5)
         else:
             self.get_logger().error("Graph 데이터가 로드되지 않았습니다.")
-        
-        # ─── 플롯 요소들 초기화 ─────────────────────────────────────────────────────────
-        # 현재 위치(빨간 점)
-        self.current_pos_plot, = self.ax.plot([], [], 'ro', markersize=10, label='Current Position')
 
-        # 타겟 좌표(하늘색 X 마커)
-        self.target_pos_plot, = self.ax.plot([], [], 'cx', markersize=10, label='Target Position')
+        cmap = plt.get_cmap('tab10')
 
-        # global_path 선 (초록색)
-        self.global_path_plot, = self.ax.plot([], [], 'g-', linewidth=4, label='Global Path')
-        
-        # approach_path 선 (빨간색)
-        self.approach_path_plot, = self.ax.plot([], [], 'r-', linewidth=4, label='Approach Path')
+        # ─── 각 로봇별 구독자 및 플롯 요소 생성 ───────────────
+        for robot_id in range(1, self.num_robots + 1):
+            color = cmap((robot_id - 1) % 10)
+            self.robots[robot_id] = {
+                "current_x": None,
+                "current_y": None,
+                "current_heading": None,
+                "target_x": None,
+                "target_y": None,
+                "target_heading": None,
+                "current_pos_plot": self.ax.plot([], [], marker='o', color=color, markersize=10, label=f'Robot {robot_id} Position')[0],
+                "target_pos_plot": self.ax.plot([], [], marker='x', color=color, markersize=10, label=f'Robot {robot_id} Target')[0],
+                "global_path_plot": self.ax.plot([], [], linestyle='-', color=color, linewidth=2, label=f'Robot {robot_id} Global Path')[0],
+                "approach_path_plot": self.ax.plot([], [], linestyle='--', color=color, linewidth=2, label=f'Robot {robot_id} Approach Path')[0],
+                "heading_line": self.ax.plot([], [], linestyle='-', color=color, linewidth=2, label=f'Robot {robot_id} Heading')[0],
+                "target_heading_line": self.ax.plot([], [], linestyle='-', color=color, linewidth=2, label=f'Robot {robot_id} Target Heading')[0],
+            }
 
-        # 내 헤딩 표시(노란색 선)
-        self.heading_line, = self.ax.plot([], [], 'y-', linewidth=2, label='Current Heading')
-
-        # 타겟 헤딩 표시(분홍색 선)
-        self.target_heading_line, = self.ax.plot([], [], 'm-', linewidth=2, label='Target Heading')
+            self.create_subscription(
+                PoseStamped,
+                f'/robot_{robot_id}/utm_pose',
+                partial(self.pose_callback, robot_id=robot_id),
+                10
+            )
+            self.create_subscription(
+                NavPath,
+                f'/robot_{robot_id}/global_path',
+                partial(self.global_path_callback, robot_id=robot_id),
+                10
+            )
+            self.create_subscription(
+                NavPath,
+                f'/robot_{robot_id}/approach_path',
+                partial(self.approach_path_callback, robot_id=robot_id),
+                10
+            )
+            self.create_subscription(
+                Float32,
+                f'/robot_{robot_id}/heading',
+                partial(self.heading_callback, robot_id=robot_id),
+                10
+            )
+            self.create_subscription(
+                Point,
+                f'/robot_{robot_id}/target_point',
+                partial(self.target_pose_callback, robot_id=robot_id),
+                10
+            )
+            self.create_subscription(
+                Float32,
+                f'/robot_{robot_id}/target_heading',
+                partial(self.target_heading_callback, robot_id=robot_id),
+                10
+            )
 
         self.ax.legend()
 
     def load_graph_data(self, file_name):
-        """
-        global_map.json 파일을 읽어 "nodes"와 "links"를 이용해 networkx Graph(또는 DiGraph)를 생성합니다.
-        파일 경로는 현재 스크립트(__file__) 기준입니다.
-        """
         script_dir = os.path.dirname(os.path.abspath(__file__))
         full_path = os.path.join(script_dir, file_name)
         try:
@@ -123,7 +113,7 @@ class PathVisualizer(Node):
             nodes = data.get("nodes", [])
             for node in nodes:
                 if "id" in node and isinstance(node["id"], list) and len(node["id"]) >= 2:
-                    node_id = tuple(node["id"][:2])  # X, Y만 사용
+                    node_id = tuple(node["id"][:2])
                     self.G.add_node(node_id)
             links = data.get("links", [])
             for link in links:
@@ -136,117 +126,99 @@ class PathVisualizer(Node):
             self.get_logger().error(f"global_map.json 그래프 데이터 로드 실패: {e}")
             self.G = None
 
-    # ──────────────────────────────────────────────────────────────────────────
-    #                         콜백 함수들
-    # ──────────────────────────────────────────────────────────────────────────
+    def pose_callback(self, msg: PoseStamped, robot_id):
+        self.robots[robot_id]["current_x"] = msg.pose.position.x
+        self.robots[robot_id]["current_y"] = msg.pose.position.y
+        self.update_current_position_plot(robot_id)
 
-    def pose_callback(self, msg: PoseStamped):
-        """현재 로봇 위치 콜백"""
-        self.current_x = msg.pose.position.x
-        self.current_y = msg.pose.position.y
-        self.update_current_position_plot()
+    def heading_callback(self, msg: Float32, robot_id):
+        self.robots[robot_id]["current_heading"] = msg.data
+        self.update_current_heading_arrow(robot_id)
 
-    def heading_callback(self, msg: Float32):
-        """현재 로봇 헤딩 콜백"""
-        self.current_heading = msg.data
-        self.update_current_heading_arrow()
+    def target_pose_callback(self, msg: Point, robot_id):
+        self.robots[robot_id]["target_x"] = msg.x
+        self.robots[robot_id]["target_y"] = msg.y
+        self.update_target_position_plot(robot_id)
+        self.update_target_heading_arrow(robot_id)
 
-    def target_pose_callback(self, msg: Point):
-        """타겟 좌표 콜백"""
-        self.target_x = msg.x
-        self.target_y = msg.y
-        self.update_target_position_plot()
-        self.update_target_heading_arrow()  # 타겟좌표가 갱신되면 타겟헤딩 화살표도 다시 그리기
+    def target_heading_callback(self, msg: Float32, robot_id):
+        self.robots[robot_id]["target_heading"] = msg.data
+        self.update_target_heading_arrow(robot_id)
 
-    def target_heading_callback(self, msg: Float32):
-        """타겟 헤딩 콜백"""
-        self.target_heading = msg.data
-        self.update_target_heading_arrow()
-
-    def global_path_callback(self, msg: NavPath):
-        """글로벌 경로 콜백"""
+    def global_path_callback(self, msg: NavPath, robot_id):
         x_vals = [pose.pose.position.x for pose in msg.poses]
         y_vals = [pose.pose.position.y for pose in msg.poses]
-        self.global_path_plot.set_xdata(x_vals)
-        self.global_path_plot.set_ydata(y_vals)
+        self.robots[robot_id]["global_path_plot"].set_xdata(x_vals)
+        self.robots[robot_id]["global_path_plot"].set_ydata(y_vals)
         plt.draw()
         plt.pause(0.1)
 
-    def approach_path_callback(self, msg: NavPath):
-        """어프로치 경로 콜백"""
+    def approach_path_callback(self, msg: NavPath, robot_id):
         x_vals = [pose.pose.position.x for pose in msg.poses]
         y_vals = [pose.pose.position.y for pose in msg.poses]
-        self.approach_path_plot.set_xdata(x_vals)
-        self.approach_path_plot.set_ydata(y_vals)
+        self.robots[robot_id]["approach_path_plot"].set_xdata(x_vals)
+        self.robots[robot_id]["approach_path_plot"].set_ydata(y_vals)
         plt.draw()
         plt.pause(0.1)
 
-    # ──────────────────────────────────────────────────────────────────────────
-    #                         플롯 업데이트 함수들
-    # ──────────────────────────────────────────────────────────────────────────
-
-    def update_current_position_plot(self):
-        """현재 로봇 위치(red dot) 업데이트"""
-        if self.current_x is not None and self.current_y is not None:
-            self.current_pos_plot.set_xdata([self.current_x])
-            self.current_pos_plot.set_ydata([self.current_y])
-            # 가시화 범위 조절 (옵션)
-
-            self.ax.set_xlim(self.current_x - (self.plot_size/2), self.current_x + (self.plot_size/2))
-            self.ax.set_ylim(self.current_y - (self.plot_size/2), self.current_y + (self.plot_size/2))
-            
+    def update_current_position_plot(self, robot_id):
+        current_x = self.robots[robot_id]["current_x"]
+        current_y = self.robots[robot_id]["current_y"]
+        if current_x is not None and current_y is not None:
+            self.robots[robot_id]["current_pos_plot"].set_xdata([current_x])
+            self.robots[robot_id]["current_pos_plot"].set_ydata([current_y])
+            # 아래 축 범위 변경 코드를 제거하거나 주석 처리합니다.
+            # self.ax.set_xlim(current_x - (25.0/2), current_x + (25.0/2))
+            # self.ax.set_ylim(current_y - (25.0/2), current_y + (25.0/2))
             plt.draw()
             plt.pause(0.1)
-            # 헤딩 화살표도 위치가 바뀌면 재갱신
-            self.update_current_heading_arrow()
+            self.update_current_heading_arrow(robot_id)
 
-    def update_current_heading_arrow(self):
-        """
-        현재 헤딩을 화살표처럼 표시하기 위해,
-        (current_x, current_y)에서 heading 방향으로 일정 길이(arrow_length)만큼 그린다.
-        """
-        if self.current_x is not None and self.current_y is not None and self.current_heading is not None:
+    def update_current_heading_arrow(self, robot_id):
+        current_x = self.robots[robot_id]["current_x"]
+        current_y = self.robots[robot_id]["current_y"]
+        current_heading = self.robots[robot_id]["current_heading"]
+        if current_x is not None and current_y is not None and current_heading is not None:
             arrow_length = 2.0
-            dx = arrow_length * math.cos(self.current_heading)
-            dy = arrow_length * math.sin(self.current_heading)
-            x_vals = [self.current_x, self.current_x + dx]
-            y_vals = [self.current_y, self.current_y + dy]
-            self.heading_line.set_xdata(x_vals)
-            self.heading_line.set_ydata(y_vals)
+            dx = arrow_length * math.cos(current_heading)
+            dy = arrow_length * math.sin(current_heading)
+            x_vals = [current_x, current_x + dx]
+            y_vals = [current_y, current_y + dy]
+            self.robots[robot_id]["heading_line"].set_xdata(x_vals)
+            self.robots[robot_id]["heading_line"].set_ydata(y_vals)
             plt.draw()
             plt.pause(0.1)
 
-    def update_target_position_plot(self):
-        """타겟 좌표 표시(하늘색 X) 업데이트"""
-        if self.target_x is not None and self.target_y is not None:
-            self.target_pos_plot.set_xdata([self.target_x])
-            self.target_pos_plot.set_ydata([self.target_y])
+    def update_target_position_plot(self, robot_id):
+        target_x = self.robots[robot_id]["target_x"]
+        target_y = self.robots[robot_id]["target_y"]
+        if target_x is not None and target_y is not None:
+            self.robots[robot_id]["target_pos_plot"].set_xdata([target_x])
+            self.robots[robot_id]["target_pos_plot"].set_ydata([target_y])
             plt.draw()
             plt.pause(0.1)
 
-    def update_target_heading_arrow(self):
-        """
-        타겟 헤딩을 화살표처럼 표시하기 위해,
-        (target_x, target_y)에서 target_heading 방향으로 일정 길이(arrow_length)만큼 그린다.
-        """
-        if (self.target_x is not None and 
-            self.target_y is not None and 
-            self.target_heading is not None):
+    def update_target_heading_arrow(self, robot_id):
+        target_x = self.robots[robot_id]["target_x"]
+        target_y = self.robots[robot_id]["target_y"]
+        target_heading = self.robots[robot_id]["target_heading"]
+        if target_x is not None and target_y is not None and target_heading is not None:
             arrow_length = 2.0
-            dx = arrow_length * math.cos(self.target_heading)
-            dy = arrow_length * math.sin(self.target_heading)
-            x_vals = [self.target_x, self.target_x + dx]
-            y_vals = [self.target_y, self.target_y + dy]
-            self.target_heading_line.set_xdata(x_vals)
-            self.target_heading_line.set_ydata(y_vals)
+            dx = arrow_length * math.cos(target_heading)
+            dy = arrow_length * math.sin(target_heading)
+            x_vals = [target_x, target_x + dx]
+            y_vals = [target_y, target_y + dy]
+            self.robots[robot_id]["target_heading_line"].set_xdata(x_vals)
+            self.robots[robot_id]["target_heading_line"].set_ydata(y_vals)
             plt.draw()
             plt.pause(0.1)
 
 def main(args=None):
+    num_robots = int(input("로봇 대수를 입력하세요: "))
     rclpy.init(args=args)
-    path_visualizer = PathVisualizer()
-    rclpy.spin(path_visualizer)
-    path_visualizer.destroy_node()
+    multi_robot_visualizer = MultiRobotPathVisualizer(num_robots)
+    rclpy.spin(multi_robot_visualizer)
+    multi_robot_visualizer.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
