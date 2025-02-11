@@ -8,8 +8,8 @@ class RosBridgeConnection:
     _instance = None
     _client = None
     
-    # HOST = "192.168.100.34"
-    HOST = "localhost"
+    HOST = "192.168.100.34"
+    # HOST = "localhost"
     PORT = 9090
     
     def __new__(cls):
