@@ -1,49 +1,91 @@
 <template>
   <div class="cameras-container">
-    <div class="camera-wrapper">
-      <h3>전방 카메라</h3>
-      <CameraView 
-        robotId="robot1"
-        cameraType="front"
-        :rosHost="rosHost"
-        :rosPort="rosPort"
-      />
-    </div>
-    <div class="camera-wrapper">
-      <h3>후방 카메라</h3>
-      <CameraView 
-        robotId="robot1"
-        cameraType="rear"
-        :rosHost="rosHost"
-        :rosPort="rosPort"
-      />
+    <!-- DB에서 가져오는 대신 하드코딩된 로봇 -->
+    <div class="robot-cameras">
+      <h2 class="robot-title">ssafy</h2>
+      <div class="camera-wrapper">
+        <h3>전방 카메라</h3>
+        <CameraView 
+          robotId="ssafy"
+          cameraType="front"
+        />
+      </div>
+      <div class="camera-wrapper">
+        <h3>후방 카메라</h3>
+        <CameraView 
+          robotId="ssafy"
+          cameraType="rear"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import CameraView from './CameraView.vue';
 
-const rosHost = ref('192.168.100.104');
-const rosPort = ref(9090);
+// DB 관련 코드 모두 주석 처리
+// import { ref, onMounted } from 'vue';
+// const robots = ref([]);
+// const loading = ref(true);
+// const error = ref(null);
+
+// async function fetchRobots() {
+//   try {
+//     const response = await fetch('/api/v1/robots', {
+//       credentials: 'include'
+//     });
+    
+//     if (!response.ok) {
+//       throw new Error('로봇 정보를 불러오는데 실패했습니다.');
+//     }
+
+//     const result = await response.json();
+//     if (!result.success) {
+//       throw new Error(result.message || '로봇 정보를 불러오는데 실패했습니다.');
+//     }
+
+//     robots.value = result.data.filter(robot => robot.isActive && !robot.isDeleted);
+    
+//     if (robots.value.length === 0) {
+//       error.value = '연결된 로봇이 없습니다.';
+//     }
+//   } catch (e) {
+//     console.error('로봇 정보 조회 실패:', e);
+//     error.value = e.message;
+//   } finally {
+//     loading.value = false;
+//   }
+// }
+
+// onMounted(() => {
+//   fetchRobots();
+// });
 </script>
 
 <style scoped>
 .cameras-container {
-  display: flex;
-  flex-direction: column;  /* 위아래로 배치 */
-  gap: 20px;
-  width: 100%;  /* 전체 너비 사용 */
-  max-width: 1200px;  /* 최대 너비 설정 */
-  margin: 0 auto;  /* 중앙 정렬 */
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.robot-cameras {
+  margin-bottom: 40px;
+}
+
+.robot-title {
+  font-size: 1.5em;
+  color: #333;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
 }
 
 .camera-wrapper {
-  width: 100%;  /* 전체 너비 사용 */
-  background: #f5f5f5;
-  border-radius: 8px;
-  padding: 15px;
+  margin-bottom: 20px;
 }
 
 .camera-wrapper h3 {
@@ -56,30 +98,19 @@ const rosPort = ref(9090);
   border-radius: 4px;
 }
 
-/* 카메라 뷰의 비율을 16:9로 유지 */
-.camera-wrapper :deep(.camera-container) {
-  position: relative;
-  width: 100%;
-  padding-top: 56.25%;  /* 16:9 비율 */
-  background: #000;
+.loading, .error {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.1em;
+  color: #666;
 }
 
-.camera-wrapper :deep(.camera-container video) {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.error {
+  color: #dc3545;
 }
 
-/* 반응형 디자인 */
 @media (max-width: 768px) {
   .cameras-container {
-    padding: 10px;
-  }
-  
-  .camera-wrapper {
     padding: 10px;
   }
 }
