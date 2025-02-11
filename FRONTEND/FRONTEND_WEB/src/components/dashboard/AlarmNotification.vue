@@ -1,24 +1,23 @@
 <template>
-  <div :class="wrapperClass">
-    <div :class="containerClasses" @click="toggleNotifications">
-      <div class="relative bg-white p-1 rounded-full">
+  <div :class="notificationWrapperClass">
+    <!-- 알림 아이콘 -->
+    <div class="relative cursor-pointer" @click="toggleNotifications">
+      <div class="bg-white p-1 rounded-full">
         <i :class="bellIconClass"></i>
-        <!-- 알림 배지 -->
         <span v-if="unreadCount > 0"
           class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
           {{ unreadCount }}
         </span>
       </div>
     </div>
-    <!-- 알림 토글창 -->
+
+    <!-- 알림 드롭다운 -->
     <div v-if="isNotificationsOpen" :class="dropdownClasses">
       <ul class="list-none p-0">
         <li v-for="(notification, index) in notifications" :key="index"
           class="flex items-center gap-3 p-3 border-b border-gray-200 cursor-pointer text-sm hover:bg-gray-100">
-          <!-- 알림 이미지 -->
           <img :src="getNotificationImage(notification.message)" alt="알림 아이콘"
             class="w-10 h-10 rounded-full object-cover">
-          <!-- 알림 내용 -->
           <div class="flex-1">
             <p class="text-gray-800 font-medium">{{ notification.message }}</p>
             <span class="text-xs text-gray-500">{{ getTimeAgo(index) }}</span>
@@ -30,13 +29,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineProps } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const props = defineProps({
-  inline: {
+  isCollapsed: {  
     type: Boolean,
     default: false,
   },
+  inline: {
+    type: Boolean,
+    default: false,
+  }
 });
 
 const notifications = ref([]);
@@ -80,23 +83,19 @@ const toggleNotifications = () => {
   isNotificationsOpen.value = !isNotificationsOpen.value;
 };
 
-// wrapperClass: inline 모드라면 relative inline-block으로 감싸서 dropdown 위치 기준을 제공
-const wrapperClass = computed(() => {
-  return props.inline ? "relative inline-block" : "";
+// 알림 아이콘 위치 조정
+const notificationWrapperClass = computed(() => {
+  if (props.inline) {
+    return "relative ml-4"; // 네비게이션 바 내부일 때
+  }
+  return "fixed top-2 right-10 z-50"; // 사이드바가 축소된 경우
 });
 
-// containerClasses: inline 모드이면 일반 flex 컨테이너, 기본 모드에서는 fixed 위치 지정
-const containerClasses = computed(() => {
-  return props.inline
-    ? "flex items-center justify-center cursor-pointer"
-    : "fixed top-2 right-8 flex items-center justify-center cursor-pointer z-50";
-});
-
-// dropdownClasses: inline 모드이면 아이콘 바로 아래 왼쪽, 아니면 기존 fixed 위치
+// 알림 드롭다운 위치 조정
 const dropdownClasses = computed(() => {
-  return props.inline
-    ? "absolute top-full left-0 mt-2 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn"
-    : "fixed top-12 right-6 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn";
+  return props.isCollapsed
+    ? "absolute top-full right-0 mt-2 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn"
+    : "absolute top-full left-[-290px] mt-2 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn";
 });
 
 onMounted(() => {
@@ -107,13 +106,7 @@ onMounted(() => {
 
 <style scoped>
 @keyframes slideIn {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import RobotMap from '@/components/map/RobotMap.vue';
 import { useRobotsStore } from '@/stores/robots';
 
