@@ -4,38 +4,43 @@ from pydantic import BaseModel, Field
 
 class ImageInfo(BaseModel):
     """이미지 정보 모델"""
-    image_id: str = Field(..., description="이미지 ID")
-    file_path: str = Field(..., description="이미지 파일 경로")
-    file_name: str = Field(..., description="이미지 파일 이름")
-    file_size: int = Field(..., description="이미지 파일 크기")
-    content_type: str = Field(..., description="이미지 콘텐츠 타입")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="생성 시간")
-
-class PersonBase(BaseModel):
-    """사용자 기본 모델"""
-    name: str = Field(..., description="사용자 이름")
-    email: str = Field(..., description="이메일 주소")
-    role: str = Field(default="user", description="사용자 역할")
-    is_active: bool = Field(default=True, description="활성화 상태")
-
-class PersonCreate(PersonBase):
-    """사용자 생성 모델"""
-    password: str = Field(..., min_length=8, description="비밀번호")
-
-class PersonUpdate(BaseModel):
-    """사용자 업데이트 모델"""
-    name: Optional[str] = None
-    email: Optional[str] = None
-    password: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class Person(PersonBase):
-    """사용자 모델"""
-    id: str = Field(..., description="사용자 ID")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="생성 시간")
-    updated_at: Optional[datetime] = Field(None, description="수정 시간")
-    images: List[ImageInfo] = Field(default_factory=list, description="사용자 이미지 목록")
+    imageId: str = Field(..., description="이미지 파일명")  # person_1_1.jpg 형식
+    url: str = Field(..., description="이미지 URL")  # 전체 경로
+    uploadedAt: datetime = Field(default_factory=datetime.utcnow, description="업로드 시간")
+    imageNumber: int = Field(..., description="동일 인물의 n번째 이미지")
 
     class Config:
-        from_attributes = True 
+        populate_by_name = True
+
+class PersonBase(BaseModel):
+    """직원 기본 모델"""
+    name: str = Field(..., description="직원 이름")
+    department: Optional[str] = Field(None, description="부서")
+    position: Optional[str] = Field(None, description="직급")
+    phone: Optional[str] = Field(None, description="연락처")
+
+class PersonCreate(PersonBase):
+    """직원 생성 모델"""
+    pass
+
+class PersonUpdate(BaseModel):
+    """직원 정보 업데이트 모델"""
+    name: Optional[str] = None
+    department: Optional[str] = None
+    position: Optional[str] = None
+    phone: Optional[str] = None
+
+class Person(PersonBase):
+    """직원 모델"""
+    id: str = Field(..., description="직원 ID")
+    seq: int = Field(..., description="직원 시퀀스 번호")
+    name: str = Field(..., description="직원 이름", unique=True)
+    images: List[ImageInfo] = Field(default_factory=list, description="직원 얼굴 이미지 목록")
+    createdAt: datetime = Field(default_factory=datetime.utcnow, alias="created_at", description="등록 시간")
+    updatedAt: Optional[datetime] = Field(None, description="수정 시간")
+    deletedAt: Optional[datetime] = Field(None, description="삭제 시간")
+    isDeleted: bool = Field(default=False, description="삭제 여부")
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True

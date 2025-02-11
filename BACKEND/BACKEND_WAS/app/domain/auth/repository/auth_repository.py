@@ -2,10 +2,12 @@ from datetime import datetime
 from ...auth.models.auth_models import User
 from ....infrastructure.database.connection import DatabaseConnection
 from motor.motor_asyncio import AsyncIOMotorCollection
+import logging
 
 class AuthRepository:
     def __init__(self):
         self.collection = None
+        self.logger = logging.getLogger(__name__)
 
     async def connect(self):
         """데이터베이스에 연결합니다."""
@@ -18,8 +20,8 @@ class AuthRepository:
         await self.connect()
         
         # 생성 시간 추가
-        user_data["created_at"] = datetime.utcnow()
-        user_data["is_default_password"] = True
+        user_data["createdAt"] = datetime.utcnow()
+        user_data["isDefaultPassword"] = True
         
         # 사용자 생성
         result = await self.collection.insert_one(user_data)
@@ -32,7 +34,11 @@ class AuthRepository:
         await self.connect()
         user_data = await self.collection.find_one({"username": username})
         if user_data:
+            print("Found user_data:", user_data)
             user_data["id"] = str(user_data.pop("_id"))
+            # hashedPassword를 hashed_password로 변환
+            if "hashedPassword" in user_data:
+                user_data["hashed_password"] = user_data.pop("hashedPassword")
             return User(**user_data)
         return None
 
@@ -66,7 +72,8 @@ class AuthRepository:
             {
                 "$set": {
                     "refreshToken": None,
-                    "lastLogout": datetime.now()
+                    "lastLogout": datetime.now(),
+                    "updatedAt": datetime.now()
                 }
             }
         )

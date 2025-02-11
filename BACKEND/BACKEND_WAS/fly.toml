@@ -14,12 +14,12 @@ primary_region = "nrt"
 [deploy]
   strategy = 'immediate'
 
-[env]
-  HOST = '0.0.0.0'
-  PORT = "8000"
-  STORAGE_PATH = "/data/storage"
-  MONGODB_URL = "mongodb+srv://power:FMX7HnqTPV7trmPU@cluster0.5idlh.mongodb.net/?retryWrites=true&w=majority"
-  DATABASE_NAME = "robocop_db"
+# [env]
+#   HOST = '0.0.0.0'
+#   PORT = "8000"
+#   STORAGE_PATH = "/data/storage"
+#   MONGODB_URL = "mongodb+srv://power:FMX7HnqTPV7trmPU@cluster0.5idlh.mongodb.net/?retryWrites=true&w=majority"
+#   DATABASE_NAME = "robocop_db"
 
 [mounts]
   source = "robocop_storage"
