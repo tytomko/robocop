@@ -16,6 +16,8 @@
 #include "robot_custom_interfaces/msg/status.hpp"
 // 목적지 도착 시 상태를 waiting으로 바꾸는 서비스
 #include "robot_custom_interfaces/srv/waiting.hpp"
+// 목적지 도착 시 정지상태로 변경하는 서비스
+#include "robot_custom_interfaces/srv/estop.hpp"
 
 #include <queue>
 
@@ -68,7 +70,7 @@ public:
         std::string target_point_topic  = "/robot_" + std::to_string(my_robot_number_) + "/target_point";
         std::string target_heading_topic = "/robot_" + std::to_string(my_robot_number_) + "/target_heading";
         waiting_service_name_ = "/robot_" + std::to_string(my_robot_number_) + "/waiting"; // waiting service 토픽 설정
-
+        temp_stop_service_name_ = "/robot_" + std::to_string(my_robot_number_) + "/temp_stop"; // temp stop service 토픽 설정
         // ─── 구독자 생성 ─────────────────────────────────────────────────
         pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             pose_topic, 10,
@@ -112,7 +114,7 @@ private:
     std::string my_robot_name_;
     // 다른 함수에서 사용하기에 멤버 변수로 선언
     std::string waiting_service_name_; // waiting service 토픽 이름
-
+    std::string temp_stop_service_name_; // temp stop service 토픽 이름
     // ─────────────
     // ※ 여기서 핵심: "인덱스+벡터" 대신 "큐"로 경로를 관리
     // ─────────────
@@ -132,6 +134,7 @@ private:
     PatrolState patrol_state_;
     PatrolState before_patrol_state_;  // 추가: 일시정지 전 patrol 상태 저장
 
+    bool global_path_received_ = false; // 글로벌 경로 수신 여부
     // ─────────────────────────────────────────────────────────────────────
     // 상태, 콜백, 경로 관리, 제어 함수들
     // ─────────────────────────────────────────────────────────────────────
@@ -193,9 +196,11 @@ private:
         // 기존 저장된 경로 비움
         while (!save_path_queue_.empty()) {
             save_path_queue_.pop();
+            global_path_received_ = false;
         }
         while (!path_queue_.empty()) {
             path_queue_.pop();
+            global_path_received_ = false;
         }
 
         for (auto &ps : msg->poses) {
@@ -204,6 +209,7 @@ private:
             p.y = ps.pose.position.y;
             p.z = ps.pose.position.z;
             save_path_queue_.push(p);
+            global_path_received_ = true;
         }
         // 최초 순찰 시작 시에는 글로벌 경로 원본을 그대로 사용
         path_queue_ = save_path_queue_;
@@ -220,6 +226,7 @@ private:
             // 기존 approach path 큐를 비우고 새 경로 저장
             while (!approach_path_queue_.empty()) {
                 approach_path_queue_.pop();
+                global_path_received_ = false;
             }
 
             for (auto & ps : msg->poses) {
@@ -228,6 +235,7 @@ private:
                 p.y = ps.pose.position.y;
                 p.z = ps.pose.position.z;
                 approach_path_queue_.push(p);
+                global_path_received_ = true;
             }
             RCLCPP_INFO(this->get_logger(),
                 "Approach path 업데이트: 큐에 %zu개 노드 저장", msg->poses.size());
@@ -367,23 +375,26 @@ private:
 
         // ── homing, navigate ───────────────────────────────────────────
         if (current_mode_ == "homing" || current_mode_ == "navigate") {
-            if (path_queue_.empty()) {
-                RCLCPP_WARN(this->get_logger(), "Global path이 없습니다(큐 비어있음).");
-                // Global path이 없을 때 먼저 정지 후 waiting service 호출
+            // 전역 경로를 한 번이라도 받은 적이 없다면 -> 실제 경로 정보 없음
+            if (!global_path_received_) {
+                RCLCPP_WARN(this->get_logger(), "Global path을 수신하지 못했습니다.");
+                callTempStop();  // temp stop service 호출
                 stop_robot();
                 callWaitingService();
                 return;
             }
+
+            // 전역 경로가 수신된 상태라면, 경로를 따라가면서 도착 여부를 확인
             bool reached = follow_current_path();
-            // 목적지 도달 시 waiting service 호출
             if (reached) {
                 RCLCPP_INFO(this->get_logger(),
                     "경로에 도달했습니다. Waiting service 호출하여 대기모드로 전환.");
-                // 경로 도달 시 먼저 정지 후 waiting service 호출
+                callTempStop();  // temp stop service 호출
                 stop_robot();
                 callWaitingService();
                 return;
             }
+            // 도착하지 않은 경우 계속 진행 (여기서 추가 작업이 있을 수 있음)
             return;
         }
 
@@ -504,6 +515,7 @@ private:
 
     // 로봇 정지
     void stop_robot() {
+
         geometry_msgs::msg::Twist stop_msg;
         stop_msg.linear.x  = 0.0;
         stop_msg.angular.z = 0.0;
@@ -542,6 +554,31 @@ private:
                     RCLCPP_INFO(this->get_logger(), "Waiting 서비스 호출 성공");
                 } catch (const std::exception &e) {
                     RCLCPP_ERROR(this->get_logger(), "Waiting 서비스 호출 실패: %s", e.what());
+                }
+            }
+        );
+    }
+    
+    void callTempStop() {
+        // robot_custom_interfaces::srv::Estop 타입으로 클라이언트를 생성
+        auto client = this->create_client<robot_custom_interfaces::srv::Estop>(temp_stop_service_name_);
+        
+        // 서비스가 응답할 때까지 반복 시도
+        while (!client->wait_for_service(std::chrono::seconds(1))) {
+            RCLCPP_ERROR(this->get_logger(), "Temp_stop 서비스가 응답하지 않습니다. 로봇 정지 후 재시도.");
+            stop_robot();
+            rclcpp::sleep_for(std::chrono::seconds(1));  // 1초 대기 후 재시도
+        }
+        
+        // 요청 타입도 Estop으로 변경
+        auto request = std::make_shared<robot_custom_interfaces::srv::Estop::Request>();
+        client->async_send_request(request,
+            [this](rclcpp::Client<robot_custom_interfaces::srv::Estop>::SharedFuture future) {
+                try {
+                    auto response = future.get();
+                    RCLCPP_INFO(this->get_logger(), "Temp_stop 서비스 호출 성공");
+                } catch (const std::exception &e) {
+                    RCLCPP_ERROR(this->get_logger(), "Temp_stop 서비스 호출 실패: %s", e.what());
                 }
             }
         );
