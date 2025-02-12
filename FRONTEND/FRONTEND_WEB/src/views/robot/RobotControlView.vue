@@ -37,8 +37,24 @@
     </div>
 
     <div class="control-area mt-5" v-if="activeRobot">
+      <!-- 자동 모드 -->
       <div v-if="mode === 'auto'">
-        <RobotMap :robot="activeRobot" />
+        <!-- (1) 버튼 컴포넌트 -->
+        <ControlButtons
+          :isSingleSelected="selectedNodesCount === 1"
+          :isMultiSelected="selectedNodesCount >= 2"
+          @navigate="handleNavigate"
+          @patrol="handlePatrol"
+          @reset="handleReset"
+          @tempStop="handleTempStop"
+        />
+
+        <!-- (2) RobotMap -->
+        <RobotMap
+          ref="robotMap"
+          :robot="activeRobot"
+          @selectedNodesChange="onSelectedNodesChange"
+        />
       </div>
 
       <div v-else-if="mode === 'manual'" class="manual-mode flex justify-between items-start">
@@ -66,6 +82,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
+import ControlButtons from '@/components/map/ControlButtons.vue'
 
 const robotsStore = useRobotsStore()
 const selectedRobotSeq = ref('')
@@ -75,6 +92,30 @@ const activeRobot = computed(() => {
 })
 
 const mode = ref('auto')
+
+// 자식에서 올라오는 selectedNodes 변경 이벤트
+const selectedNodesCount = ref(0)
+function onSelectedNodesChange(newNodes) {
+  selectedNodesCount.value = newNodes.length
+  console.log('[RobotControlView] selectedNodesCount:', selectedNodesCount.value)
+}
+
+// RobotMap의 메서드를 직접 쓰기 위해 ref로 잡기
+const robotMap = ref(null)
+
+// 버튼 클릭 시 -> RobotMap 내부 함수 호출
+function handleNavigate() {
+  robotMap.value?.handleNavigate?.()
+}
+function handlePatrol() {
+  robotMap.value?.handlePatrol?.()
+}
+function handleReset() {
+  robotMap.value?.resetSelection?.()
+}
+function handleTempStop() {
+  robotMap.value?.handleTempStop?.()
+}
 
 const activeArrows = ref(new Set()) // 여러 개의 방향키 저장
 
@@ -96,26 +137,12 @@ function toggleMode() {
 }
 
 onMounted(() => {
-  robotsStore.loadRobots();
+  robotsStore.loadRobots()
   // 만약 store에 selectedRobot 이 있으면 그것을 기본값으로 설정
   if (robotsStore.selectedRobot) {
     selectedRobotSeq.value = String(robotsStore.selectedRobot)
   }
 })
-
-import { watch } from 'vue';
-
-watch(mode, (newMode) => {
-  if (newMode === 'auto') {
-    nextTick(() => {
-      const chart = document.querySelector('.chart');
-      if (chart) {
-        chart.dispatchEvent(new Event('resize'));
-      }
-    });
-  }
-});
-
 </script>
 
 <style scoped>
