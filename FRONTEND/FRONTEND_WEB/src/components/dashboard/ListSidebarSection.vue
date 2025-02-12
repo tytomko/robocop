@@ -42,7 +42,7 @@
 
     <!-- 토글 버튼: 사이드바 너비에 따라 왼쪽에서 슬라이드되도록 transition-all 적용 -->
     <button
-      class="absolute top-1/2 transform -translate-y-1/2 bg-gray-200 text-black px-2 py-1 rounded-r hover:bg-gray-300 z-10 
+      class="absolute top-1/2 transform -translate-y-1/2 bg-gray-300 text-black px-2 py-1 rounded-r hover:bg-gray-300 z-10 
              transition-all duration-300 ease-in-out"
       :class="isCollapsed ? 'left-0' : 'left-[240px]'"
       @click="$emit('toggle-left-sidebar')"
