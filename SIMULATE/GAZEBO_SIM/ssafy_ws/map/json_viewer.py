@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 # 현재 코드가 있는 디렉토리에서 JSON 파일 검색
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
+# 노드 레이블 표시 여부
+Labelset = True
+
 def load_json_files(directory):
     """현재 디렉토리의 모든 JSON 파일을 로드하여 그래프 목록 반환"""
     graphs = []
@@ -45,7 +48,7 @@ def visualize_graphs(graph_data_list):
 
         # 노드 위치를 좌표 값 그대로 사용
         pos = {node: node for node in G.nodes()}
-        nx.draw(G, pos, node_size=50, node_color="blue", edge_color="gray", with_labels=True, font_size=8)
+        nx.draw(G, pos, node_size=50, node_color="blue", edge_color="gray", with_labels=Labelset, font_size=8)
 
         plt.xlabel("X Coordinate")
         plt.ylabel("Y Coordinate")

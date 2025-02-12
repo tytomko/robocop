@@ -11,8 +11,17 @@ class KeyPublisher : public rclcpp::Node
 public:
     KeyPublisher() : Node("key_publisher")
     {
-        publisher_ = this->create_publisher<std_msgs::msg::String>("key_publisher", 10);
-        RCLCPP_INFO(this->get_logger(), "Key Publisher Node Started");
+        // 1) 파라미터 선언
+        this->declare_parameter<std::string>("robot_name", "default_robot");
+        this->declare_parameter<int>("robot_number", -1);
+        robot_name_ = this->get_parameter("robot_name").as_string();
+        robot_num_ = this->get_parameter("robot_number").as_int();
+        // 2) 발행 토픽 설정
+        std::string topic_name = "/" + robot_name_ + "/key_publisher";
+        publisher_ = this->create_publisher<std_msgs::msg::String>(topic_name, 10);
+
+        RCLCPP_INFO(this->get_logger(), "Key Publisher Node Started. Publishing to topic: %s", topic_name.c_str());
+
         setupTerminal();
     }
 
@@ -40,7 +49,8 @@ public:
 
 private:
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
-
+    std::string robot_name_;
+    int robot_num_;
     struct termios original_terminal_;
 
     void setupTerminal()
@@ -74,19 +84,15 @@ private:
         case ' ':
             return "SPACE";
         case 'I':
-            return "UP_LEFT";
         case 'i':
             return "UP_LEFT";
         case 'O':
-            return "UP_RIGHT";
         case 'o':
             return "UP_RIGHT";
         case 'K':
-            return "DOWN_LEFT";
         case 'k':
             return "DOWN_LEFT";
         case 'L':
-            return "DOWN_RIGHT";
         case 'l':
             return "DOWN_RIGHT";
         case '\033': // Arrow keys start with an escape sequence
@@ -102,7 +108,6 @@ private:
                     return "RIGHT";
                 case 'D':
                     return "LEFT";
-                
                 }
             }
             break;
@@ -111,8 +116,9 @@ private:
         }
         return "UNKNOWN";
     }
+    
 };
- 
+
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);

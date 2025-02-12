@@ -1,39 +1,39 @@
 <template>
-  <div v-if="show" class="modal-overlay">
-    <div class="modal-container management">
-      <div class="modal-header">
-        <h3>로봇 관리</h3>
-        <div class="modal-buttons">
-          <button @click="$emit('openAddRobotModal')" class="add-robot-btn">로봇 등록</button>
-          <button @click="$emit('close')" class="close-btn">닫기</button>
+  <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-3/4 max-w-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">로봇 관리</h3>
+        <div class="flex space-x-2">
+          <button @click="$emit('openAddRobotModal')" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">로봇 등록</button>
+          <button @click="$emit('close')" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">닫기</button>
         </div>
       </div>
 
-      <table class="robot-table">
+      <table class="w-full border-collapse border border-gray-200 text-sm text-center">
         <thead>
-          <tr>
-            <th>ID</th>
-            <th>이름</th>
-            <th>IP 주소</th>
-            <th>배터리</th>
-            <th>위치</th>
-            <th>상태</th>
-            <th>작업</th>
+          <tr class="bg-gray-100">
+            <th class="border border-gray-200 px-4 py-2">ID</th>
+            <th class="border border-gray-200 px-4 py-2">이름</th>
+            <th class="border border-gray-200 px-4 py-2">IP 주소</th>
+            <th class="border border-gray-200 px-4 py-2">배터리</th>
+            <th class="border border-gray-200 px-4 py-2">위치</th>
+            <th class="border border-gray-200 px-4 py-2">상태</th>
+            <th class="border border-gray-200 px-4 py-2">작업</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="robot in robots" :key="robot.id">
-            <td>{{ robot.id }}</td>
-            <td>{{ robot.nickname || robot.name }}</td>
-            <td>{{ robot.ipAddress }}</td>
-            <td>{{ robot.battery }}%</td>
-            <td>{{ robot.location }}</td>
-            <td>
-              <span :class="getStatusClass(robot.status)">{{ getStatusLabel(robot.status) }}</span>
+          <tr v-for="robot in robots" :key="robot.seq" class="border border-gray-200">
+            <td class="px-4 py-2">{{ robot.seq }}</td>
+            <td class="px-4 py-2">{{ robot.nickname || robot.name }}</td>
+            <td class="px-4 py-2">{{ robot.ipAddress }}</td>
+            <td class="px-4 py-2">{{ robot.battery }}%</td>
+            <td class="px-4 py-2">{{ robot.position }}</td>
+            <td class="px-4 py-2">
+              <span :class="getStatusClass(robot.status)" class="px-2 py-1 rounded text-white">{{ getStatusLabel(robot.status) }}</span>
             </td>
-            <td>
-              <button v-if="robot.status !== 'breakdown'" class="action-btn breakdown" @click="setBreakdown(robot.id)">고장</button>
-              <button v-else class="action-btn active" @click="setActive(robot.id)">가동</button>
+            <td class="px-4 py-2">
+              <button v-if="robot.status !== 'error'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="setBreakdown(robot.seq)">고장</button>
+              <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="setActive(robot.seq)">가동</button>
             </td>
           </tr>
         </tbody>
@@ -51,190 +51,36 @@ const props = defineProps({
 const emit = defineEmits(['close', 'openAddRobotModal', 'setBreakdown', 'setActive']);
 
 const getStatusClass = (status) => {
-  return `status-badge ${status}`;
+  const statusClasses = {
+    charging: 'bg-green-500',
+    navigating: 'bg-blue-500',
+    patrolling: 'bg-blue-500',
+    emergencyStopped: 'bg-red-500',
+    error: 'bg-red-600',
+    waiting: 'bg-gray-500',
+    homing: 'bg-teal-500',
+  };
+  return statusClasses[status] || 'bg-yellow-500';
 };
 
 const getStatusLabel = (status) => {
   const labels = {
-    active: '활동 중',
+    navigating: '이동 중',
     charging: '충전 중',
-    stopped: '정지 중',
-    error: '오류 발생',
-    idle: '대기 중',
-    returning: '복귀 중',
-    breakdown: '고장'
+    emergencyStopped: '정지 중',
+    error: '고장',
+    waiting: '대기 중',
+    homing: '복귀 중',
+    patrolling: '순찰 중'
   };
   return labels[status] || status;
 };
 
-const setBreakdown = (robotId) => {
-  emit('setBreakdown', robotId);
+const setBreakdown = (robotSeq) => {
+  emit('setBreakdown', robotSeq);
 };
 
-const setActive = (robotId) => {
-  emit('setActive', robotId);
+const setActive = (robotSeq) => {
+  emit('setActive', robotSeq);
 };
 </script>
-
-<style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.modal-container {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 600px;
-}
-
-.status-badge {
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  display: inline-block;
-}
-
-.status-badge.active {
-  background-color: #28a745;
-  color: white;
-}
-
-.status-badge.charging {
-  background-color: #007bff;
-  color: white;
-}
-
-.status-badge.stopped {
-  background-color: #dc3545;
-  color: white;
-}
-
-.status-badge.error {
-  background-color: #dc3545;
-  color: white;
-}
-
-.status-badge.idle {
-  background-color: #6c757d;
-  color: white;
-}
-
-.status-badge.returning {
-  background-color: black;
-  color: white;
-}
-
-.status-badge.unknown {
-  background-color: #ffc107;
-  color: black;
-}
-
-.status-badge.breakdown {
-  background-color: black;
-  color: white;
-}
-
-.status-details {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 15px 0;
-}
-
-.status-item {
-  margin-bottom: 0.5rem;
-}
-
-.status-item .label {
-  display: block;
-  color: #666;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.action-btn.breakdown {
-  background: #dc3545;
-  color: white;
-}
-
-.action-btn.breakdown:hover {
-  background: #c82333;
-}
-
-.action-btn {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  background: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.modal-buttons button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.modal-buttons .close-btn {
-  background: #dc3545;
-  color: white;
-}
-
-.modal-buttons .close-btn:hover {
-  background: #c82333;
-}
-
-.add-robot-btn {
-  background: #28a745;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-/* 테이블 스타일 */
-.robot-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.robot-table th, .robot-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: center;
-}
-
-.robot-table th {
-  background: #f4f4f4;
-}
-</style>

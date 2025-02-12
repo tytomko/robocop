@@ -1,66 +1,59 @@
 <template>
-  <div class="monitoring-section">
-    <div class="section-header">
-      <h4>로봇 목록</h4>
+  <div class="bg-white rounded-lg shadow-md p-5 font-sans">
+    <div class="border-b pb-2 mb-4">
+      <h4 class="text-lg font-bold">로봇 목록</h4>
     </div>
     
     <!-- 로봇 상태 목록 -->
-    <div class="robot-status-list">
-      <div v-for="robot in visibleRobots" :key="robot.id" class="robot-status-card">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-for="robot in visibleRobots" :key="robot.seq" class="relative bg-white rounded-lg p-4 border shadow-sm">
         <!-- X 버튼 -->
-        <button class="close-btnx" @click="hideRobot(robot.id)">✖</button>
-        
-        <div class="robot-header">
-          <span class="robot-name"><strong>{{ robot.nickname || robot.name }}</strong></span>
-          <span class="status-badge" :class="getStatusClass(robot.status)">
+        <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-600" @click="hideRobot(robot.seq)">✖</button>
+
+        <!-- 로봇 이름과 상태 표시를 나란히 배치 -->
+        <div class="flex items-center mt-2">
+          <span class="font-bold mr-2">{{ robot.nickname || robot.name }}</span>
+          <span class="px-2 py-1 text-xs font-semibold rounded-full" :class="getStatusClass(robot.status)">
             {{ getStatusLabel(robot.status) }}
           </span>
         </div>
         
-        <div class="status-details">
-          <div class="status-item">
-            <span class="label">배터리</span>
-            <div class="battery-indicator">
-              <div class="battery-level" :style="{ width: robot.battery + '%', backgroundColor: getBatteryColor(robot.battery) }">
-              </div>
-              <span class="battery-text">{{ robot.battery }}%</span>
+        <div class="space-y-2 mt-4">
+          <div>
+            <span class="text-sm text-gray-600">배터리</span>
+            <div class="relative w-full h-4 bg-gray-200 rounded overflow-hidden">
+              <div class="h-full" :class="getBatteryClass(robot.battery)" :style="{ width: robot.battery + '%' }"></div>
+              <span class="absolute inset-0 flex justify-center items-center text-xs text-white font-semibold">{{ robot.battery }}%</span>
             </div>
           </div>
-          
-          <div class="status-item">
-            <span class="label">현재 위치</span>
-            <span class="value">{{ robot.location }}</span>
+          <div>
+            <span class="text-sm text-gray-600">현재 위치</span>
+            <span class="block text-gray-800 font-medium">{{ robot.position }}</span>
           </div>
-          
-          <div class="status-item">
-            <span class="label">IP 주소</span>
-            <span class="value">{{ robot.ipAddress }}</span>
+          <div>
+            <span class="text-sm text-gray-600">IP 주소</span>
+            <span class="block text-gray-800 font-medium">{{ robot.ipAddress }}</span>
           </div>
         </div>
         
-        <div class="robot-actions">
-          <button class="action-btn return" @click="returnRobot(robot.id)" :class="{ active: robot.status === 'returning' }">
+        <div class="flex gap-2 mt-4">
+          <button class="flex-1 py-2 rounded text-white text-sm bg-gray-700 hover:bg-gray-800" @click="returnRobot(robot.seq)">
             복귀 명령
           </button>
-          <button v-if="robot.status === 'active'" class="action-btn emergency" @click="emergencyStop(robot.id)" :class="{ active: robot.status === 'emergency' }">
-            비상 정지
-          </button>
-          <button v-else class="action-btn active" @click="emergencyStop(robot.id)" :class="{ active: robot.status === 'active' }">
-            가동 시작
+          <button class="flex-1 py-2 rounded text-white text-sm" :class="getEmergencyClass(robot.status)" @click="emergencyStop(robot.seq)">
+            {{ robot.status === 'navigating' ? '비상 정지' : '가동 시작' }}
           </button>
         </div>
         
-        <button class="detail-btn" @click="goToDetailPage(robot.id)">상세 페이지</button>
+        <button class="mt-2 w-full py-2 rounded bg-gray-900 text-white text-sm hover:bg-gray-800" @click="goToDetailPage(robot.seq)">
+          상세 페이지
+        </button>
       </div>
       
       <!-- 로봇 관리 버튼 -->
-      <div class="robot-status-card robot-management" @click="robotsStore.openRobotManagementModal">
-        <div class="status-details">
-          <div class="status-item">
-            <div class="plus-icon">+</div>
-            <button class="manage-button">로봇 관리</button>
-          </div>
-        </div>
+      <div class="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-6 cursor-pointer" @click="robotsStore.openRobotManagementModal">
+        <div class="text-6xl text-gray-400">+</div>
+        <button class="mt-2 px-4 py-2 bg-gray-300 rounded">로봇 관리</button>
       </div>
     </div>
   </div>
@@ -76,314 +69,58 @@ const robotsStore = useRobotsStore();
 const robots = computed(() => robotsStore.registered_robots);
 const hiddenRobots = ref([]);
 
-const visibleRobots = computed(() => {
-  return robots.value.filter(robot => !hiddenRobots.value.includes(robot.id));
-});
+const visibleRobots = computed(() => robots.value.filter(robot => !hiddenRobots.value.includes(robot.seq)));
 
-const hideRobot = (robotId) => {
-  hiddenRobots.value.push(robotId);
-};
+const hideRobot = (robotSeq) => hiddenRobots.value.push(robotSeq);
 
 const getStatusClass = (status) => {
-  return `status-badge ${status}`;
-};
-
-const getStatusLabel = (status) => {
-  const labels = {
-    active: '활동 중',
-    charging: '충전 중',
-    stopped: '정지 중',
-    error: '오류 발생',
-    idle: '대기 중',
-    returning: '복귀 중',
-    breakdown: '고장'
+  return {
+    'bg-green-500 text-white': status === 'charging',
+    'bg-blue-500 text-white': status === 'patrolling' || status === 'navigating',
+    'bg-red-500 text-white': status === 'emergencyStopped' || status === 'error',
+    'bg-gray-500 text-white': status === 'waiting',
+    'bg-black text-white': status === 'homing'
   };
-  return labels[status] || status;
 };
 
-const getBatteryColor = (battery) => {
-  battery = Number(battery);
-  if (battery >= 80) return 'green';
-  if (battery >= 50) return 'yellowgreen';
-  if (battery >= 30) return 'orange';
-  if (battery >= 15) return 'orangered';
-  return 'red';
+const getStatusLabel = (status) => ({
+  navigating: '이동 중', charging: '충전 중', emergencyStopped: '정지 중', error: '고장',
+  waiting: '대기 중', homing: '복귀 중', patrolling: '순찰 중'
+}[status] || status);
+
+const getBatteryClass = (battery) => {
+  return {
+    'bg-green-500': battery >= 30,
+    'bg-red-500': battery < 30
+  };
 };
 
-const returnRobot = async (robotId) => {
-  if (!robotId) return;
+const getEmergencyClass = (status) => {
+  return {
+    'bg-red-600 hover:bg-red-700': status === 'navigating' || status === 'patrolling',
+    'bg-emerald-500 hover:bg-emerald-600': status !== 'active'
+  };
+};
+
+const returnRobot = async (robotSeq) => {
+  if (!robotSeq) return;
   try {
-    const robotIndex = robotsStore.registered_robots.findIndex((r) => r.id === robotId);
-    if (robotIndex !== -1) {
-      robotsStore.registered_robots[robotIndex].status = 'returning'; // 상태 변경
-    }
-    console.log('복귀 명령:', robotId);
+    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
+    if (robot) robot.status = 'homing';
   } catch (err) {
     console.error('로봇 복귀 명령 에러:', err);
   }
 };
 
-// 비상 정지 및 가동 시작 처리
-const emergencyStop = async (robotId) => {
-  if (!robotId) return;
+const emergencyStop = async (robotSeq) => {
+  if (!robotSeq) return;
   try {
-    const robotIndex = robotsStore.registered_robots.findIndex((r) => r.id === robotId);
-    if (robotIndex !== -1) {
-      const robot = robotsStore.registered_robots[robotIndex];
-      robot.status = robot.status === 'active' ? 'stopped' : 'active';
-    }
+    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
+    if (robot) robot.status = robot.status === 'navigating' ? 'emergencyStopped' : 'navigating';
   } catch (err) {
     console.error('비상 정지 명령 에러:', err);
   }
 };
 
-// 상세 페이지 이동 함수
-const goToDetailPage = (robotId) => {
-  router.push(`/${robotId}`);
-};
+const goToDetailPage = (robotSeq) => router.push(`/${robotSeq}`);
 </script>
-
-<style scoped>
-.robot-management {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 89%;
-  text-align: center;
-}
-
-.monitoring-section {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.plus-icon {
-  font-size: 150px;
-  color: rgb(234, 231, 231);
-}
-
-.manage-button {
-  padding: 7px 10px;
-  border: none;
-  background-color: rgb(234, 231, 231);
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  padding: 5px 15px;
-  border-bottom: 1px solid #eee;
-}
-
-.section-header h4 {
-  margin: 0;
-  font-size: 16px;
-  color: #333;
-}
-
-.robot-status-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  padding: 20px;
-}
-
-.robot-status-card {
-  position: relative;
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #eee;
-}
-
-.robot-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.robot-name {
-  font-weight: 500;
-}
-
-.status-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: inline-block;
-  text-align: center;
-  min-width: 60px;
-}
-
-.status-badge.active {
-  background-color: #28a745;
-  color: white;
-}
-
-.status-badge.charging {
-  background-color: #007bff;
-  color: white;
-}
-
-.status-badge.stopped {
-  background-color: #dc3545;
-  color: white;
-}
-
-.status-badge.error {
-  background-color: #dc3545;
-  color: white;
-}
-
-.status-badge.idle {
-  background-color: #6c757d;
-  color: white;
-}
-
-.status-badge.returning {
-  background-color: black;
-  color: white;
-}
-
-.status-badge.unknown {
-  background-color: #ffc107;
-  color: black;
-}
-
-.status-badge.breakdown {
-  background-color: black;
-  color: white;
-}
-
-.status-details {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin: 15px 0;
-}
-
-.status-item {
-  margin-bottom: 0.5rem;
-}
-
-.status-item .label {
-  display: block;
-  color: #666;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.battery-indicator {
-  width: 100%;
-  height: 20px;
-  background: #f0f0f0;
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
-}
-
-.battery-level {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.battery-text {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: white;
-  font-size: 12px;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-}
-
-.action-btn {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  background: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.action-btn:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.robot-actions {
-  display: flex;
-  gap: 10px;
-  padding: 5px 15px;
-  background: #f8f9fa;
-  margin-top: 20px;
-}
-
-/* 로봇 상태 변경 버튼 */
-.robot-actions .action-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  color: white;
-}
-
-/* 상세 페이지 버튼 스타일 */
-.detail-btn {
-  width: calc(100% - 30px); /* 기존 버튼 2개 넓이와 동일 */
-  margin: 5px 15px;
-  padding: 8px;
-  background-color: black;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1em;
-  text-align: center;
-}
-
-.detail-btn:hover {
-  background-color: #3c3c3dd1;
-}
-
-.action-btn.return {
-  background: grey;
-  color: white;
-}
-
-.action-btn.return:hover {
-  background: rgb(153, 147, 147);
-}
-
-.action-btn.emergency {
-  background: #F44336;
-  color: white;
-}
-
-.action-btn.emergency:hover {
-  background: #D32F2F;
-}
-
-.close-btnx {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  color: #888;
-}
-
-.close-btnx:hover {
-  color: #333;
-}
-</style>

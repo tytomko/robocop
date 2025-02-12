@@ -27,7 +27,7 @@ const router = createRouter({
       component: SettingsView
     },
     {
-      path: '/:robotId',
+      path: '/:seq',
       name: 'detail', 
       component: RobotDetailView
     },

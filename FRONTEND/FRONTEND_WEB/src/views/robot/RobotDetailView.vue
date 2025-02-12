@@ -1,8 +1,13 @@
 <template>
-  <div class="robot-detail">
-    <div class="robot-header">
-      <h1 v-if="robot">{{ robot.nickname || robot.name }} ({{ robot.is_active ? '활성화' : '비활성화' }})</h1>
-      <button @click="openNicknameModal(robot)" class="settings-btn">
+  <div class="robot-detail max-w-xl mx-auto p-5 overflow-y-auto max-h-[80vh]">
+    <div class="robot-header flex items-center gap-3">
+      <h1 v-if="robot" class="text-xl font-bold">
+        {{ robot.nickname || robot.name }} 
+        <span class="text-sm" :class="robot.isActive ? 'text-green-500' : 'text-red-500'">
+          ({{ robot.isActive ? '활성화' : '비활성화' }})
+        </span>
+      </h1>
+      <button @click="openNicknameModal(robot)" class="text-gray-700 text-lg hover:text-gray-900">
         <i class="fas fa-cog"></i>
       </button>
     </div>
@@ -10,7 +15,9 @@
     <!-- RobotInfo 컴포넌트 사용 -->
     <RobotInfo v-if="robot" :robot="robot" />
 
-    <button class="back-btn" @click="goBack">뒤로 가기</button>
+    <button class="mt-5 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700" @click="goBack">
+      뒤로 가기
+    </button>
 
     <!-- RobotNickname 모달 컴포넌트 -->
     <RobotNickname 
@@ -27,38 +34,33 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
 import RobotNickname from '@/components/detail/RobotNickname.vue';
-import RobotInfo from '@/components/detail/RobotInfo.vue'; //
+import RobotInfo from '@/components/detail/RobotInfo.vue';
 
 const route = useRoute();
 const router = useRouter();
 const robotsStore = useRobotsStore();
-const robotId = route.params.robotId;
+const seq = route.params.seq;
 
 const robot = computed(() => {
-  return robotsStore.registered_robots.find(r => r.id == robotId) || null;
+  return robotsStore.registered_robots.find(r => r.seq == seq) || null;
 });
 
-// 닉네임 모달 상태
 const showNicknameModal = ref(false);
 const selectedRobotForNickname = ref(null);
 
-// 로봇 닉네임 모달 열기
 const openNicknameModal = (robot) => {
-  selectedRobotForNickname.value = { id: robot.id, nickname: robot.nickname || '' };
+  selectedRobotForNickname.value = { id: robot.seq, nickname: robot.nickname || '' };
   showNicknameModal.value = true;
 };
 
-// 닉네임 모달 닫기
 const closeNicknameModal = () => {
   showNicknameModal.value = false;
 };
 
-// 닉네임 저장
-const setRobotNickname = (robotId, nickname) => {
-  localStorage.setItem(`robot_nickname_${robotId}`, nickname);
-
-  // robots 상태 업데이트
-  const robotIndex = robotsStore.registered_robots.findIndex(r => r.id === robotId);
+const setRobotNickname = (seq, nickname) => {
+  localStorage.setItem(`robot_nickname_${seq}`, nickname);
+  
+  const robotIndex = robotsStore.registered_robots.findIndex(r => r.seq === seq);
   if (robotIndex !== -1) {
     robotsStore.registered_robots[robotIndex].nickname = nickname;
   }
@@ -80,45 +82,3 @@ watch(() => robotsStore.registered_robots, () => {
   }
 }, { deep: true });
 </script>
-
-<style scoped>
-.robot-detail {
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto;
-  overflow-y: auto; /* 세로 스크롤 활성화 */
-  max-height: 80vh; /* 화면 높이를 넘어가지 않게 제한 */
-}
-
-.robot-header {
-  display: flex;
-  align-items: center; /* 세로 중앙 정렬 */
-  gap: 10px; /* h1과 버튼 사이 여백 */
-}
-
-.back-btn {
-  display: block;
-  margin: 20px auto;
-  padding: 10px 15px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.back-btn:hover {
-  background: #0056b3;
-}
-
-.settings-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-.settings-btn i {
-  color: #333; /* 아이콘 색상 */
-}
-</style>

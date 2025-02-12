@@ -5,6 +5,7 @@ import router from './router'
 
 import '@fortawesome/fontawesome-free/css/all.css'
 import 'leaflet/dist/leaflet.css'
+import './assets/tailwind.css';
 
 const app = createApp(App);
 const pinia = createPinia();

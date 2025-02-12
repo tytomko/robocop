@@ -1,21 +1,24 @@
 <template>
-    <div class="settings-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>로봇 설정</h3>
-        </div>
-        <label>로봇명: </label>
-        <input v-model="robot.nickname" placeholder="로봇명을 설정하세요" />
-  
-        <div class="modal-buttons">
-          <button @click="saveNickname">저장</button>
-          <button @click="closeModal" class="close-btn">닫기</button>
-        </div>
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div class="bg-white p-6 rounded-lg w-96 shadow-lg">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">로봇 설정</h3>
+      </div>
+      <label class="block text-sm font-medium text-gray-700">로봇명:</label>
+      <input 
+        v-model="robot.nickname" 
+        placeholder="로봇명을 설정하세요" 
+        class="w-full mt-2 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-300 focus:outline-none"
+      />
+      <div class="flex justify-end gap-3 mt-4">
+        <button @click="saveNickname" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">저장</button>
+        <button @click="closeModal" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">닫기</button>
       </div>
     </div>
-  </template>
-  
-  <script setup>
+  </div>
+</template>
+
+<script setup>
 const props = defineProps({
   show: Boolean,
   robot: Object
@@ -24,74 +27,10 @@ const props = defineProps({
 const emit = defineEmits(['save', 'close']);
 
 const saveNickname = () => {
-  emit('save', props.robot.id, props.robot.nickname); // 부모 컴포넌트로 데이터 전달
+  emit('save', props.robot.seq, props.robot.nickname);
 };
 
 const closeModal = () => {
-  emit('close'); // 모달 닫기 이벤트
+  emit('close');
 };
-  </script>
-  
-  <style scoped>
-  .settings-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 400px;
-    text-align: left;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-  }
-  
-  .modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-
-  .modal-buttons button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-  
-  .modal-buttons .close-btn {
-    background: #dc3545;
-    color: white;
-  }
-  
-  .modal-buttons .close-btn:hover {
-    background: #c82333;
-  }
-
-  /* 입력 필드 스타일 */
-.modal-content input {
-  width: calc(100% - 20px);
-  padding: 10px;
-  margin: 5px 0 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
-}
-  </style>
+</script>

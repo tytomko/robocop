@@ -1,54 +1,58 @@
 <template>
   <div class="robot-control-page" @keydown="handleKeyDown" @keyup="handleKeyUp">
-    <div class="robot-selection-and-mode">
+    <div class="robot-selection-and-mode flex justify-between items-center mb-5">
       <div class="robot-selection">
-        <label for="robot-select">로봇 선택:</label>
-        <select id="robot-select" v-model="selectedRobotId">
+        <label for="robot-select" class="font-semibold">로봇 선택:</label>
+        <select id="robot-select" v-model="selectedRobotSeq" class="mt-2 p-2 border border-gray-300 rounded-md w-48">
           <option disabled value="">선택해주세요</option>
           <option 
             v-for="robot in robotsStore.registered_robots" 
-            :key="robot.id" 
-            :value="robot.id">
+            :key="robot.seq" 
+            :value="robot.seq">
             {{ robot.nickname || robot.name }}
           </option>
         </select>
       </div>
 
-      <div class="mode-toggle">
-        <span class="mode-label">수동</span>
-        <div class="toggle-switch">
-          <input type="checkbox" id="toggle" v-model="isAutoMode" @change="toggleMode">
-          <label for="toggle" class="switch">
-            <span class="slider"></span>
+      <div class="mode-toggle flex items-center space-x-3">
+        <span class="mode-label text-lg font-semibold">수동</span>
+        <div class="toggle-switch relative inline-block w-24 h-12 flex-shrink-0">
+          <input 
+            type="checkbox" 
+            id="toggle" 
+            v-model="isAutoMode" 
+            @change="toggleMode"
+            class="opacity-0 w-0 h-0"
+          />
+          <label for="toggle" class="switch relative inline-block w-full h-full cursor-pointer rounded-full transition-all flex items-center">
+            <span class="slider absolute bg-white rounded-full"></span>
           </label>
         </div>
-        <span class="mode-label">자동</span>
+        <span class="mode-label text-lg font-semibold">자동</span>
       </div>
     </div>
 
-    <div v-if="!activeRobot">
+    <div v-if="!activeRobot" class="text-center text-gray-500">
       로봇을 먼저 선택해주세요.
     </div>
 
-    <div class="control-area" v-if="activeRobot">
+    <div class="control-area mt-5" v-if="activeRobot">
       <div v-if="mode === 'auto'">
         <RobotMap :robot="activeRobot" />
       </div>
 
-      <div v-else-if="mode === 'manual'" class="manual-mode">
-        <div class="cctv-and-controls">
-          <!-- CCTV 컴포넌트 크기 확대 -->
-          <Cctv :robot="activeRobot" />
+      <div v-else-if="mode === 'manual'" class="manual-mode flex justify-between items-start">
+        <div class="cctv-and-controls flex flex-row items-center w-full">
+          <Cctv :robot="activeRobot" class="w-full h-[490px] bg-black" />
 
-          <!-- 화살표 컨트롤 -->
-          <div class="arrow-controls">
-            <div class="vertical-controls">
-              <button :class="{ active: activeArrow === 'ArrowUp' }">↑</button>
+          <div class="arrow-controls flex flex-col items-center ml-5">
+            <div class="vertical-controls flex flex-col justify-center items-center mb-5">
+              <button :class="{ 'active': activeArrows.has('ArrowUp') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 transition transform hover:scale-110">↑</button>
             </div>
-            <div class="horizontal-controls">
-              <button :class="{ active: activeArrow === 'ArrowLeft' }">←</button>
-              <button :class="{ active: activeArrow === 'ArrowDown' }">↓</button>
-              <button :class="{ active: activeArrow === 'ArrowRight' }">→</button>
+            <div class="horizontal-controls flex justify-center">
+              <button :class="{ 'active': activeArrows.has('ArrowLeft') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">←</button>
+              <button :class="{ 'active': activeArrows.has('ArrowDown') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">↓</button>
+              <button :class="{ 'active': activeArrows.has('ArrowRight') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">→</button>
             </div>
           </div>
         </div>
@@ -58,47 +62,40 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 
 const robotsStore = useRobotsStore()
 
-// 선택된 로봇 ID (select의 v-model)
-const selectedRobotId = ref('')
+const selectedRobotSeq = ref('')
 
-// activeRobot computed: 등록된 로봇이 존재할 때만 선택
 const activeRobot = computed(() => {
-  return robotsStore.registered_robots.find(robot => String(robot.id) === String(selectedRobotId.value)) || null
+  return robotsStore.registered_robots.find(robot => String(robot.seq) === String(selectedRobotSeq.value)) || null
 })
 
-// 제어 모드 (기본값 'auto' : 자동 주행 모드)
 const mode = ref('auto')
 
-// 키보드 입력으로 눌린 화살표 상태
-const activeArrow = ref(null)
+const activeArrows = ref(new Set()) // 여러 개의 방향키 저장
 
-// 키보드 이벤트 감지
 function handleKeyDown(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    activeArrow.value = event.key
+    activeArrows.value.add(event.key)
   }
 }
 
 function handleKeyUp(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-    activeArrow.value = null
+    activeArrows.value.delete(event.key)
   }
 }
 
-// 모드 토글 스위치
 const isAutoMode = ref(true)
 function toggleMode() {
   mode.value = isAutoMode.value ? 'auto' : 'manual'
 }
 
-// 컴포넌트가 마운트될 때 로봇 데이터를 로드합니다.
 onMounted(() => {
   robotsStore.loadRobots()
 })
@@ -106,145 +103,61 @@ onMounted(() => {
 
 <style scoped>
 .robot-control-page {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 20px;
-  min-height: 150vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.robot-selection-and-mode {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.robot-selection {
-  margin-bottom: 0;
+  min-height: 100vh;
 }
 
 .mode-toggle {
   display: flex;
   align-items: center;
-}
-
-.mode-label {
-  margin: 0 10px;
-  font-size: 18px;
-  font-weight: bold;
+  justify-content: center;
 }
 
 .toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 120px;
-  height: 40px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #a52a2a;
-  border-radius: 40px;
-  transition: 0.4s;
   display: flex;
   align-items: center;
-  padding: 4px;
+  justify-content: center;
 }
 
-.slider {
-  height: 32px;
-  width: 32px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.4s;
-  position: relative;
-}
-
+/* 활성화된 상태 (초록색) */
 input:checked + .switch {
-  background-color: #8bc34a;
+  background-color: #4caf50;
 }
 
+/* 체크 상태일 때 슬라이더 이동 */
 input:checked + .switch .slider {
-  transform: translateX(80px);
+  transform: translate(2.4rem, -50%); /* 오른쪽 끝까지 이동 */
 }
 
-/* 컨트롤 영역 */
-.control-area {
-  margin-top: 20px;
-}
-
-.manual-mode {
+/* 토글 버튼 기본 스타일 */
+.switch {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.cctv-and-controls {
-  display: flex;
-  flex-direction: row; /* 세로로 배치 */
-  align-items: center; /* 중앙 정렬 */
-  width: 100%; /* 카메라 화면을 더 크게 만들기 위해 전체 너비의 90%로 설정 */
-  margin: 0 auto; /* 가운데 정렬 */
-}
-
-.cctv-screen {
-  width: 100%; /* CCTV 화면이 화면 전체 너비를 차지하도록 설정 */
-  height: 500px; /* 카메라 화면의 높이를 크게 설정 */
-  background-color: black; /* 배경을 검정색으로 설정 */
-  margin-bottom: 20px; /* 카메라 화면과 화살표 컨트롤 간의 간격 */
-}
-
-.arrow-controls {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  margin-left: 15px;
+  justify-content: flex-start;
+  background-color: #d1d5db;
+  width: 5rem;  /* 80px */
+  height: 2.5rem; /* 40px */
+  border-radius: 9999px;
+  transition: background-color 0.3s ease-in-out;
+  position: relative;
 }
 
-.horizontal-controls {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 10px;
+/* 슬라이더 스타일 */
+.slider {
+  width: 2rem; /* 32px */
+  height: 2rem; /* 32px */
+  position: absolute;
+  top: 50%;
+  left: 0.3rem; /* 초기 위치 */
+  transform: translateY(-50%);
+  transition: transform 0.3s ease-in-out;
 }
 
-.vertical-controls {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.arrow-controls button {
-  width: 60px; /* 버튼 크기 키움 */
-  height: 60px;
-  font-size: 28px; /* 텍스트 크기 증가 */
-  margin: 8px;
-  border: 1px solid #ccc;
-  background: #f9f9f9;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-/* 키보드 입력 시 버튼이 활성화되도록 변경 */
 .arrow-controls button.active {
   font-weight: bold;
   background-color: #007bff;
-  color: #fff;
+  color: white;
   transform: scale(1.1);
   box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
 }
+
 </style>
