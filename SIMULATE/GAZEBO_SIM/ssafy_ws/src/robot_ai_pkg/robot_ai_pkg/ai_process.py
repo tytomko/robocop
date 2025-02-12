@@ -35,6 +35,8 @@ class RobotAI(Node):
 
         # 소켓 서버 초기화 및 연결 대기
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 이미 사용중인 소켓 문제를 피하기 위해 SO_REUSEADDR 옵션 설정
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((IP_ADDRESS, PORT))
         self.socket.listen(1)
         self.get_logger().info(f'Socket server started on {IP_ADDRESS}:{PORT}, waiting for connections...')
@@ -46,12 +48,17 @@ class RobotAI(Node):
 
     def accept_connections(self):
         """
-        소켓으로 들어오는 데이터는 이제 "명령" 문자열만 포함합니다.
+        소켓으로 들어오는 데이터는 "명령" 문자열만 포함합니다.
         미리 정의된 명령어(CMD_STOP, CMD_RESUME, CMD_DISAPPEAR)는 해당 처리 후,
         그 외의 명령은 수신한 내용 그대로 ai_info 토픽에 발행합니다.
         """
         while rclpy.ok():
-            conn, addr = self.socket.accept()
+            try:
+                conn, addr = self.socket.accept()
+            except Exception as e:
+                self.get_logger().error(f"Socket accept error: {e}")
+                continue
+
             self.get_logger().info(f'Connection from {addr}')
             try:
                 data = conn.recv(1024).decode('utf-8').strip()
@@ -71,10 +78,10 @@ class RobotAI(Node):
             with self.command_lock:
                 self.current_command = command
 
-            # ai_info 토픽에 수신 메시지 발행
+            # ai_info 토픽에 수신 메시지 발행 (필요 시 주석 해제)
             info_msg = String()
             info_msg.data = f"Received command '{command}' for robot '{self.robot_name}'"
-            self.ai_info_pub.publish(info_msg)
+            # self.ai_info_pub.publish(info_msg)
 
             # 미리 정의된 명령어에 따른 처리
             if command == CMD_STOP:
@@ -104,10 +111,9 @@ class RobotAI(Node):
 
     def call_service_with_cancellation(self, client, command):
         """
-        서비스가 준비될 때까지 최대 5번 대기하고 호출하며, 응답의 success 필드가 True여야 성공으로 간주합니다.
-        응답이 실패하거나 타임아웃이 발생하면 최대 5번까지 재시도하며, 각 재시도 사이에 1초씩 대기합니다.
+        서비스가 준비될 때까지 최대 5회 대기 후 호출하며, 응답의 success 필드가 True여야 성공으로 간주합니다.
+        응답 실패 또는 타임아웃 시 최대 5회까지 재시도하며, 각 재시도 사이 1초씩 대기합니다.
         대기 중 또는 호출 후 최신 명령이 변경되면 진행 중인 호출은 취소합니다.
-        rclpy.spin_until_future_complete() 대신 루프와 time.sleep()으로 future 완료 여부를 확인합니다.
         """
         max_call_attempts = 5
         for call_attempt in range(1, max_call_attempts + 1):
@@ -134,13 +140,13 @@ class RobotAI(Node):
                 self.ai_info_pub.publish(warn)
                 return
 
-            # 서비스 준비 완료 → 서비스 호출
+            # 서비스 호출
             request = Estop.Request()
             future = client.call_async(request)
 
-            # future가 완료될 때까지 주기적으로 확인 (명령 취소 여부 체크)
+            # 응답 대기 (최대 timeout_duration 초)
             start_time = time.time()
-            timeout_duration = 10.0  # 최대 대기 시간 (초)
+            timeout_duration = 10.0
             while rclpy.ok() and not future.done() and (time.time() - start_time < timeout_duration):
                 time.sleep(0.1)
                 with self.command_lock:
@@ -162,23 +168,30 @@ class RobotAI(Node):
                 response = future.result()
                 if response is not None and hasattr(response, 'success') and response.success:
                     self.get_logger().info(f"Service call to {client.srv_name} succeeded on attempt {call_attempt}.")
-                    return  # 성공하면 종료
+                    return
                 else:
                     error_msg = f"Service call to {client.srv_name} failed on attempt {call_attempt}."
                     self.get_logger().error(error_msg)
                     warn = String()
                     warn.data = error_msg
                     self.ai_info_pub.publish(warn)
-            # 1초 대기 후 재시도 (마지막 시도가 아니면)
             if call_attempt < max_call_attempts:
                 time.sleep(1)
 
-        # 모든 시도 실패 시
         final_msg = f"Service call to {client.srv_name} failed after {max_call_attempts} attempts."
         self.get_logger().error(final_msg)
         final_warn = String()
         final_warn.data = final_msg
         self.ai_info_pub.publish(final_warn)
+
+    def shutdown(self):
+        # 노드 종료 시 소켓을 명시적으로 닫아 소켓 반환을 수행합니다.
+        try:
+            self.socket.close()
+            self.get_logger().info("Socket closed successfully.")
+        except Exception as e:
+            self.get_logger().error(f"Error closing socket: {e}")
+        self.destroy_node()
 
 def main(args=None):
     rclpy.init(args=args)
@@ -187,8 +200,10 @@ def main(args=None):
         rclpy.spin(robot_ai)
     except KeyboardInterrupt:
         pass
-    robot_ai.destroy_node()
-    rclpy.shutdown()
+    finally:
+        # 종료 시 shutdown() 호출하여 소켓 반환 및 노드 파괴
+        robot_ai.shutdown()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
