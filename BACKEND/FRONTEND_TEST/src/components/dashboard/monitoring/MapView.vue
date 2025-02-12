@@ -201,9 +201,8 @@ const chartOption = computed(() => ({
     // 노드 표시
     {
       type: 'scatter',
-      data: mapData.value.nodes.map(node => node.id),
-      symbolSize: (value, params) => {
-        // 선택된 노드는 더 크게 표시
+      data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+      symbolSize: (value) => {
         return selectedNodes.value.some(selected => 
           selected.id[0] === value[0] && selected.id[1] === value[1]
         ) ? 15 : 8
@@ -253,7 +252,7 @@ const handleNodeClick = (params) => {
             chartOption.value.series[0],
             {
               type: 'scatter',
-              data: mapData.value.nodes.map(node => node.id),
+              data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
               symbolSize: (value) => {
                 return selectedNodes.value.some(selected => 
                   selected.id[0] === value[0] && selected.id[1] === value[1]
@@ -288,10 +287,20 @@ const fetchMapData = async () => {
   try {
     loading.value = true
     const response = await axios.get('http://localhost:8000/map')
+    
+    // 상세 데이터 로깅 추가
+    console.log('원본 응답 데이터:', response.data)
+    console.log('첫 번째 노드 샘플:', response.data.nodes[0])
+    console.log('노드 개수:', response.data.nodes.length)
+    
     mapData.value = {
       nodes: response.data.nodes,
       links: response.data.links
     }
+    
+    // 변환된 데이터 확인
+    console.log('변환된 scatter 데이터:', mapData.value.nodes.map(node => [node.id[0], node.id[1]]))
+    
   } catch (error) {
     console.error('맵 데이터 로딩 실패:', error)
   } finally {

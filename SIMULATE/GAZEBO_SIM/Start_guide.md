@@ -152,9 +152,19 @@
 
 ## 4. 실행 방법
 
-### 런치파일실행
+### 가제보 실행
+```bash
+ros2 launch turtlebot3_gazebo tb3_imu_lidar_gps_burger.launch.py
+```
+
+### 런치파일실행 로봇별로실행
 ```bash
 ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=ssafy robot_number:=1
+```
+
+### 키보드입력(먼저 메뉴얼모드로변경)
+```bash
+ros2 run robot_control_pkg key_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
 ### 호밍서비스
@@ -194,7 +204,6 @@ ros2 service call /robot_1/waiting robot_custom_interfaces/srv/Waiting
 ### Manual 서비스(모드변경)
 ```bash
 ros2 service call /robot_1/manual robot_custom_interfaces/srv/Manual 
-
 ---
 
 ### [수정된 사항]
