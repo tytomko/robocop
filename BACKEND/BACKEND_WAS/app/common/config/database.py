@@ -1,14 +1,14 @@
+import os
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
 class DatabaseSettings(BaseSettings):
     """데이터베이스 설정"""
     # MongoDB 설정
-    MONGODB_URL: str = Field(
-        default="mongodb+srv://maybecold:OBK7Z5K3UYqTiEUp@cluster0.5idlh.mongodb.net/"
-    )
-    MONGODB_DB_NAME: str = Field(default="robocop_db")
+    MONGODB_URL: str = os.getenv("MONGODB_URL")
+    MONGODB_DB_NAME: str = os.getenv("DATABASE_NAME")
     
+
     # PostgreSQL 설정 (필요한 경우)
     POSTGRES_URL: str = Field(
         default="postgresql://postgres:postgres@localhost:5432/robocop"

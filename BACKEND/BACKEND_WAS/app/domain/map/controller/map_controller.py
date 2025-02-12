@@ -5,5 +5,5 @@ from ..models.map_models import PointsData
 router = APIRouter()
 
 @router.get("/map", response_model=PointsData)
-def get_points():
-    return PointService.get_points()
+async def get_points():
+    return await PointService.get_points()

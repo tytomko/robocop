@@ -27,6 +27,8 @@ class Settings:
         ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     class Storage:
+        MEDIA_SERVER_URL: str
+        UPLOAD_API_URL: str
         VIDEO_STORAGE_PATH: str
         IMAGE_STORAGE_PATH: str
 

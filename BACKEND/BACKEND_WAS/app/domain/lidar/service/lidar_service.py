@@ -26,41 +26,49 @@ class LidarService:
         self.last_process_time = 0
         self.status = LidarStatus()
         self.config: Optional[LidarConfig] = None
+        self.cleanup_delay = 5  # 초
+        self.last_activity = time.time()
 
     async def connect(self, host: str, port: int) -> bool:
         """라이다 웹소켓에 연결을 시도합니다."""
-        while self.reconnect_attempts < self.max_reconnect_attempts:
-            try:
-                if self.websocket:
-                    await self.websocket.close()
+        try:
+            logger.info(f"라이다 웹소켓 연결 시도 - host: {host}, port: {port}")
+            while self.reconnect_attempts < self.max_reconnect_attempts:
+                try:
+                    if self.websocket:
+                        await self.websocket.close()
+                    
+                    self.websocket = await websockets.connect(
+                        f"ws://{host}:{port}",
+                        ping_interval=None,
+                        ping_timeout=20,
+                        close_timeout=5
+                    )
+                    self.is_connected = True
+                    self.reconnect_attempts = 0
+                    logger.info("라이다 웹소켓에 연결되었습니다.")
+                    return True
                 
-                self.websocket = await websockets.connect(
-                    f"ws://{host}:{port}",
-                    ping_interval=None,
-                    ping_timeout=20,
-                    close_timeout=5
-                )
-                self.is_connected = True
-                self.reconnect_attempts = 0
-                logger.info("라이다 웹소켓에 연결되었습니다.")
-                return True
+                except (websockets.exceptions.WebSocketException, 
+                        ConnectionRefusedError, 
+                        asyncio.TimeoutError) as e:
+                    self.reconnect_attempts += 1
+                    logger.warning(
+                        f"라이다 연결 시도 {self.reconnect_attempts}/{self.max_reconnect_attempts} 실패: {str(e)}"
+                    )
+                    if self.reconnect_attempts < self.max_reconnect_attempts:
+                        logger.info(f"{self.reconnect_delay}초 후 재연결을 시도합니다.")
+                        await asyncio.sleep(self.reconnect_delay)
+                    else:
+                        logger.error("최대 재연결 시도 횟수를 초과했습니다.")
+                        self.is_connected = False
+                        return False
             
-            except (websockets.exceptions.WebSocketException, 
-                    ConnectionRefusedError, 
-                    asyncio.TimeoutError) as e:
-                self.reconnect_attempts += 1
-                logger.warning(
-                    f"라이다 연결 시도 {self.reconnect_attempts}/{self.max_reconnect_attempts} 실패: {str(e)}"
-                )
-                if self.reconnect_attempts < self.max_reconnect_attempts:
-                    logger.info(f"{self.reconnect_delay}초 후 재연결을 시도합니다.")
-                    await asyncio.sleep(self.reconnect_delay)
-                else:
-                    logger.error("최대 재연결 시도 횟수를 초과했습니다.")
-                    self.is_connected = False
-                    return False
-        
-        return False
+            return False
+        except Exception as e:
+            logger.error(f"연결 중 오류 발생: {str(e)}")
+            self.is_connected = False
+            return False
 
     async def disconnect(self):
         """라이다 웹소켓 연결을 종료합니다."""
@@ -153,14 +161,25 @@ class LidarService:
         """새로운 웹 클라이언트 연결을 등록"""
         await websocket.accept()
         self.clients.add(websocket)
+        self.last_activity = time.time()
         self.status.client_count = len(self.clients)
         logger.info(f"새로운 클라이언트가 연결되었습니다. 현재 클라이언트 수: {self.status.client_count}")
 
     async def unregister_client(self, websocket: WebSocket):
         """웹 클라이언트 연결 해제"""
-        self.clients.remove(websocket)
-        self.status.client_count = len(self.clients)
-        logger.info(f"클라이언트가 연결 해제되었습니다. 현재 클라이언트 수: {self.status.client_count}")
+        try:
+            self.clients.remove(websocket)
+            self.status.client_count = len(self.clients)
+            logger.info(f"클라이언트 연결이 해제되었습니다. 현재 클라이언트 수: {self.status.client_count}")
+            
+            # 마지막 클라이언트가 나가고 일정 시간 후에도 새 연결이 없으면 정리
+            if len(self.clients) == 0:
+                await asyncio.sleep(self.cleanup_delay)
+                if len(self.clients) == 0:
+                    await self.disconnect()
+                    
+        except Exception as e:
+            logger.error(f"클라이언트 연결 해제 중 오류: {str(e)}")
 
     async def _broadcast(self, points: List[Point]):
         """모든 연결된 클라이언트에게 포인트 클라우드 데이터 전송"""

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .domain.auth.controller.auth_controller import router as auth_router, create_admin_user
 from .domain.robot.controller.robot_controller import router as robot_router
@@ -17,15 +17,13 @@ from .common.exceptions.handlers import (
 )
 from .common.middleware.logging import RequestLoggingMiddleware
 from .common.models.responses import BaseResponse
+from .domain.camera.models.camera_models import CameraConfig
 from .domain.lidar.controller.lidar_controller import start_lidar_subscriber
 from .infrastructure.database.connection import DatabaseConnection
 import uvicorn
 import os
 import logging
 import asyncio
-from fastapi import WebSocketDisconnect
-from pathlib import Path
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -41,8 +39,7 @@ app = FastAPI(
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["https://frontend-web-one-omega.vercel.app"],  # 실제 운영 환경에서는 구체적인 origin으로 변경
-    allow_origins=["*"],
+    allow_origins=["*"],  # 실제 운영 환경에서는 구체적인 origin으로 변경
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,16 +61,6 @@ app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
 app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
 app.include_router(map_router, tags=["map"])
-
-# 프로젝트 루트 디렉토리 찾기
-base_dir = Path(__file__).resolve().parent.parent
-
-# .env 파일 경로 설정
-env_path = os.path.join(base_dir, '.env')
-
-# .env 파일 로드
-load_dotenv(env_path)
-
 
 @app.on_event("startup")
 async def startup_event():
@@ -111,7 +98,7 @@ async def startup_event():
         except Exception as e:
             logger.error(f"시퀀스 초기화 실패: {str(e)}")
             raise
-
+        
         # 컬렉션 인덱스 초기화
         await DatabaseConnection.init_collections()
         
@@ -125,6 +112,34 @@ async def startup_event():
         except Exception as e:
             logger.warning(f"라이다 서비스 시작 실패: {str(e)}")
         
+        # 카메라 초기화
+        # camera_configs = [
+        #     CameraConfig(
+        #         camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
+        #         camera_name='robot1_front',
+        #         ros_bridge_host='172.30.1.10',
+        #         ros_bridge_port=9090
+        #     ),
+        #     CameraConfig(
+        #         camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
+        #         camera_name='robot1_rear',
+        #         ros_bridge_host='172.30.1.10',
+        #         ros_bridge_port=9090
+        #     )
+        # ]
+        
+        # for config in camera_configs:
+        #     try:
+        #         success = await initialize_camera(config)
+        #         if success:
+        #             logger.info(f"카메라 초기화 성공: {config.camera_name}")
+        #         else:
+        #             logger.warning(f"카메라 초기화 실패: {config.camera_name}")
+        #     except Exception as e:
+        #         logger.warning(f"카메라 초기화 실패 ({config.camera_name}): {str(e)}")
+        #         logger.warning("카메라 기능이 비활성화된 상태로 실행됩니다.")
+
+        # topic publish 작업 (test)
         
 
         logger.info("모든 초기화 작업이 완료되었습니다.")
@@ -149,16 +164,6 @@ async def root():
             "environment": settings.base.ENV
         }
     )
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message text was: {data}")
-    except WebSocketDisconnect:
-        pass
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))

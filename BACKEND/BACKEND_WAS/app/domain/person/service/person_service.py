@@ -4,76 +4,115 @@ from fastapi import UploadFile, HTTPException
 from datetime import datetime
 from ..models.person_models import Person, PersonCreate, PersonUpdate, ImageInfo
 from ..repository.person_repository import PersonRepository
-from ....common.utils import validate_image_file, generate_unique_id
+from ....common.utils import validate_image_file
+from ....common.config.manager import get_settings
+import aiohttp
+import time
+import uuid
+from hangul_romanize import Transliter
+from hangul_romanize.rule import academic
 
-UPLOAD_DIR = "storage/persons"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+settings = get_settings()
+print(f"MEDIA_SERVER_URL: {settings.storage.MEDIA_SERVER_URL}")
+print(f"UPLOAD_API_URL: {settings.storage.UPLOAD_API_URL}")
+
+MEDIA_SERVER_PATH = settings.storage.MEDIA_SERVER_URL  # Nginx 미디어 서버 경로
+
 
 class PersonService:
     """사용자 서비스"""
     def __init__(self):
         """초기화"""
         self.repository = PersonRepository()
+        # URL 끝에 슬래시가 있다면 제거
+        self.media_server_url = settings.storage.MEDIA_SERVER_URL.rstrip('/')
+        self.upload_api_url = settings.storage.UPLOAD_API_URL.rstrip('/')
 
     async def initialize(self):
         """서비스를 초기화합니다."""
         await self.repository.connect()
+        print("person service connected")
+
+    def _generate_safe_filename(self, original_name: str, person_name: str, seq: int) -> str:
+        """안전한 파일명 생성"""
+        # 확장자 추출
+        ext = os.path.splitext(original_name)[1].lower()
+        
+        # 한글 이름을 로마자로 변환
+        safe_name = self._romanize_korean(person_name)
+        
+        # 최종 파일명 생성 (UUID 대신 seq 사용)
+        return f"person_{safe_name}_{seq}{ext}"
 
     async def create_person(self, person_data: PersonCreate, image: UploadFile) -> Person:
         """새로운 Person을 생성합니다."""
         # 이미지 유효성 검사
-        if not validate_image_file(image.filename, 0):  # 파일 크기는 스트림이라 0으로 처리
+        if not validate_image_file(image.filename, 0):
             raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다")
 
-        # Person ID 생성
-        person_id = await self.repository.get_next_person_id()
-
-        # 이미지 저장
-        ext = os.path.splitext(image.filename)[1].lower()
-        image_id = generate_unique_id(f"person_{person_id}")
-        image_path = os.path.join(UPLOAD_DIR, f"{image_id}{ext}")
-
         try:
-            with open(image_path, "wb") as buffer:
-                content = await image.read()
-                buffer.write(content)
-
-            # 이미지 정보 생성
+            # Person 먼저 생성
+            person = await self.repository.create_person(person_data)
+            
+            content = await image.read()
+            filename = self._generate_safe_filename(image.filename, person_data.name, person.seq)
+            
+            # 디버깅 로그 추가
+            print(f"Uploading file to: {self.upload_api_url}/persons_image")
+            print(f"Generated filename: {filename}")
+            
+            # FormData로 파일 전송
+            async with aiohttp.ClientSession() as session:
+                data = aiohttp.FormData()
+                data.add_field('file',
+                             content,
+                             filename=filename,
+                             content_type=image.content_type)
+                
+                # 업로드 요청 및 응답 확인
+                async with session.post(
+                    f"{self.upload_api_url}/persons_image",
+                    data=data
+                ) as response:
+                    response_text = await response.text()
+                    print(f"Upload response: {response_text}")  # 디버깅용
+                    
+                    if response.status != 200:
+                        raise HTTPException(status_code=500, detail=f"파일 업로드 실패: {response_text}")
+            
+            # 이미지 정보 생성 (확장자 포함)
+            image_url = f"{self.media_server_url}/persons_image/{filename}"  # filename에는 이미 확장자가 포함됨
             image_info = ImageInfo(
-                imageId=image_id,
-                url=f"/storage/persons/{image_id}{ext}",
-                uploadedAt=datetime.now()
+                imageId=os.path.splitext(filename)[0],  # 확장자 제외
+                url=image_url,
+                uploadedAt=datetime.now(),
+                imageNumber=1
             )
-
-            # Person 데이터 생성
-            person_dict = person_data.dict()
-            person_dict.update({
-                "personId": person_id,
-                "images": [image_info.dict()],
-                "createdAt": datetime.now()
-            })
-
-            return await self.repository.create_person(person_dict)
+            
+            # 이미지 정보 DB에 추가
+            updated_person = await self.repository.add_person_image(
+                identifier=person.id,
+                image_info=image_info,
+                is_name=False
+            )
+            
+            if not updated_person:
+                raise HTTPException(status_code=500, detail="이미지 정보 저장 실패")
+                
+            return updated_person
 
         except Exception as e:
-            # 실패 시 이미지 파일 삭제
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            raise HTTPException(status_code=400, detail=str(e))
+            print(f"Error in create_person: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
-    async def get_persons(self, department: Optional[str] = None, position: Optional[str] = None) -> List[Person]:
-        """Person 목록을 조회합니다."""
-        filter_query = {}
-        if department:
-            filter_query["department"] = department
-        if position:
-            filter_query["position"] = position
-        return await self.repository.get_persons(filter_query)
-
-    async def add_person_image(self, person_id: int, image: UploadFile) -> Person:
+    async def add_person_image(self, identifier: str, person_position: str, image: UploadFile, is_name: bool = False) -> Person:
         """Person에 이미지를 추가합니다."""
         # Person 존재 확인
-        person = await self.repository.get_person_by_id(person_id)
+        if is_name:
+            person = await self.repository.get_person_by_name(identifier)
+        else:
+            person = await self.repository.get_person_by_id(identifier)
+
         if not person:
             raise HTTPException(status_code=404, detail="해당 사용자를 찾을 수 없습니다")
 
@@ -81,12 +120,13 @@ class PersonService:
         if not validate_image_file(image.filename, 0):
             raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다")
 
-        # 이미지 저장
-        ext = os.path.splitext(image.filename)[1].lower()
-        image_id = generate_unique_id(f"person_{person_id}")
-        image_path = os.path.join(UPLOAD_DIR, f"{image_id}{ext}")
-
         try:
+            # 이미지 저장
+            ext = os.path.splitext(image.filename)[1].lower()
+            next_number = await self.repository.get_next_image_number(person.id)
+            image_id = f"person_{person.seq}_{next_number}"
+            image_path = os.path.join(MEDIA_SERVER_PATH, f"persons_image/{image_id}{ext}")
+
             with open(image_path, "wb") as buffer:
                 content = await image.read()
                 buffer.write(content)
@@ -94,12 +134,18 @@ class PersonService:
             # 이미지 정보 생성
             image_info = ImageInfo(
                 imageId=image_id,
-                url=f"/storage/persons/{image_id}{ext}",
-                uploadedAt=datetime.now()
+                url=f"{MEDIA_SERVER_PATH}/persons_image/{image_id}{ext}",
+                uploadedAt=datetime.now(),
+                imageNumber=next_number
             )
 
             # 이미지 정보 추가
-            updated_person = await self.repository.add_image(person_id, image_info)
+            updated_person = await self.repository.add_person_image(
+                identifier=identifier,
+                image_info=image_info,
+                is_name=is_name
+            )
+
             if not updated_person:
                 raise HTTPException(status_code=500, detail="이미지 정보 업데이트에 실패했습니다")
 
@@ -111,24 +157,34 @@ class PersonService:
                 os.remove(image_path)
             raise HTTPException(status_code=400, detail=str(e))
 
-    async def update_person(self, person_id: int, person_data: PersonUpdate) -> Person:
+    async def update_person(self, person_id: str, person_data: PersonUpdate) -> Person:
         """Person 정보를 업데이트합니다."""
-        # Person 존재 확인
-        person = await self.repository.get_person_by_id(person_id)
-        if not person:
-            raise HTTPException(status_code=404, detail="해당 사용자를 찾을 수 없습니다")
+        try:
+            # 이름으로 조회된 경우 ID로 변환
+            if not person_id.isdigit():
+                person = await self.repository.get_person_by_name(person_id)
+                if not person:
+                    raise HTTPException(status_code=404, detail="해당 사용자를 찾을 수 없습니다")
+                person_id = person.id
+            else:
+                # ID로 조회
+                person = await self.repository.get_person_by_id(person_id)
+                if not person:
+                    raise HTTPException(status_code=404, detail="해당 사용자를 찾을 수 없습니다")
 
-        # 업데이트 수행
-        updated_person = await self.repository.update_person(person_id, person_data.dict())
-        if not updated_person:
-            raise HTTPException(status_code=500, detail="사용자 정보 업데이트에 실패했습니다")
+            # 업데이트 수행
+            updated_person = await self.repository.update_person(person_id, person_data.dict())
+            if not updated_person:
+                raise HTTPException(status_code=500, detail="사용자 정보 업데이트에 실패했습니다")
 
-        return updated_person
+            return updated_person
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
-    async def delete_person(self, person_id: int) -> bool:
+    async def delete_person(self, seq: int) -> bool:
         """Person을 삭제합니다."""
-        # Person 존재 확인
-        person = await self.repository.get_person_by_id(person_id)
+        # Person 존재 확인 
+        person = await self.repository.get_person_by_seq(seq)
         if not person:
             raise HTTPException(status_code=404, detail="해당 사용자를 찾을 수 없습니다")
 
@@ -139,7 +195,74 @@ class PersonService:
                 os.remove(image_path)
 
         # Person 삭제
-        if not await self.repository.delete_person(person_id):
+        if not await self.repository.delete_person(seq=seq):
             raise HTTPException(status_code=500, detail="사용자 삭제에 실패했습니다")
 
         return True
+    
+    async def get_all_persons(self) -> List[Person]:
+        """모든 Person을 조회합니다."""
+        return await self.repository.get_all_persons()
+
+    async def delete_person_by_name(self, name: str) -> bool:
+        """이름으로 Person을 삭제합니다."""
+        # Person 존재 확인
+        person = await self.repository.get_person_by_name(name)
+        if not person:
+            raise HTTPException(status_code=404, detail="해당 이름의 사용자를 찾을 수 없습니다")
+
+        # 이미지 파일 삭제
+        for image in person.images:
+            image_path = os.path.join("storage", "persons", os.path.basename(image.url))
+            if os.path.exists(image_path):
+                os.remove(image_path)
+
+        # Person 삭제
+        if not await self.repository.delete_person_by_name(name):
+            raise HTTPException(status_code=500, detail="사용자 삭제에 실패했습니다")
+
+        return True
+
+    async def get_person_images(self, identifier: str, is_name: bool = False) -> List[ImageInfo]:
+        """사용자의 모든 이미지를 조회합니다."""
+        images = await self.repository.get_person_images(identifier, is_name)
+        if images is None:
+            raise HTTPException(status_code=404, detail="해당 사용자를 찾을 수 없습니다")
+        return images
+
+    async def delete_person_image(self, identifier: str, image_number: int, is_name: bool = False) -> bool:
+        """사용자의 특정 이미지를 삭제합니다."""
+        # 이미지 정보 조회
+        images = await self.get_person_images(identifier, is_name)
+        target_image = next((img for img in images if img.imageNumber == image_number), None)
+        if not target_image:
+            raise HTTPException(status_code=404, detail="해당 이미지를 찾을 수 없습니다")
+
+        # EC2 미디어 서버에 삭제 요청
+        try:
+            async with aiohttp.ClientSession() as session:
+                filename = os.path.basename(target_image.url)
+                async with session.delete(
+                    f"{self.upload_api_url}/persons_image/{filename}"
+                ) as response:
+                    if response.status != 200:
+                        raise HTTPException(status_code=500, detail="이미지 파일 삭제 실패")
+
+            # DB에서 이미지 정보 삭제
+            if not await self.repository.delete_person_image(identifier, image_number, is_name):
+                raise HTTPException(status_code=500, detail="이미지 삭제에 실패했습니다")
+            return True
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def _romanize_korean(self, text: str) -> str:
+        """한글을 로마자로 변환"""
+        try:
+            transliter = Transliter(academic)
+            romanized = transliter.translit(text)
+            # 특수문자 제거 및 공백을 언더스코어로 변환
+            safe_name = ''.join(c if c.isalnum() else '_' for c in romanized).lower()
+            return safe_name or f"person_{int(time.time())}"
+        except Exception as e:
+            print(f"Romanization failed: {str(e)}")
+            return f"person_{int(time.time())}"
