@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Literal, Optional, Dict, Any
 from datetime import datetime
+from enum import Enum
 
 class Position(BaseModel):
     x: float = 0
@@ -18,45 +19,49 @@ class RobotImage(BaseModel):
     url: str
     createdAt: datetime
 
-class RobotStatus(str):
-    IDLE = "idle"
-    MOVING = "moving"
+class RobotStatus(str, Enum):
+    WAITING = "waiting"
+    HOMING = "homing"
+    NAVIGATING = "navigating"
+    EMERGENCYSTOPPED = "emergencyStopped"
+    PATROLLING = "patrolling"
     CHARGING = "charging"
     ERROR = "error"
-    EMERGENCY = "emergency"
+
+class NetworkStatus(str):
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    CONNECTING = "connecting"
+    DISCONNECTING = "disconnecting"
+    networkHealth: float = 100.0
+
+class Waypoint(BaseModel):
+    x: float
+    y: float
 
 class Robot(BaseModel):
-    robotId: int
-    name: str
+    seq: int
+    manufactureName: str
+    nickname: str
     ipAddress: str
-    status: str = RobotStatus.IDLE
+    networkStatus: str = NetworkStatus.CONNECTED
+    status: str = RobotStatus.WAITING
+    networkHealth: float = 100.0
     position: Position
     battery: BatteryStatus
+    cpuTemp: float = 0.0
     image: Optional[RobotImage] = None
+    waypoints: List[Waypoint] = []
+    startAt: datetime
+    IsActive: bool = True
+    IsDeleted: bool = False
+    DeletedAt: Optional[datetime] = None
     lastActive: datetime
     createdAt: datetime
     updatedAt: Optional[datetime] = None
 
-class Waypoint(BaseModel):
-    type: Literal["start", "mid", "end"]
-    position: Position
-
-class RouteRequest(BaseModel):
-    sequence: int
-    waypoints: List[Waypoint]
-
-class RouteResponse(BaseModel):
-    routeId: str
-    robotId: str
-    courseSequence: int
-    waypoints: Dict[str, Dict[str, int]]
-    createdAt: datetime
-
-class MapResponse(BaseModel):
-    robotId: str
-    mapId: str
-    currentLocation: Dict[str, Any]
-    mapData: Dict[str, Any]
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
 
 class StatusUpdate(BaseModel):
     status: Literal["manual", "auto", "emergency_stop"]
@@ -96,3 +101,19 @@ class LogResponse(BaseModel):
 class RobotCreate(BaseModel):
     name: str
     ipAddress: str
+
+# ROS2 메시지 타입을 위한 모델
+class ROS2RobotStatus(BaseModel):
+    """robot_custom_interfaces/msg/Status 메시지 타입"""
+    robot_id: str
+    status: str
+    battery_level: float
+    battery_charging: bool
+    position_x: float
+    position_y: float
+    position_z: float
+    orientation: float
+    cpu_temp: float
+    error_code: Optional[int] = None
+    error_message: Optional[str] = None
+    timestamp: datetime
