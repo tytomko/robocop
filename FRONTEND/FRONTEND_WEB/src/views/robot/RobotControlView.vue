@@ -68,7 +68,6 @@ import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 
 const robotsStore = useRobotsStore()
-
 const selectedRobotSeq = ref('')
 
 const activeRobot = computed(() => {
@@ -97,8 +96,26 @@ function toggleMode() {
 }
 
 onMounted(() => {
-  robotsStore.loadRobots()
+  robotsStore.loadRobots();
+  // 만약 store에 selectedRobot 이 있으면 그것을 기본값으로 설정
+  if (robotsStore.selectedRobot) {
+    selectedRobotSeq.value = String(robotsStore.selectedRobot)
+  }
 })
+
+import { watch } from 'vue';
+
+watch(mode, (newMode) => {
+  if (newMode === 'auto') {
+    nextTick(() => {
+      const chart = document.querySelector('.chart');
+      if (chart) {
+        chart.dispatchEvent(new Event('resize'));
+      }
+    });
+  }
+});
+
 </script>
 
 <style scoped>

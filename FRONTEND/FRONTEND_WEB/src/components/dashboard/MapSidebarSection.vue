@@ -34,7 +34,7 @@
 <script setup>
 import RobotMap from '@/components/map/RobotMap.vue';
 import { useRobotsStore } from '@/stores/robots';
-import { onMounted } from 'vue';
+import { onMounted, nextTick, watch } from 'vue';
 
 const props = defineProps({
   isCollapsed: {
@@ -46,6 +46,12 @@ const emit = defineEmits(['toggle-sidebar']);
 
 const toggleSidebar = () => {
   emit('toggle-sidebar');
+  nextTick(() => {
+    const chart = document.querySelector('.chart');
+    if (chart) {
+      chart.dispatchEvent(new Event('resize'));
+    }
+  });
 };
 
 // 로봇 데이터 스토어 (예: Pinia)
@@ -55,6 +61,17 @@ onMounted(() => {
   const savedRobot = localStorage.getItem('selectedRobot');
   if (savedRobot) {
     robotsStore.selectedRobot = savedRobot;
+  }
+});
+
+watch(() => props.isCollapsed, async (newVal) => {
+  if (!newVal) { // 사이드바가 열릴 때
+    await nextTick();
+    const chart = document.querySelector('.chart');
+    if (chart) {
+      chart.dispatchEvent(new Event('resize'));
+      console.log("사이드바 열림 → ECharts 리사이즈 실행");
+    }
   }
 });
 </script>

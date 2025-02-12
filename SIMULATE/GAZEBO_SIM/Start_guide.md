@@ -204,7 +204,20 @@ ros2 service call /robot_1/waiting robot_custom_interfaces/srv/Waiting
 ### Manual 서비스(모드변경)
 ```bash
 ros2 service call /robot_1/manual robot_custom_interfaces/srv/Manual 
----
+```
+
+### 로봇 여러 대 동시 주행
+```bash
+ros2 service call /robot_2/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304396.57, y: 3892844.46, theta: 0.0}, {x: 304401.15, y: 3892849.86, theta: 0.0}]}"
+```
+
+```bash
+ros2 service call /robot_1/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304417.70, y: 3892839.59, theta: 0.0}, {x: 304417.77, y: 3892845.46, theta: 0.0}, {x: 304408.34, y: 3892851.10, theta: 0.0}]}"
+```
+
+```bash
+ros2 service call /robot_3/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304401.85, y: 3892835.85, theta: 0.0}, {x: 304417.43, y: 3892837.16, theta: 0.0}]}"
+```
 
 ### [수정된 사항]
 1. **섹션 제목 추가**  
