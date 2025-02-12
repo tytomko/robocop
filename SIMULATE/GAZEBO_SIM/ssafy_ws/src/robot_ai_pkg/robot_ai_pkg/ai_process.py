@@ -11,17 +11,20 @@ CMD_STOP = '거수자인식-정지'
 CMD_RESUME = '거수자 처리완료-재개'
 CMD_DISAPPEAR = '거수자 사라짐'
 IP_ADDRESS = '0.0.0.0'
-PORT = 5000
+BASE_PORT = 5000
 
 class RobotAI(Node):
     def __init__(self):
         super().__init__('robot_ai')
         # 파라미터 선언 및 가져오기
-        self.declare_parameter('robot_num', 1)
+        self.declare_parameter('robot_number', 1)
         self.declare_parameter('robot_name', 'robot1')
-        self.robot_num = self.get_parameter('robot_num').value
+        self.robot_num = self.get_parameter('robot_number').value
         self.robot_name = self.get_parameter('robot_name').value
-        PORT = 5000 + self.robot_num - 1
+
+        # 로봇 번호를 기반으로 포트 설정 (1번 로봇: 5000, 2번 로봇: 5001, ...)
+        self.port = BASE_PORT + self.robot_num - 1
+        print(f"현재 포트는?{self.port}\n")
         # 서비스 클라이언트 생성 (로봇 번호에 따라 토픽 생성)
         self.temp_stop_client = self.create_client(Estop, f'/robot_{self.robot_num}/temp_stop')
         self.resume_client = self.create_client(Estop, f'/robot_{self.robot_num}/resume')
@@ -37,9 +40,9 @@ class RobotAI(Node):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # 이미 사용중인 소켓 문제를 피하기 위해 SO_REUSEADDR 옵션 설정
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind((IP_ADDRESS, PORT))
+        self.socket.bind((IP_ADDRESS, self.port))
         self.socket.listen(1)
-        self.get_logger().info(f'Socket server started on {IP_ADDRESS}:{PORT}, waiting for connections...')
+        self.get_logger().info(f'Socket server started on {IP_ADDRESS}:{self.port}, waiting for connections...')
 
         # 소켓 수신 루프를 별도 스레드에서 실행
         self.socket_thread = threading.Thread(target=self.accept_connections)
