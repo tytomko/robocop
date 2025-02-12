@@ -15,6 +15,8 @@ export function useUser() {
         // 클라이언트 측에서 토큰 제거
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('selectedRobot')
+        robotsStore.selectedRobot = ''
 
         // Axios 기본 Authorization 헤더 제거
         delete axios.defaults.headers.common['Authorization'];
