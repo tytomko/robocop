@@ -21,7 +21,7 @@ class RobotAI(Node):
         self.declare_parameter('robot_name', 'robot1')
         self.robot_num = self.get_parameter('robot_num').value
         self.robot_name = self.get_parameter('robot_name').value
-
+        PORT = 5000 + self.robot_num - 1
         # 서비스 클라이언트 생성 (로봇 번호에 따라 토픽 생성)
         self.temp_stop_client = self.create_client(Estop, f'/robot_{self.robot_num}/temp_stop')
         self.resume_client = self.create_client(Estop, f'/robot_{self.robot_num}/resume')
