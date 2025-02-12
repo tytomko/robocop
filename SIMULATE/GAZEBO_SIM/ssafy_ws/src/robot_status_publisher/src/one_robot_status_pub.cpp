@@ -55,7 +55,7 @@ public:
         std::ostringstream oss;
         oss << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S");
         status_message.starttime = oss.str(); // 시작 시간 문자열로 저장
-
+        status_message.id = robot_num;
         status_message.name = robot_name;
         status_message.battery = 75.0f;  // 초기 배터리 값
         status_message.temperatures = {55.0f};  // 초기 온도 값
