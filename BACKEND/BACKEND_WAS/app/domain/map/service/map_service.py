@@ -20,6 +20,7 @@ class PointService:
                 logger.error("맵 데이터를 찾을 수 없습니다.")
                 return PointsData(directed=False, multigraph=False, graph={}, nodes=[], links=[])
 
+            # print(map_data)
             return PointsData(**map_data)  # 데이터베이스에서 가져온 데이터를 PointsData 모델로 변환
         except Exception as e:
             logger.error(f"맵 데이터 읽기 오류: {str(e)}")

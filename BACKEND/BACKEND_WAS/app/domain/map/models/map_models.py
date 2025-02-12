@@ -10,6 +10,7 @@ class Link(BaseModel):
     target: List[float]  # 끝점 [x, y] 좌표값
 
 class PointsData(BaseModel):
+    # id: str
     directed: bool
     multigraph: bool
     graph: Dict[str, Any]
