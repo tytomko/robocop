@@ -27,9 +27,11 @@ class Settings:
         ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     class Storage:
+        MEDIA_SERVER_URL: str
+        UPLOAD_API_URL: str
         VIDEO_STORAGE_PATH: str
         IMAGE_STORAGE_PATH: str
-
+        
     class ROS:
         ROS_BRIDGE_HOST: str = "172.30.1.78"
         ROS_BRIDGE_PORT: int = 9090

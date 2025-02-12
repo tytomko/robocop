@@ -1,15 +1,20 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from pydantic import validator
 
 class UserBase(BaseModel):
     """사용자 기본 모델"""
     username: str = Field(..., description="사용자 이름")
     role: str = Field(default="user", description="사용자 역할")
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
     """사용자 생성 모델"""
-    password: str = Field(..., description="비밀번호")
+    username: str
+    password: str
+    role: str = "user"
+    is_active: bool = True
+    is_default_password: bool = False
 
 class UserLogin(BaseModel):
     """사용자 로그인 모델"""
@@ -18,11 +23,22 @@ class UserLogin(BaseModel):
 
 class User(UserBase):
     """사용자 모델"""
-    id: str = Field(..., description="사용자 ID")
-    is_active: bool = Field(default=True, description="활성화 여부")
-    is_default_password: bool = Field(default=True, description="기본 비밀번호 사용 여부")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="생성일")
-    updated_at: Optional[datetime] = Field(None, description="수정일")
+    id: Optional[str] = None  # 생성 시에는 None
+    password: Optional[str] = None  # 생성 시에만 사용
+    hashedPassword: Optional[str] = None  # DB 저장용
+    isActive: bool = True
+    isDefaultPassword: bool = Field(default=False)  # admin 계정은 True로 설정
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+    @validator('isDefaultPassword', pre=True)
+    def set_default_password(cls, v, values):
+        # admin 계정인 경우 default_password = True
+        return True if values.get('username') == 'admin' else v
 
 class Token(BaseModel):
     """토큰 모델"""

@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .domain.auth.controller.auth_controller import router as auth_router, create_admin_user
 from .domain.robot.controller.robot_controller import router as robot_router
-from .domain.camera.controller.camera_controller import router as camera_router, initialize_camera
+from .domain.camera.controller.camera_controller import router as camera_router
 from .domain.lidar.controller.lidar_controller import router as lidar_router
-# from .domain.person.controller.person_controller import router as person_router
+from .domain.person.controller.person_controller import router as person_router
 from .domain.ros_publisher.controller.ros_publisher_controller import router as ros_publisher_router
 from .domain.map.controller.map_controller import router as map_router
 
@@ -58,7 +58,7 @@ app.include_router(robot_router, prefix="/api/v1/robots", tags=["robots"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
 app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
-# app.include_router(person_router, eprefix="/api/v1/persons", tags=["persons"])
+app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
 app.include_router(map_router, tags=["map"])
 
@@ -98,7 +98,7 @@ async def startup_event():
         except Exception as e:
             logger.error(f"시퀀스 초기화 실패: {str(e)}")
             raise
-        
+
         # 컬렉션 인덱스 초기화
         await DatabaseConnection.init_collections()
         
@@ -112,34 +112,6 @@ async def startup_event():
         except Exception as e:
             logger.warning(f"라이다 서비스 시작 실패: {str(e)}")
         
-        # 카메라 초기화
-        # camera_configs = [
-        #     CameraConfig(
-        #         camera_topic='/ssafy/tb3_front_camera/image_raw/compressed',
-        #         camera_name='robot1_front',
-        #         ros_bridge_host='172.30.1.10',
-        #         ros_bridge_port=9090
-        #     ),
-        #     CameraConfig(
-        #         camera_topic='/ssafy/tb3_rear_camera/image_raw/compressed',
-        #         camera_name='robot1_rear',
-        #         ros_bridge_host='172.30.1.10',
-        #         ros_bridge_port=9090
-        #     )
-        # ]
-        
-        # for config in camera_configs:
-        #     try:
-        #         success = await initialize_camera(config)
-        #         if success:
-        #             logger.info(f"카메라 초기화 성공: {config.camera_name}")
-        #         else:
-        #             logger.warning(f"카메라 초기화 실패: {config.camera_name}")
-        #     except Exception as e:
-        #         logger.warning(f"카메라 초기화 실패 ({config.camera_name}): {str(e)}")
-        #         logger.warning("카메라 기능이 비활성화된 상태로 실행됩니다.")
-
-        # topic publish 작업 (test)
         
 
         logger.info("모든 초기화 작업이 완료되었습니다.")

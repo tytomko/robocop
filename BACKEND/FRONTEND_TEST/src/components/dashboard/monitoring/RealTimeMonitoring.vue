@@ -24,6 +24,15 @@
             <h4>{{ element.title }}</h4>
           </div>
           
+          <!-- 카메라 뷰 -->
+          <div v-if="element.type === 'camera'" class="camera-section">
+            <CameraView 
+              robotId="ssafy" 
+              cameraType="front"
+              class="robot-camera"
+            />
+          </div>
+
           <!-- 로봇 상태 목록 -->
           <div v-if="element.type === 'robots'" class="robot-status-list">
             <div v-for="robot in robots" 
@@ -113,13 +122,15 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import MapView from './MapView.vue'
 import draggable from 'vuedraggable'
+import CameraView from './CameraView.vue'
 import { webSocketService } from '@/services/websocket'
 
 // 모니터링 컴포넌트 순서 관리
 const monitoringComponents = ref([
-  { id: 1, type: 'robots', title: '로봇 목록' },
-  { id: 2, type: 'alerts', title: '실시간 알림' },
-  { id: 3, type: 'map', title: '로봇 지도' }
+  { id: 1, type: 'camera', title: '실시간 카메라' },
+  { id: 2, type: 'robots', title: '로봇 목록' },
+  { id: 3, type: 'alerts', title: '실시간 알림' },
+  { id: 4, type: 'map', title: '로봇 지도' }
 ])
 
 // 로봇 상태 데이터
@@ -529,6 +540,21 @@ onUnmounted(() => {
 .robot-map-section {
   height: 400px;
   padding: 20px;
+}
+
+.camera-section {
+  width: 100%;
+  height: 400px;  /* 또는 원하는 높이 */
+  margin-bottom: 20px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.robot-camera {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 </style>
 

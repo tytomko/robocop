@@ -176,7 +176,12 @@ private:
 
     // 4. 클러스터링
     pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
-    tree->setInputCloud(cloud_roi);
+    if (!cloud_roi->empty()) {
+      tree->setInputCloud(cloud_roi);
+      // KD-트리 사용 코드
+    } else {
+      //RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "입력 포인트 클라우드가 비어 있습니다. KD-트리 생성 건너뛰기.");
+    }
 
     std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
