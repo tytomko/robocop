@@ -30,8 +30,8 @@ class MultiRobotPathVisualizer(Node):
                 self.G, 
                 pos=self.pos, 
                 ax=self.ax, 
-                node_size=50, 
-                node_color='blue',
+                node_size=20, 
+                node_color='lightgray',  # 파란색 대신 연한 회색 사용
                 edge_color='gray', 
                 with_labels=False
             )
