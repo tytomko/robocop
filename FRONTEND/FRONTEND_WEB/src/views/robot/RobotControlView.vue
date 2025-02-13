@@ -3,72 +3,48 @@
     <div class="robot-selection-and-mode flex justify-between items-center mb-5">
       <div class="robot-selection">
         <label for="robot-select" class="font-semibold">로봇 선택:</label>
-        <select id="robot-select" v-model="selectedRobotSeq" class="mt-2 p-2 border border-gray-300 rounded-md w-48">
+        <select id="robot-select" v-model="selectedRobotSeq" class="custom-select">
           <option disabled value="">선택해주세요</option>
-          <option 
-            v-for="robot in robotsStore.registered_robots" 
-            :key="robot.seq" 
-            :value="robot.seq">
+          <option v-for="robot in robotsStore.registered_robots" :key="robot.seq" :value="robot.seq">
             {{ robot.nickname || robot.name }}
           </option>
         </select>
       </div>
 
       <div class="mode-toggle flex items-center space-x-3">
-        <span class="mode-label text-lg font-semibold">수동</span>
-        <div class="toggle-switch relative inline-block w-24 h-12 flex-shrink-0">
-          <input 
-            type="checkbox" 
-            id="toggle" 
-            v-model="isAutoMode" 
-            @change="toggleMode"
-            class="opacity-0 w-0 h-0"
-          />
-          <label for="toggle" class="switch relative inline-block w-full h-full cursor-pointer rounded-full transition-all flex items-center">
-            <span class="slider absolute bg-white rounded-full"></span>
-          </label>
-        </div>
-        <span class="mode-label text-lg font-semibold">자동</span>
+        <span class="mode-label">수동</span>
+        <label class="toggle-switch">
+          <input type="checkbox" v-model="isAutoMode" @change="toggleMode" />
+          <span class="slider"></span>
+        </label>
+        <span class="mode-label">자동</span>
       </div>
     </div>
 
-    <div v-if="!activeRobot" class="text-center text-gray-500">
-      로봇을 먼저 선택해주세요.
-    </div>
+    <div v-if="!activeRobot" class="text-center text-gray-500">로봇을 먼저 선택해주세요.</div>
 
     <div class="control-area mt-5" v-if="activeRobot">
-      <!-- 자동 모드 -->
       <div v-if="mode === 'auto'">
         <!-- (1) 버튼 컴포넌트 -->
-        <ControlButtons
-          :isSingleSelected="selectedNodesCount === 1"
-          :isMultiSelected="selectedNodesCount >= 2"
-          @navigate="handleNavigate"
-          @patrol="handlePatrol"
-          @reset="handleReset"
-          @tempStop="handleTempStop"
-        />
+        <ControlButtons :selectedNodes="selectedNodes" @navigate="handleNavigate" @patrol="handlePatrol" @reset="resetSelection" @tempStop="handleTempStop"/>
+
+        <!-- 선택된 노드 표시 -->
+        <SelectedNodes :selectedNodes="selectedNodes" />
 
         <!-- (2) RobotMap -->
-        <RobotMap
-          ref="robotMap"
-          :robot="activeRobot"
-          @selectedNodesChange="onSelectedNodesChange"
-        />
+        <RobotMap ref="robotMap" :robot="activeRobot" @selectedNodesChange="onSelectedNodesChange" />
       </div>
 
       <div v-else-if="mode === 'manual'" class="manual-mode flex justify-between items-start">
         <div class="cctv-and-controls flex flex-row items-center w-full">
-          <Cctv :robot="activeRobot" class="w-full h-[490px] bg-black" />
+          <Cctv :robot="activeRobot" class="cctv-screen" />
 
           <div class="arrow-controls flex flex-col items-center ml-5">
-            <div class="vertical-controls flex flex-col justify-center items-center mb-5">
-              <button :class="{ 'active': activeArrows.has('ArrowUp') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 transition transform hover:scale-110">↑</button>
-            </div>
-            <div class="horizontal-controls flex justify-center">
-              <button :class="{ 'active': activeArrows.has('ArrowLeft') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">←</button>
-              <button :class="{ 'active': activeArrows.has('ArrowDown') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">↓</button>
-              <button :class="{ 'active': activeArrows.has('ArrowRight') }" class="w-16 h-16 text-3xl border border-gray-300 bg-gray-100 hover:bg-blue-500 rounded-full mb-2 mx-2 transition transform hover:scale-110">→</button>
+            <button :class="{ active: activeArrows.has('ArrowUp') }" class="control-btn arrow">↑</button>
+            <div class="horizontal-controls flex justify-center mt-2">
+              <button :class="{ active: activeArrows.has('ArrowLeft') }" class="control-btn arrow">←</button>
+              <button :class="{ active: activeArrows.has('ArrowDown') }" class="control-btn arrow">↓</button>
+              <button :class="{ active: activeArrows.has('ArrowRight') }" class="control-btn arrow">→</button>
             </div>
           </div>
         </div>
@@ -78,14 +54,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 import ControlButtons from '@/components/map/ControlButtons.vue'
+import SelectedNodes from '@/components/map/SelectedNodes.vue'
 
 const robotsStore = useRobotsStore()
 const selectedRobotSeq = ref('')
+
+// 선택된 노드 상태 추가
+const selectedNodes = ref([])
 
 const activeRobot = computed(() => {
   return robotsStore.registered_robots.find(robot => String(robot.seq) === String(selectedRobotSeq.value)) || null
@@ -93,12 +73,16 @@ const activeRobot = computed(() => {
 
 const mode = ref('auto')
 
-// 자식에서 올라오는 selectedNodes 변경 이벤트
-const selectedNodesCount = ref(0)
+// 🚨 선택된 노드 변경 이벤트 (정상적으로 실행되는지 확인)
 function onSelectedNodesChange(newNodes) {
-  selectedNodesCount.value = newNodes.length
-  console.log('[RobotControlView] selectedNodesCount:', selectedNodesCount.value)
+  console.log('[RobotControlView] selectedNodes changed:', newNodes) // 디버깅 로그 추가
+  selectedNodes.value = [...newNodes] // 🚨 Vue의 반응형 상태를 유지하면서 값 변경
 }
+
+// 🚨 selectedNodes가 변경될 때마다 watch를 통해 로그 확인
+watch(selectedNodes, (newVal) => {
+  console.log('Watch detected selectedNodes change:', newVal)
+})
 
 // RobotMap의 메서드를 직접 쓰기 위해 ref로 잡기
 const robotMap = ref(null)
@@ -110,8 +94,8 @@ function handleNavigate() {
 function handlePatrol() {
   robotMap.value?.handlePatrol?.()
 }
-function handleReset() {
-  robotMap.value?.resetSelection?.()
+function resetSelection() {
+  selectedNodes.value = []
 }
 function handleTempStop() {
   robotMap.value?.handleTempStop?.()
@@ -146,62 +130,114 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 📌 모달 및 페이지 기본 설정 */
 .robot-control-page {
   min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 20px;
 }
 
-.mode-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 📌 드롭다운 스타일 */
+.custom-select {
+  margin-top: 5px;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  width: 200px;
+  font-size: 16px;
+  background-color: white;
+  transition: all 0.3s;
+}
+.custom-select:hover {
+  border-color: #007bff;
+}
+.custom-select:focus {
+  outline: none;
+  border-color: #0056b3;
+  box-shadow: 0px 0px 8px rgba(0, 91, 255, 0.4);
 }
 
+/* 📌 토글 스위치 */
 .toggle-switch {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  width: 60px;
+  height: 30px;
+  display: inline-block;
 }
-
-/* 활성화된 상태 (초록색) */
-input:checked + .switch {
+.toggle-switch input {
+  display: none;
+}
+.toggle-switch .slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d1d5db;
+  border-radius: 30px;
+  transition: 0.4s;
+}
+.toggle-switch input:checked + .slider {
   background-color: #4caf50;
 }
-
-/* 체크 상태일 때 슬라이더 이동 */
-input:checked + .switch .slider {
-  transform: translate(2.4rem, -50%); /* 오른쪽 끝까지 이동 */
+.toggle-switch .slider:before {
+  content: "";
+  position: absolute;
+  height: 26px;
+  width: 26px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: 0.4s;
+}
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(30px);
 }
 
-/* 토글 버튼 기본 스타일 */
-.switch {
+/* 📌 버튼 기본 스타일 */
+.control-btn {
+  width: 60px;
+  height: 60px;
+  border: 3px solid #007bff;
+  background-color: white;
+  color: #007bff;
+  font-size: 24px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  background-color: #d1d5db;
-  width: 5rem;  /* 80px */
-  height: 2.5rem; /* 40px */
-  border-radius: 9999px;
-  transition: background-color 0.3s ease-in-out;
-  position: relative;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0px 5px 10px rgba(0, 123, 255, 0.2);
 }
-
-/* 슬라이더 스타일 */
-.slider {
-  width: 2rem; /* 32px */
-  height: 2rem; /* 32px */
-  position: absolute;
-  top: 50%;
-  left: 0.3rem; /* 초기 위치 */
-  transform: translateY(-50%);
-  transition: transform 0.3s ease-in-out;
-}
-
-.arrow-controls button.active {
-  font-weight: bold;
+.control-btn:hover {
   background-color: #007bff;
   color: white;
   transform: scale(1.1);
-  box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
+}
+.control-btn:active {
+  transform: scale(0.95);
+  box-shadow: none;
 }
 
+/* 📌 활성화된 버튼 */
+.control-btn.active {
+  background-color: #0056b3;
+  color: white;
+  box-shadow: 0px 5px 15px rgba(0, 91, 255, 0.5);
+}
+
+/* 📌 CCTV 스타일 */
+.cctv-screen {
+  width: 100%;
+  height: 400px;
+  background: black;
+  border-radius: 8px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+}
 </style>
