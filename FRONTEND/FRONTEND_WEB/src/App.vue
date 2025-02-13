@@ -20,7 +20,6 @@
             <router-link to="/" class="font-normal text-base hover:text-blue-400">현황</router-link>
             <router-link to="/camera" class="font-normal text-base hover:text-blue-400">CCTV</router-link>
             <router-link to="/control" class="font-normal text-base hover:text-blue-400">제어</router-link>
-            <router-link to="/statistics" class="font-normal text-base hover:text-blue-400">통계</router-link>
             <router-link to="/management" class="font-normal text-base hover:text-blue-400">관리</router-link>
             <AlarmNotification inline v-if="!isSidebarCollapsed" class="ml-4" />
           </div>

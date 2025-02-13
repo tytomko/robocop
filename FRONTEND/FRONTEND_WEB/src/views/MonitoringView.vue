@@ -4,8 +4,27 @@
       <h2 class="text-2xl font-bold text-gray-800">실시간 모니터링</h2>
     </div>
 
-    <!-- 등록된 로봇 리스트-->
-    <RobotList />
+    <!-- 탭 메뉴 -->
+    <div class="flex border-b">
+      <button
+        v-for="tab in tabs"
+        :key="tab.name"
+        @click="activeTab = tab.name"
+        class="px-6 py-3 text-gray-600 font-semibold transition-all"
+        :class="{
+          'border-b-4 border-blue-500 text-blue-600': activeTab === tab.name,
+          'hover:text-blue-500': activeTab !== tab.name
+        }"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <!-- 탭 콘텐츠 -->
+    <div class="mt-4">
+      <RobotList v-if="activeTab === 'robotList'" />
+      <StatisticsView v-if="activeTab === 'statistics'" />
+    </div>
 
     <!-- 로봇 관리 모달 -->
     <RobotManagement
@@ -28,16 +47,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { webSocketService } from '@/services/websocket'
 import { useRobotsStore } from '@/stores/robots'
 import RobotList from '@/components/dashboard/RobotList.vue';
 import RobotManagement from '@/components/dashboard/RobotManagement.vue';
 import RobotRegistration from '@/components/dashboard/RobotRegistration.vue';
+import StatisticsView from '@/views/statistics/StatisticsView.vue';
 
 // 모니터링 컴포넌트 순서 관리
 const robotsStore = useRobotsStore()
 const robots = computed(() => robotsStore.registered_robots)
+
+// 탭 관리
+const activeTab = ref('robotList') // 기본값: 로봇 목록 탭
+const tabs = ref([
+  { name: 'robotList', label: '로봇 목록' },
+  { name: 'statistics', label: '통계' }
+])
 
 // WebSocket 연결 설정
 const setupWebSocket = async () => {

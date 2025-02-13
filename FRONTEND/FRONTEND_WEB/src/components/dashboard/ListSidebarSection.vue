@@ -6,7 +6,7 @@
       :class="isCollapsed ? 'w-0' : 'w-[240px]'"
     >
       <!-- 상단 로고 -->
-      <div class="p-3 border-b border-gray-700">
+      <div class="p-3 border-b border-gray-700 h-[55px]">
         <h1 class="text-xl font-bold">ROBOCOP</h1>
       </div>
 
