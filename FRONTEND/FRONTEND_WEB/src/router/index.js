@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '@/views/login/LoginView.vue'
 import MonitoringView from '@/views/MonitoringView.vue'
-import SettingsView from '@/views/setting/SettingsView.vue'
 import RobotDetailView from '@/views/robot/RobotDetailView.vue'
 import CameraView from '@/views/camera/CameraView.vue'
 import EnrollmentView from '@/views/enrollment/EnrollmentView.vue'
 import RobotControlView from '@/views/robot/RobotControlView.vue'
 import StatisticsView from '@/views/statistics/StatisticsView.vue'
+import ManagementView from '@/views/management/ManagementView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,9 +22,9 @@ const router = createRouter({
       component: LoginView
     },
     {
-      path: '/settings',
-      name: 'settings', 
-      component: SettingsView
+      path: '/management',
+      name: 'management', 
+      component: ManagementView
     },
     {
       path: '/:seq',

@@ -32,7 +32,7 @@
           >
             <!-- 체크 아이콘 -->
             <span
-              v-if="robotsStore.selectedRobot.value === robot.seq"
+              v-if="robotsStore.selectedRobot === robot.seq"
               class="text-green-500 mr-2"
             >
               <i class="fas fa-check"></i>
@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 
 const props = defineProps({
@@ -78,16 +78,28 @@ const props = defineProps({
 defineEmits(['toggle-left-sidebar'])
 
 const robotsStore = useRobotsStore()
+const robots = computed(() => robotsStore.registered_robots)
 
 onMounted(() => {
+  // 새로고침 후에도 선택한 로봇 유지
+  const savedRobot = localStorage.getItem('selectedRobot')
+  if (savedRobot) {
+    robotsStore.selectedRobot = parseInt(savedRobot, 10) // 숫자로 변환
+  }
+
   robotsStore.loadRobots()
 })
 
-const robots = computed(() => robotsStore.registered_robots)
-
 // 선택된 로봇 객체
 const selectedRobotItem = computed(() => {
-  return robots.value.find(r => r.seq === robotsStore.selectedRobot.value) || null
+  return robots.value.find(r => r.seq === robotsStore.selectedRobot) || null
+})
+
+// robots 데이터가 변경될 때 selectedRobotItem 자동 업데이트
+watch(robots, () => {
+  if (!selectedRobotItem.value && robotsStore.selectedRobot) {
+    robotsStore.selectedRobot = 0 // 선택한 로봇이 리스트에 없으면 초기화
+  }
 })
 
 function toggleRobotSelection(seq) {
@@ -95,11 +107,11 @@ function toggleRobotSelection(seq) {
   const parsedSeq = typeof seq === 'string' ? parseInt(seq, 10) : seq
 
   // 이미 선택된 로봇이면 해제(0)
-  if (robotsStore.selectedRobot.value === parsedSeq) {
-    robotsStore.selectedRobot.value = 0
+  if (robotsStore.selectedRobot === parsedSeq) {
+    robotsStore.selectedRobot = 0
   } else {
     // 새 로봇 선택
-    robotsStore.selectedRobot.value = parsedSeq
+    robotsStore.selectedRobot = parsedSeq
   }
 
   // 로컬 스토리지에 반영

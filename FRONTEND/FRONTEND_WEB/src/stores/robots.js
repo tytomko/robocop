@@ -21,42 +21,41 @@ export const useRobotsStore = defineStore('robots', () => {
   // 숫자가 없으면 0(또는 null, '') 등으로 지정
 
   // 로봇 리스트 불러오기
-  const loadRobots = () => {
-    axios.get('https://robocop-backend-app.fly.dev/api/v1/robots/')
-      .then((res) => {
-        registered_robots.value = res.data.data.map((robot) => ({
-          seq: robot.seq,
-          name: robot.manufactureName,
-          nickname: robot.nickname || '',
-          ipAddress: robot.ipAddress || '알 수 없음',
-          status: robot.status || 'waiting',
-          battery: robot.battery?.level || 100,
-          isCharging: robot.battery?.isCharging || false,
-          lastCharged: robot.battery?.lastCharged || '알 수 없음',
-          networkStatus: robot.networkStatus || 'connected',
-          networkHealth: robot.networkHealth || 100,
-          position: robot.position
-            ? `x: ${robot.position.x}, y: ${robot.position.y}`
-            : '알 수 없음',
-          cpuTemp: robot.cpuTemp || 0.0,
-          imageUrl: robot.image?.url || '',
-          startAt: robot.startAt || '알 수 없음',
-          lastActive: robot.lastActive || '알 수 없음',
-          isActive: robot.IsActive || false,
-          isDeleted: robot.IsDeleted || false,
-          deletedAt: robot.DeletedAt || null,
-          createdAt: robot.createdAt || null,
-          updatedAt: robot.updatedAt || null,
-          waypoints: robot.waypoints || [],
-        }))
-      })
-      .catch((err) => {
-        console.error('로봇 데이터 로드 에러:', err)
-        if (err.response) {
-          console.log('서버 응답:', err.response.data)
-          console.log('상태 코드:', err.response.status)
-        }
-      })
+  const loadRobots = async () => {
+    try {
+      const res = await axios.get('https://robocop-backend-app.fly.dev/api/v1/robots/')
+      registered_robots.value = res.data.data.map((robot) => ({
+        seq: robot.seq,
+        name: robot.manufactureName,
+        nickname: robot.nickname || '',
+        ipAddress: robot.ipAddress || '알 수 없음',
+        status: robot.status || 'waiting',
+        battery: robot.battery?.level || 100,
+        isCharging: robot.battery?.isCharging || false,
+        lastCharged: robot.battery?.lastCharged || '알 수 없음',
+        networkStatus: robot.networkStatus || 'connected',
+        networkHealth: robot.networkHealth || 100,
+        position: robot.position
+          ? `x: ${robot.position.x}, y: ${robot.position.y}`
+          : '알 수 없음',
+        cpuTemp: robot.cpuTemp || 0.0,
+        imageUrl: robot.image?.url || '',
+        startAt: robot.startAt || '알 수 없음',
+        lastActive: robot.lastActive || '알 수 없음',
+        isActive: robot.IsActive || false,
+        isDeleted: robot.IsDeleted || false,
+        deletedAt: robot.DeletedAt || null,
+        createdAt: robot.createdAt || null,
+        updatedAt: robot.updatedAt || null,
+        waypoints: robot.waypoints || [],
+      }))
+    } catch (err) {
+      console.error('로봇 데이터 로드 에러:', err)
+      if (err.response) {
+        console.log('서버 응답:', err.response.data)
+        console.log('상태 코드:', err.response.status)
+      }
+    }
   }
 
   // 로봇 닉네임 설정
