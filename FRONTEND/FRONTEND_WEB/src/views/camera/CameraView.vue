@@ -3,15 +3,19 @@
     <!-- 실시간 모니터링 섹션 -->
     <div class="flex flex-col gap-5 h-full">
       <div class="p-2 border-b border-gray-200 mt-2">
-        <!-- 로봇 선택 -->
+        <!-- ✅ 로봇 선택 (멀티셀렉트) -->
         <select
           v-model="selectedRobots"
           class="w-full p-2 border border-gray-300 rounded bg-white text-sm appearance-none bg-no-repeat bg-right pr-8"
           @change="handleRobotSelection"
           multiple
         >
-          <option v-for="robot in robotsStore.registered_robots" :key="robot.seq" :value="robot.seq">
-            {{ robot.nickname }}
+          <option 
+            v-for="robot in robotsStore.registered_robots" 
+            :key="robot.seq" 
+            :value="robot.seq"
+            :selected="selectedRobots.includes(robot.seq)"> 
+            {{ robot.nickname || robot.name }}
           </option>
         </select>
       </div>
@@ -41,8 +45,9 @@ import Cctv from '@/components/camera/Cctv.vue'
 // robotsStore 활용하기
 const robotsStore = useRobotsStore()
 
-// 선택된 로봇들 (초기값 빈 배열)
+// ✅ 선택된 로봇 리스트 (초기값: 빈 배열)
 const selectedRobots = ref([])
+
 // 각 로봇의 스트림 정보
 const streamInfoMap = ref({})
 
@@ -55,24 +60,35 @@ const gridClass = computed(() => {
   return "quad" // 4개일 때
 })
 
-// 로봇 선택 후 상태 변경
+// ✅ 로봇 선택 후 상태 변경
 const handleRobotSelection = () => {
   selectedRobots.value.forEach(robotSeq => {
     streamInfoMap.value[robotSeq] = robotsStore.getStreamInfo(robotSeq)
   })
 }
 
-// 로봇 데이터 불러오기
+// ✅ 로봇 데이터 불러오기 (기본값 설정 추가)
 onMounted(() => {
   robotsStore.loadRobots()
+
+  // 1️⃣ 기존에 선택된 로봇을 `localStorage`에서 가져오기
   const savedRobots = localStorage.getItem('selectedRobots')
   if (savedRobots) {
     const parsedRobots = JSON.parse(savedRobots)
-    selectedRobots.value = Array.isArray(parsedRobots) ? parsedRobots : []
+
+    // 2️⃣ 저장된 로봇 리스트에서, 실제 등록된 로봇만 선택되도록 필터링
+    selectedRobots.value = Array.isArray(parsedRobots)
+      ? parsedRobots.filter(seq => robotsStore.registered_robots.some(robot => robot.seq === seq))
+      : []
+  }
+
+  // 3️⃣ `store.selectedRobot`이 설정되어 있으면 기본값으로 추가 (이미 선택되지 않았다면)
+  if (robotsStore.selectedRobot && !selectedRobots.value.includes(robotsStore.selectedRobot)) {
+    selectedRobots.value.push(robotsStore.selectedRobot)
   }
 })
 
-// selectedRobots가 변경될 때마다 로컬 스토리지에 저장
+// ✅ `selectedRobots`가 변경될 때마다 `localStorage`에 저장
 watch(selectedRobots, (newRobots) => {
   localStorage.setItem('selectedRobots', JSON.stringify(newRobots))
 })
@@ -137,6 +153,6 @@ watch(selectedRobots, (newRobots) => {
 /* 4개 선택 시 2×2 */
 .quad .video-item {
   width: 50%;
-  height: 50%;
+  height: 50%
 }
 </style>

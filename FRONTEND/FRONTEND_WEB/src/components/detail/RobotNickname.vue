@@ -19,15 +19,25 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
+
 const props = defineProps({
   show: Boolean,
   robot: Object
 });
 
 const emit = defineEmits(['save', 'close']);
+const nickname = ref(props.robot?.nickname || '');
+
+// props.robot이 변경될 때 nickname 값을 업데이트
+watch(() => props.robot, (newVal) => {
+  if (newVal) {
+    nickname.value = newVal.nickname || '';
+  }
+}, { deep: true });
 
 const saveNickname = () => {
-  emit('save', props.robot.seq, props.robot.nickname);
+  emit('save', props.robot.seq, nickname.value);
 };
 
 const closeModal = () => {

@@ -3,7 +3,7 @@
     <div class="bg-white p-6 rounded-lg w-96 shadow-lg">
       <h3 class="text-lg font-semibold mb-4">로봇 등록하기</h3>
       <label class="block text-sm font-medium">로봇명:</label>
-      <input v-model="newRobot.name" placeholder="로봇 이름 입력" 
+      <input v-model="newRobot.nickname" placeholder="로봇 이름 입력" 
              class="w-full p-2 border border-gray-300 rounded mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
       
       <label class="block text-sm font-medium mt-4">IP주소:</label>

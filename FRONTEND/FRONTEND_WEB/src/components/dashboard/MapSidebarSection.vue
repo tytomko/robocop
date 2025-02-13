@@ -8,12 +8,12 @@
       <!-- 실제 사이드바 내부 콘텐츠 -->
       <div class="flex flex-col gap-1 min-h-full">
         <div class="bg-white">
-          <div class="flex items-center mb-2 p-4 border-b border-gray-200 bg-white">
+          <div class="flex items-center mb-2 h-[55px] p-4 border-b border-gray-200 bg-white">
             <h3 class="m-0 text-gray-800 font-bold text-base">
               실시간 로봇 현황
             </h3>
           </div>
-          <div class="p-4 flex flex-col gap-5">
+          <div class="p-1 flex flex-col gap-1">
             <RobotMap />
           </div>
         </div>
@@ -34,7 +34,7 @@
 <script setup>
 import RobotMap from '@/components/map/RobotMap.vue';
 import { useRobotsStore } from '@/stores/robots';
-import { onMounted } from 'vue';
+import { onMounted, nextTick, watch } from 'vue';
 
 const props = defineProps({
   isCollapsed: {
@@ -46,6 +46,12 @@ const emit = defineEmits(['toggle-sidebar']);
 
 const toggleSidebar = () => {
   emit('toggle-sidebar');
+  nextTick(() => {
+    const chart = document.querySelector('.chart');
+    if (chart) {
+      chart.dispatchEvent(new Event('resize'));
+    }
+  });
 };
 
 // 로봇 데이터 스토어 (예: Pinia)
@@ -55,6 +61,17 @@ onMounted(() => {
   const savedRobot = localStorage.getItem('selectedRobot');
   if (savedRobot) {
     robotsStore.selectedRobot = savedRobot;
+  }
+});
+
+watch(() => props.isCollapsed, async (newVal) => {
+  if (!newVal) { // 사이드바가 열릴 때
+    await nextTick();
+    const chart = document.querySelector('.chart');
+    if (chart) {
+      chart.dispatchEvent(new Event('resize'));
+      console.log("사이드바 열림 → ECharts 리사이즈 실행");
+    }
   }
 });
 </script>
