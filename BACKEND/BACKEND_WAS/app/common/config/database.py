@@ -5,8 +5,14 @@ from pydantic import Field
 class DatabaseSettings(BaseSettings):
     """데이터베이스 설정"""
     # MongoDB 설정
-    MONGODB_URL: str = os.getenv("MONGODB_URL")
-    MONGODB_DB_NAME: str = os.getenv("DATABASE_NAME")
+
+    MONGODB_URL: str
+    MONGODB_DB_NAME: str
+    
+    
+    REDIS_HOST: str
+    REDIS_PORT: int = 6379
+
     
 
     # PostgreSQL 설정 (필요한 경우)

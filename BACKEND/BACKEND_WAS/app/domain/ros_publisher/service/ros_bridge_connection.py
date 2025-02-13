@@ -10,9 +10,9 @@ class RosBridgeConnection:
     _instance = None
     _client = None
     
-    HOST = "0.tcp.jp.ngrok.io"
+    HOST = "localhost"
     # HOST = "localhost"
-    PORT = 10347
+    PORT = 9090
     MAX_RETRIES = 3
     RETRY_DELAY = 2  # 초
     
