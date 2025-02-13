@@ -8,12 +8,12 @@
       <!-- 실제 사이드바 내부 콘텐츠 -->
       <div class="flex flex-col gap-1 min-h-full">
         <div class="bg-white">
-          <div class="flex items-center mb-2 p-4 border-b border-gray-200 bg-white">
+          <div class="flex items-center mb-2 h-[55px] p-4 border-b border-gray-200 bg-white">
             <h3 class="m-0 text-gray-800 font-bold text-base">
               실시간 로봇 현황
             </h3>
           </div>
-          <div class="p-4 flex flex-col gap-5">
+          <div class="p-1 flex flex-col gap-1">
             <RobotMap />
           </div>
         </div>
