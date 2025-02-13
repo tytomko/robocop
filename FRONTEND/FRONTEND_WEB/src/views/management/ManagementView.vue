@@ -1,5 +1,5 @@
 <template>
-  <div class="settings-container p-5 flex flex-col gap-5 max-w-4xl mx-auto">
+  <div class="settings-container p-5 flex flex-col gap-5 max-w-4xl mx-auto h-screen overflow-y-auto">
     
     <!-- ✅ 계정 관리 섹션 -->
     <div class="bg-white p-5 rounded-lg shadow-md">
@@ -31,7 +31,7 @@
 <script setup>
 import { ref } from 'vue';
 import PasswordChange from '@/components/management/PasswordChange.vue';
-import EnrollmentView from '@/views/enrollment/EnrollmentView.vue'; // ✅ 추가된 컴포넌트
+import EnrollmentView from '@/views/enrollment/EnrollmentView.vue';
 import { useUser } from '@/composables/useUser';
 
 const isChangePasswordModalOpen = ref(false);
