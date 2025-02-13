@@ -137,6 +137,6 @@ watch(selectedRobots, (newRobots) => {
 /* 4개 선택 시 2×2 */
 .quad .video-item {
   width: 50%;
-  height: 50%;
+  height: 50%
 }
 </style>
