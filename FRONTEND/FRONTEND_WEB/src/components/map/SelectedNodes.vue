@@ -19,13 +19,6 @@
   </template>
   
   <script setup>
-  /**
-   * props:
-   *   - selectedNodes: [
-   *       { x: string, y: string },
-   *       ...
-   *     ]
-   */
   const props = defineProps({
     selectedNodes: {
       type: Array,

@@ -40,16 +40,6 @@
   </template>
   
   <script setup>
-  /**
-   * props:
-   *   - isSingleSelected: 단일 노드 선택 여부
-   *   - isMultiSelected: 2개 이상 노드 선택 여부
-   * emits:
-   *   - navigate
-   *   - patrol
-   *   - reset
-   *   - tempStop
-   */
   const props = defineProps({
     isSingleSelected: {
       type: Boolean,
