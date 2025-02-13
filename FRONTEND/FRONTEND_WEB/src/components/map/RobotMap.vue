@@ -1,15 +1,16 @@
 <template>
   <div class="flex flex-col h-screen bg-white">
-    <div class="flex-1 relative p-5">
+    <div class="flex-1 relative p-1">
       <!-- (버튼 영역 사라짐) -->
 
       <v-chart
-        class="w-full h-full min-h-[500px]"
+        class="w-5/6 h-[600px] min-h-[300px] mx-auto"
         :option="chartOption"
         ref="chartRef"
         autoresize
         @click="handleNodeClick"
       />
+
 
       <!-- 선택된 노드들을 표시하는 컴포넌트 -->
       <SelectedNodes :selectedNodes="selectedNodesInfo" />

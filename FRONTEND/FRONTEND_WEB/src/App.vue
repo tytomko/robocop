@@ -1,8 +1,7 @@
 <template>
-  <div id="app" class="fixed inset-0 overflow-hidden bg-gray-100">
-    <div class="flex w-full h-full overflow-hidden">
+  <div id="app" class="fixed inset-0 bg-gray-100 overflow-auto">
+    <div class="flex w-full h-full">
       <!-- Left Sidebar -->
-      <!-- [1] 왼쪽 사이드바 -->
       <ListSidebarSection
         v-if="!isLoginPage"
         :is-collapsed="isLeftSidebarCollapsed"
@@ -10,7 +9,7 @@
       />
 
       <!-- Main Content -->
-      <div class="flex flex-col flex-1 overflow-hidden">
+      <div class="flex flex-col flex-1 overflow-auto">
 
         <!-- Navbar -->
         <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-10 h-[55px] flex items-center justify-between">
@@ -23,12 +22,11 @@
             <router-link to="/control" class="font-normal text-base hover:text-blue-400">제어</router-link>
             <router-link to="/statistics" class="font-normal text-base hover:text-blue-400">통계</router-link>
             <router-link to="/management" class="font-normal text-base hover:text-blue-400">관리</router-link>
-            <!-- 사이드바 확장 상태일 때만 네비게이션 바에서 알림 아이콘 표시 -->
             <AlarmNotification inline v-if="!isSidebarCollapsed" class="ml-4" />
           </div>
         </nav>
 
-        <div class="flex-1 px-5 overflow-hidden">
+        <div class="flex-1 px-5 overflow-auto">
           <router-view />
         </div>
       </div>
@@ -39,7 +37,7 @@
       </div>
     </div>
 
-    <!-- 사이드바 축소 상태일 때만 우측 상단에 `fixed`로 알림 아이콘 표시 -->
+    <!-- 우측 상단 고정 알림 아이콘 -->
     <AlarmNotification v-if="!isLoginPage && isSidebarCollapsed" :isCollapsed="true" />
   </div>
 </template>
@@ -54,7 +52,7 @@ import ListSidebarSection from "./components/dashboard/ListSidebarSection.vue";
 const route = useRoute();
 const isLoginPage = computed(() => route.path === "/login");
 
-// localStorage에서 사이드바 상태를 읽어 초기 상태 설정
+// 사이드바 상태 저장 및 토글
 const storedState = localStorage.getItem("sidebar-collapsed");
 const isSidebarCollapsed = ref(storedState ? storedState === "true" : false);
 
@@ -66,15 +64,12 @@ const toggleSidebar = () => {
   }, 350);
 };
 
-// [왼쪽 사이드바] 접기/펼치기 상태
 const storedLeftState = localStorage.getItem("left-sidebar-collapsed");
 const isLeftSidebarCollapsed = ref(storedLeftState ? storedLeftState === "true" : false);
 
-// [왼쪽 사이드바] 토글 함수
 const toggleLeftSidebar = () => {
   isLeftSidebarCollapsed.value = !isLeftSidebarCollapsed.value;
   localStorage.setItem("left-sidebar-collapsed", isLeftSidebarCollapsed.value);
-  // 크기 변경 이후 차트나 지도 등이 리사이즈되도록 resize 이벤트 트리거
   setTimeout(() => {
     window.dispatchEvent(new Event("resize"));
   }, 350);
@@ -87,13 +82,14 @@ const sidebarClasses = computed(() => {
     : "w-[400px] bg-white border-l border-gray-300 relative";
 });
 
-// router-link 컨테이너의 여백 조정 (사이드바 확장/축소 상태 반영)
+// 네비게이션 링크 컨테이너 클래스
 const navRouterLinkContainerClasses = computed(() => {
   return isSidebarCollapsed.value
     ? "flex items-center space-x-8 mr-20"
     : "flex items-center space-x-8 mr-0";
 });
 
+// 페이지 새로고침
 const refreshPage = () => {
   window.location.href = "http://localhost:3000";
 };
@@ -109,12 +105,12 @@ watch(
 </script>
 
 <style>
-/* 스크롤바 제거 */
+/* 스크롤바 숨기되, 스크롤 가능하게 유지 */
 * {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE, Edge */
 }
 *::-webkit-scrollbar {
-  display: none;
+  display: none; /* Chrome, Safari */
 }
 </style>
