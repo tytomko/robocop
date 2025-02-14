@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col items-center justify-center w-full h-screen bg-black text-white">
+  <div class="flex flex-col items-center justify-center w-full h-vh bg-black text-white">
     <div v-if="!hasPermission" class="text-center">
       <p class="text-lg">카메라 접근 권한이 필요합니다</p>
       <button @click="requestPermission" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">카메라 권한 요청</button>
@@ -18,7 +18,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 
 const ws = ref(null);
 const videoElement = ref(null);
-const cameraStatus = ref('연결 대기 중');
+
 const errorMessage = ref('');
 const hasPermission = ref(false);
 const stream = ref(null);

@@ -1,11 +1,10 @@
 <template>
   <div class="relative h-full">
-    <!-- 사이드바 컨테이너 (오른쪽 고정, 너비를 애니메이션으로 변경) -->
+    <!-- 사이드바 컨테이너 -->
     <div
       class="absolute top-0 right-0 h-full bg-gray-100 border-l border-gray-200 transition-all duration-300 ease-in-out overflow-auto"
       :class="isCollapsed ? 'w-0' : 'w-[400px]'"
     >
-      <!-- 실제 사이드바 내부 콘텐츠 -->
       <div class="flex flex-col gap-1 min-h-full">
         <div class="bg-white">
           <div class="flex items-center mb-2 h-[55px] p-4 border-b border-gray-200 bg-white">
@@ -14,13 +13,18 @@
             </h3>
           </div>
           <div class="p-1 flex flex-col gap-1">
-            <RobotMap />
+            <!-- activeRobot이 있을 때만 RobotMap을 렌더링 -->
+            <RobotMap 
+              v-if="activeRobot"
+              :robot="activeRobot"
+              :showSelectedNodes="false" 
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 토글 버튼 (사이드바 왼쪽에 배치) -->
+    <!-- 토글 버튼 -->
     <button
       class="toggle-button"
       @click="toggleSidebar"
@@ -34,7 +38,7 @@
 <script setup>
 import RobotMap from '@/components/map/RobotMap.vue';
 import { useRobotsStore } from '@/stores/robots';
-import { onMounted, nextTick, watch } from 'vue';
+import { onMounted, nextTick, watch, computed } from 'vue';
 
 const props = defineProps({
   isCollapsed: {
@@ -42,7 +46,17 @@ const props = defineProps({
     default: false,
   },
 });
+
 const emit = defineEmits(['toggle-sidebar']);
+const robotsStore = useRobotsStore();
+
+// activeRobot computed 속성 추가
+const activeRobot = computed(() => {
+  const selectedRobot = robotsStore.selectedRobot;
+  return robotsStore.registered_robots.find(robot => 
+    String(robot.seq) === String(selectedRobot)
+  ) || null;
+});
 
 const toggleSidebar = () => {
   emit('toggle-sidebar');
@@ -54,8 +68,6 @@ const toggleSidebar = () => {
   });
 };
 
-// 로봇 데이터 스토어 (예: Pinia)
-const robotsStore = useRobotsStore();
 onMounted(() => {
   robotsStore.loadRobots();
   const savedRobot = localStorage.getItem('selectedRobot');
@@ -77,7 +89,6 @@ watch(() => props.isCollapsed, async (newVal) => {
 </script>
 
 <style scoped>
-/* 토글 버튼의 위치/스타일 (원하는 대로 조정) */
 .toggle-button {
   position: absolute;
   top: 50%;

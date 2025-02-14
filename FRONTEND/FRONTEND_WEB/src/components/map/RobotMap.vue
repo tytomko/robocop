@@ -11,9 +11,8 @@
         @click="handleNodeClick"
       />
 
-
-      <!-- 선택된 노드들을 표시하는 컴포넌트 -->
-      <SelectedNodes :selectedNodes="selectedNodesInfo" />
+      <!-- showSelectedNodes가 true일 때만 렌더링 -->
+      <SelectedNodes v-if="props.showSelectedNodes" :selectedNodes="selectedNodesInfo" />
 
       <!-- 로딩 표시 -->
       <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90">
@@ -25,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -44,6 +43,18 @@ use([
   ScatterChart,
   LinesChart
 ])
+
+// 새로운 prop 추가: showSelectedNodes (기본값: true)
+const props = defineProps({
+  showSelectedNodes: {
+    type: Boolean,
+    default: true
+  },
+  robot: {
+    type: Object,
+    required: true
+  }
+})
 
 // 이벤트 정의
 const emit = defineEmits(['selectedNodesChange'])
@@ -79,13 +90,10 @@ async function handlePatrol() {
   }
 }
 
+// RobotMap.vue (수정된 resetSelection 함수)
 function resetSelection() {
-  selectedNodes.value = []
-  if (chartRef.value) {
-    chartRef.value.setOption({
-      series: chartOption.value.series
-    })
-  }
+  selectedNodes.value = []    // 내부 선택 노드 초기화
+  updateChartSeries()         // 차트 업데이트
 }
 
 async function handleTempStop() {
@@ -118,14 +126,73 @@ const selectedNodesInfo = computed(() => {
   }))
 })
 
-// 선택된 노드 바뀔 때마다 부모에게 알림
+function updateChartSeries() {
+  if (chartRef.value) {
+    const newSeries = [
+      // 기존 엣지 시리즈
+      chartOption.value.series[0],
+      // 노드(산점도) 시리즈 재정의
+      {
+        ...chartOption.value.series[1],
+        data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+        symbolSize: (value) =>
+          selectedNodes.value.some(
+            sel => sel.id[0] === value[0] && sel.id[1] === value[1]
+          )
+            ? 15  // 선택된 노드는 크게
+            : 8,  // 기본 크기
+        itemStyle: {
+          color: (params) => {
+            const node = mapData.value.nodes[params.dataIndex]
+            return selectedNodes.value.some(
+              selected => selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+            )
+              ? '#ff4081' // 선택된 노드: 핑크색
+              : '#007bff' // 기본 색상
+          }
+        }
+      }
+    ]
+  }
+}
+
+// 선택된 노드가 변경될 때마다 업데이트
 watch(selectedNodes, (newVal) => {
-  // 디버그 확인용
-  console.log('RobotMap: selectedNodes changed:', newVal)
-  // 부모에게 이벤트 전송
-  emit('selectedNodesChange', newVal)
+  console.log("🔵 Selected nodes updated:", newVal)
+  if (chartRef.value) {
+    chartRef.value.setOption({
+      series: [
+        chartOption.value.series[0],
+        {
+          ...chartOption.value.series[1],
+          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+          symbolSize: (value) =>
+            selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
+              ? 15
+              : 8,
+          itemStyle: {
+            color: (p) => {
+              const node = mapData.value.nodes[p.dataIndex]
+              return selectedNodes.value.some(sel =>
+                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+              ) ? '#ff4081' : '#007bff'
+            }
+          }
+        }
+      ]
+    })
+  }
 })
 
+watch(() => props.robot, (newRobot) => {
+  if (newRobot) {
+    console.log('Robot changed in RobotMap:', newRobot)
+    // 맵 데이터 다시 불러오기
+    fetchMapData()
+    // 선택된 노드 초기화
+    selectedNodes.value = []
+  }
+}, { deep: true })
 
 // 차트 옵션
 const chartOption = computed(() => ({
@@ -158,12 +225,14 @@ const chartOption = computed(() => ({
   xAxis: {
     type: 'value',
     scale: true,
-    axisLine: { onZero: false }
+    axisLine: { onZero: false },
+    axisLabel: { show: false } // x축 라벨 숨김
   },
   yAxis: {
     type: 'value',
     scale: true,
-    axisLine: { onZero: false }
+    axisLine: { onZero: false },
+    axisLabel: { show: false } // y축 라벨 숨김
   },
   series: [
     // 엣지(연결선) 표시
@@ -195,14 +264,13 @@ const chartOption = computed(() => ({
       itemStyle: {
         color: (params) => {
           const node = mapData.value.nodes[params.dataIndex]
-          // 선택된 노드는 다른 색상으로 표시
           return selectedNodes.value.some(selected => 
             selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
           ) ? '#ff4081' : '#007bff'
         }
       },
       emphasis: {
-        scale: 1.5,  // 마우스 오버 시 크기 증가
+        scale: 1.5,
         itemStyle: {
           shadowBlur: 10,
           shadowColor: 'rgba(0, 0, 0, 0.3)'
@@ -222,23 +290,24 @@ function handleNodeClick(params) {
     const index = selectedNodes.value.findIndex(n =>
       n.id[0] === clickedNode.id[0] && n.id[1] === clickedNode.id[1]
     )
+
     if (index === -1) {
       selectedNodes.value.push(clickedNode)
     } else {
       selectedNodes.value.splice(index, 1)
     }
 
-    // 심볼/색상 즉시 반영
+    // 차트 옵션을 즉시 업데이트
     if (chartRef.value) {
       chartRef.value.setOption({
         series: [
-          chartOption.value.series[0], // lines
+          chartOption.value.series[0], // 기존 라인 유지
           {
-            ...chartOption.value.series[1], // scatter
+            ...chartOption.value.series[1],
             data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-            symbolSize: (value) =>
+            symbolSize: (value) => 
               selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-                ? 15
+                ? 15 // 선택된 노드는 더 크게 표시
                 : 8,
             itemStyle: {
               color: (p) => {
@@ -252,8 +321,11 @@ function handleNodeClick(params) {
         ]
       })
     }
+
+    console.log('Selected nodes updated:', selectedNodes.value)
+    emit('selectedNodesChange', selectedNodes.value)
   }
-} 
+}
 
 /** 로딩 후 맵 데이터 가져오기 */
 async function fetchMapData() {
