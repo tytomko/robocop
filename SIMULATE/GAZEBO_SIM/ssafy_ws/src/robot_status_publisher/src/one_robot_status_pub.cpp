@@ -55,7 +55,7 @@ public:
         std::ostringstream oss;
         oss << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S");
         status_message.starttime = oss.str(); // 시작 시간 문자열로 저장
-
+        status_message.id = robot_num;
         status_message.name = robot_name;
         status_message.battery = 75.0f;  // 초기 배터리 값
         status_message.temperatures = {55.0f};  // 초기 온도 값
@@ -272,6 +272,7 @@ private:
     void stop_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
                             std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
+        (void) request;
         status_message.mode = "emergency stop";
         status_message.is_active = false;
         publisher_status_->publish(status_message);
@@ -283,6 +284,7 @@ private:
     void temp_stop_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
                                     std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
+        (void) request;
         if (status_message.mode == "temp stop") {
             RCLCPP_WARN(this->get_logger(), "[TEMP STOP] Robot is already stopped.");
             response->success = false;
@@ -308,6 +310,7 @@ private:
     void resume_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Estop::Request> request,
                                 std::shared_ptr<robot_custom_interfaces::srv::Estop::Response> response)
     {
+        (void) request;
         if (status_message.mode == "emergency stop") { // 비상 정지 상태에서는 waiting으로 재개
             RCLCPP_INFO(this->get_logger(), "[RESUME] Returning to operational mode.");
             
@@ -339,6 +342,7 @@ private:
     void homing_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Homing::Request> request,
                                 std::shared_ptr<robot_custom_interfaces::srv::Homing::Response> response)
     {
+        (void) request;
         if (status_message.mode != "waiting") {
             RCLCPP_WARN(this->get_logger(), "[HOMING] Cannot switch to homing mode because robot is not in waiting mode.");
             response->success = false;
@@ -403,6 +407,7 @@ private:
     void waiting_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Waiting::Request> request,
                                 std::shared_ptr<robot_custom_interfaces::srv::Waiting::Response> response)
     {
+        (void) request;
         if(status_message.mode == "waiting") {
             RCLCPP_WARN(this->get_logger(), "🚨[WAITING] Robot is already in waiting mode.🚨");
             response->success = false;
@@ -428,6 +433,7 @@ private:
     void manual_service_callback(const std::shared_ptr<robot_custom_interfaces::srv::Manual::Request> request,
                                 std::shared_ptr<robot_custom_interfaces::srv::Manual::Response> response)
     {
+        (void) request;
         if (status_message.mode != "waiting") {
             RCLCPP_WARN(this->get_logger(), "[MANUAL] Cannot switch to manual mode because robot is not in waiting mode.");
             response->success = false;

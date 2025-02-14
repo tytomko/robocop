@@ -34,8 +34,8 @@ constexpr int MIN_CLUSTER_SIZE = 15;       // 최소 클러스터 포인트 수
 // CropBox ROI (전방 5미터, 좌우 2미터, 높이 2미터 내의 영역)
 // X: 0 ~ 5, Y: -2 ~ 2, Z: -0.4 ~ 2 (여기서는 X 최대값 8로 제한)
 // 수정 후 (바닥 제거를 위해 z 최소값을 0.2로 올림):
-const Eigen::Vector4f CROP_MIN(0.0, -2.0, 0.2, 0.0);
-const Eigen::Vector4f CROP_MAX(5.0, 2.0, 4.0, 0.0);
+const Eigen::Vector4f CROP_MIN(0.0, -1.5, 0.1, 0.0);
+const Eigen::Vector4f CROP_MAX(5.0, 1.5, 3.0, 0.0);
 
 // 객체 크기 조건 (바운딩 박스 생성 조건, 필요에 따라 조정)
 // (여기서는 y축, z축 조건으로 사용)
