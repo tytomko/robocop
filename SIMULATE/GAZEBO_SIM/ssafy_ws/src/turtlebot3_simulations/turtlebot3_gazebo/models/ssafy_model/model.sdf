@@ -211,7 +211,7 @@
         <!-- 항상 켜두기 -->
         <always_on>true</always_on>
         <!-- Gazebo GUI에서 센서 시각화 여부 -->
-        <visualize>true</visualize>
+        <visualize>0</visualize>
         <!-- 업데이트 주기(Hz) -->
         <update_rate>30</update_rate>
         <!-- 돌리려면 yaw에 3.14159 -->

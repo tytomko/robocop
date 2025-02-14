@@ -378,9 +378,12 @@ private:
             // 전역 경로를 한 번이라도 받은 적이 없다면 -> 실제 경로 정보 없음
             if (!global_path_received_) {
                 RCLCPP_WARN(this->get_logger(), "Global path을 수신하지 못했습니다.");
-                callTempStop();  // temp stop service 호출
-                stop_robot();
-                callWaitingService();
+                //0215 이부분 때문에 경로를 받기 전에 멈춰버린다. 현재 문제인부분임..
+                //일단 정지를 안하게해서 해결해보자.
+                
+                //callTempStop();  // temp stop service 호출
+                //stop_robot();
+                //callWaitingService();
                 return;
             }
 
