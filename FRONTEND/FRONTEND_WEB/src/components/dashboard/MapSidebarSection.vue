@@ -89,7 +89,6 @@ watch(() => props.isCollapsed, async (newVal) => {
 </script>
 
 <style scoped>
-/* 토글 버튼의 위치/스타일 (원하는 대로 조정) */
 .toggle-button {
   position: absolute;
   top: 50%;
