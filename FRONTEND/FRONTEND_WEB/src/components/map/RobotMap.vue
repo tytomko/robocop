@@ -11,9 +11,8 @@
         @click="handleNodeClick"
       />
 
-
-      <!-- 선택된 노드들을 표시하는 컴포넌트 -->
-      <SelectedNodes :selectedNodes="selectedNodesInfo" />
+      <!-- showSelectedNodes가 true일 때만 렌더링 -->
+      <SelectedNodes v-if="props.showSelectedNodes" :selectedNodes="selectedNodesInfo" />
 
       <!-- 로딩 표시 -->
       <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90">
@@ -44,6 +43,18 @@ use([
   ScatterChart,
   LinesChart
 ])
+
+// 새로운 prop 추가: showSelectedNodes (기본값: true)
+const props = defineProps({
+  showSelectedNodes: {
+    type: Boolean,
+    default: true
+  },
+  robot: {
+    type: Object,
+    required: true
+  }
+})
 
 // 이벤트 정의
 const emit = defineEmits(['selectedNodesChange'])
@@ -142,20 +153,46 @@ function updateChartSeries() {
         }
       }
     ]
-    
-    // notMerge 옵션을 true로 해서 기존 옵션과 병합하지 않고 완전히 교체
-    chartRef.value.setOption(
-      { series: newSeries },
-      { notMerge: true, lazyUpdate: false }
-    )
   }
 }
 
 // 선택된 노드가 변경될 때마다 업데이트
 watch(selectedNodes, (newVal) => {
   console.log("🔵 Selected nodes updated:", newVal)
-  updateChartSeries()
+  if (chartRef.value) {
+    chartRef.value.setOption({
+      series: [
+        chartOption.value.series[0],
+        {
+          ...chartOption.value.series[1],
+          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+          symbolSize: (value) =>
+            selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
+              ? 15
+              : 8,
+          itemStyle: {
+            color: (p) => {
+              const node = mapData.value.nodes[p.dataIndex]
+              return selectedNodes.value.some(sel =>
+                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+              ) ? '#ff4081' : '#007bff'
+            }
+          }
+        }
+      ]
+    })
+  }
 })
+
+watch(() => props.robot, (newRobot) => {
+  if (newRobot) {
+    console.log('Robot changed in RobotMap:', newRobot)
+    // 맵 데이터 다시 불러오기
+    fetchMapData()
+    // 선택된 노드 초기화
+    selectedNodes.value = []
+  }
+}, { deep: true })
 
 // 차트 옵션
 const chartOption = computed(() => ({
@@ -188,12 +225,14 @@ const chartOption = computed(() => ({
   xAxis: {
     type: 'value',
     scale: true,
-    axisLine: { onZero: false }
+    axisLine: { onZero: false },
+    axisLabel: { show: false } // x축 라벨 숨김
   },
   yAxis: {
     type: 'value',
     scale: true,
-    axisLine: { onZero: false }
+    axisLine: { onZero: false },
+    axisLabel: { show: false } // y축 라벨 숨김
   },
   series: [
     // 엣지(연결선) 표시
@@ -225,14 +264,13 @@ const chartOption = computed(() => ({
       itemStyle: {
         color: (params) => {
           const node = mapData.value.nodes[params.dataIndex]
-          // 선택된 노드는 다른 색상으로 표시
           return selectedNodes.value.some(selected => 
             selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
           ) ? '#ff4081' : '#007bff'
         }
       },
       emphasis: {
-        scale: 1.5,  // 마우스 오버 시 크기 증가
+        scale: 1.5,
         itemStyle: {
           shadowBlur: 10,
           shadowColor: 'rgba(0, 0, 0, 0.3)'
@@ -259,10 +297,35 @@ function handleNodeClick(params) {
       selectedNodes.value.splice(index, 1)
     }
 
-    console.log('Selected nodes updated:', selectedNodes.value) // 디버깅 로그 추가
-    emit('selectedNodesChange', selectedNodes.value) // 부모 컴포넌트(RobotControlView)에 변경사항 전달
+    // 차트 옵션을 즉시 업데이트
+    if (chartRef.value) {
+      chartRef.value.setOption({
+        series: [
+          chartOption.value.series[0], // 기존 라인 유지
+          {
+            ...chartOption.value.series[1],
+            data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+            symbolSize: (value) => 
+              selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
+                ? 15 // 선택된 노드는 더 크게 표시
+                : 8,
+            itemStyle: {
+              color: (p) => {
+                const node = mapData.value.nodes[p.dataIndex]
+                return selectedNodes.value.some(sel =>
+                  sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+                ) ? '#ff4081' : '#007bff'
+              }
+            }
+          }
+        ]
+      })
+    }
+
+    console.log('Selected nodes updated:', selectedNodes.value)
+    emit('selectedNodesChange', selectedNodes.value)
   }
-} 
+}
 
 /** 로딩 후 맵 데이터 가져오기 */
 async function fetchMapData() {
