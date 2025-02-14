@@ -9,7 +9,7 @@ import time
 app = FastAPI()
 
 class CameraService:
-    def __init__(self, ros_host='127.0.0.1', ros_port=10000):
+    def __init__(self, ros_host='127.0.0.1', ros_port=9090):
         self.client = roslibpy.Ros(host=ros_host, port=ros_port)
         self.latest_frame = None
         self.fps = 30  # FPS 제한 추가

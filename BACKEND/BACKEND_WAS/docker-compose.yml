@@ -47,36 +47,37 @@ services:
   # ---------------------------------------
   # (D) ROS2 Discovery Server
   # ---------------------------------------
-  ros2-discovery:
-    build:
-      context: ./ros2-discovery   # Dockerfile ??
-      dockerfile: Dockerfile
-    container_name: ros2-discovery
-    environment:
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#  ros2-discovery:
+#    build:
+#      context: ./ros2-discovery   # Dockerfile ??
+#      dockerfile: Dockerfile
+#    container_name: ros2-discovery
+#    environment:
+##      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       # ? Dockerfile?? ?? ENV ?????, ????
-      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
-    network_mode: host
+#      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
+#    network_mode: host
     # ??? ? ????? ??, ?? Discovery Server? ??
 
 
   # ---------------------------------------
   # (E) ROS Bridge (WebSocket)
   # ---------------------------------------
+
   rosbridge:
-    build: ./rosbridge
+    build: 
+      context: ./rosbridge
+      dockerfile: Dockerfile
     container_name: ros2-bridge
     environment:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
     command: >
       bash -c "source /opt/ros/humble/setup.bash &&
-               ros2 launch rosbridge_server rosbridge_websocket_launch.xml
-                 websocket_external_port:=9090
-                 websocket_address:=0.0.0.0"
+               (ros2 launch rosbridge_server rosbridge_websocket_launch.xml 
+               port:=9090 
+               address:=0.0.0.0) && python3 /ros2_ws/test_publisher.py"
     network_mode: host
-    depends_on:
-      - ros2-discovery
+    restart: unless-stopped
 
 volumes:
   media_volume:

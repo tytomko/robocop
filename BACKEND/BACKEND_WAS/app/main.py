@@ -29,6 +29,9 @@ from dotenv import load_dotenv
 from app.common.middleware.socket_service import start_socket_server
 import threading
 from .domain.robot.service.robot_service import RobotService, ROS2WebSocketClient
+import time
+from datetime import datetime
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -139,15 +142,20 @@ async def startup_event():
         # 소켓 서버 시작
         threading.Thread(target=start_socket_server, daemon=True).start()
         logger.info("소켓 서버가 시작되었습니다.")
-        await robot_service.connect_ros()
 
-        await ros_client.connect()
-        logger.info("connected to ROS")
-
+        # ROS2 웹소켓 연결 시도
+        try:
+            await ros_client.connect()
+            logger.info("ROS2 웹소켓 연결 성공")
+        except Exception as e:
+            logger.warning(f"ROS2 웹소켓 연결 실패: {str(e)}")
+            logger.warning("ROS2 Bridge 없이 서버를 계속 실행합니다.")
+        
         logger.info("모든 초기화 작업이 완료되었습니다.")
     except Exception as e:
         logger.error(f"애플리케이션 시작 중 오류 발생: {str(e)}")
-        raise e
+        # 치명적인 오류가 아닌 경우 서버 시작을 계속 진행
+        logger.warning("일부 서비스 초기화 실패, 서버를 계속 실행합니다.")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -181,8 +189,62 @@ async def websocket_middleware(request, call_next):
 # WebSocket 연결 테스트용 엔드포인트
 @app.websocket("/ws/test")
 async def websocket_test(websocket: WebSocket):
-    await websocket.accept()
-    await websocket.send_text("Connected to WebSocket")
+    try:
+        await websocket.accept()
+        logger.info("새로운 웹소켓 클라이언트 연결됨")
+        
+        # 프론트엔드 클라이언트로 등록
+        await robot_service.register_frontend_client(websocket)
+        
+        # ROS2 클라이언트에도 등록
+        await ros_client.register_client(websocket)
+        
+        while True:
+            try:
+                # 클라이언트로부터 메시지 수신 (비동기로 처리)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
+                logger.info(f"클라이언트로부터 메시지 수신: {data}")
+                
+                # 수신된 메시지 파싱
+                message_data = json.loads(data)
+                if message_data.get('type') == 'user_message':
+                    user_text = message_data.get('data', {}).get('text')
+                    logger.info(f"사용자 입력 메시지: {user_text}")
+                    
+                    # ROS2 Bridge로 메시지 전달
+                    bridge_message = {
+                        "op": "publish",
+                        "topic": "/user_messages",
+                        "msg": {
+                            "data": user_text
+                        }
+                    }
+                    # ROS2 Bridge로 메시지 전송 (이미 내부적으로 broadcast 포함)
+                    await ros_client.send_message(bridge_message)
+                    logger.info(f"ROS2 Bridge로 메시지 전송: {bridge_message}")
+                
+            except asyncio.TimeoutError:
+                # 타임아웃 시 새로운 메시지 전송 (기존 코드 유지)
+                test_message = {
+                    "type": "test_message",
+                    "data": f"실시간 서버 시간: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}"
+                }
+                await robot_service.broadcast_to_frontend(test_message)
+                await asyncio.sleep(1)
+                continue
+            except WebSocketDisconnect:
+                break
+            except json.JSONDecodeError as e:
+                logger.error(f"메시지 파싱 오류: {str(e)}")
+            except Exception as e:
+                logger.error(f"메시지 처리 중 오류: {str(e)}")
+                
+    except WebSocketDisconnect:
+        logger.info("웹소켓 클라이언트 연결 해제")
+        await robot_service.unregister_frontend_client(websocket)
+        await ros_client.unregister_client(websocket)
+    except Exception as e:
+        logger.error(f"웹소켓 처리 중 오류: {str(e)}")
 
 
 if __name__ == "__main__":

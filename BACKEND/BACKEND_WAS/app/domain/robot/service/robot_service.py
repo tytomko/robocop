@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from fastapi import HTTPException, UploadFile, WebSocket
-from typing import List, Optional, Union, Set
+from typing import List, Optional, Union, Set, Dict, Callable
 from ..repository.robot_repository import RobotRepository
 from ..models.robot_models import (
     Robot, Position, BatteryStatus, RobotStatus, RobotImage,
@@ -15,32 +15,59 @@ import roslibpy
 import json
 import logging
 from redis import Redis
+import asyncio
+import websockets
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
 class RobotService:
+    """로봇 관련 비즈니스 로직과 프론트엔드 통신을 담당하는 서비스"""
     def __init__(self):
         self.repository = RobotRepository()
-        self.ros2_client = ROS2RobotClient()
+        self.ros2_client = ROS2RobotClient()  # ROS2와의 통신용
         self.media_server_url = settings.storage.MEDIA_SERVER_URL
         self.upload_api_url = settings.storage.UPLOAD_API_URL
         
-        # ROS 연결 설정
-        self.ros_client = roslibpy.Ros(host='localhost', port=10000)
-        self.topic = None
+        # 웹소켓 클라이언트 관리 (프론트엔드)
+        self.frontend_clients: Set[WebSocket] = set()
         
-        # Redis 연결 설정
+        # Redis 연결
         self.redis_client = Redis(
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
             decode_responses=True
         )
+
+    # === 프론트엔드 WebSocket 관리 ===
+    async def register_frontend_client(self, websocket: WebSocket):
+        """프론트엔드 웹소켓 클라이언트 등록"""
+        self.frontend_clients.add(websocket)
+        client_id = id(websocket)
+        self.redis_client.sadd('frontend_clients', client_id)
+        logger.info(f"프론트엔드 클라이언트 등록: {client_id}")
+
+    async def unregister_frontend_client(self, websocket: WebSocket):
+        """프론트엔드 웹소켓 클라이언트 제거"""
+        self.frontend_clients.remove(websocket)
+        client_id = id(websocket)
+        self.redis_client.srem('frontend_clients', client_id)
+        logger.info(f"프론트엔드 클라이언트 제거: {client_id}")
+
+    async def broadcast_to_frontend(self, message: dict):
+        """프론트엔드 클라이언트들에게 메시지 브로드캐스트"""
+        disconnected = set()
+        for client in self.frontend_clients:
+            try:
+                await client.send_json(message)
+            except Exception as e:
+                logger.error(f"프론트엔드 메시지 전송 실패: {str(e)}")
+                disconnected.add(client)
         
-        # 웹소켓 클라이언트 관리
-        self.clients: Set[WebSocket] = set()
+        for client in disconnected:
+            await self.unregister_frontend_client(client)
 
-
+    # === 기존 REST API 관련 메서드들 ===
     async def create_robot(self, nickname: str, ip_address: str, image: Optional[UploadFile] = None) -> Robot:
         try:
             # IP 주소 형식 검증
@@ -293,21 +320,6 @@ class RobotService:
         except Exception as e:
             print(f"로봇 상태 처리 중 오류 발생: {str(e)}")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     async def update_nickname(self, seq: int, new_nickname: str) -> Robot:
         """로봇의 닉네임을 업데이트합니다."""
         try:
@@ -337,6 +349,7 @@ class RobotService:
 
 
 class ROS2WebSocketClient:
+    """ROS2 Bridge와의 웹소켓 통신을 담당하는 클라이언트"""
     def __init__(self):
         self.url = settings.ros2.BRIDGE_URL
         self.ws: Optional[websockets.WebSocketClientProtocol] = None
@@ -344,6 +357,16 @@ class ROS2WebSocketClient:
         self.subscriptions: Dict[str, Callable] = {}
         self.retry_count = 0
         self.max_retries = settings.ros2.MAX_RETRIES
+        
+        # 웹소켓 클라이언트 관리
+        self.clients: Set[WebSocket] = set()
+        
+        # Redis 연결 설정
+        self.redis_client = Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            decode_responses=True
+        )
 
     async def connect(self):
         """ROS2 Bridge에 WebSocket 연결을 수립합니다."""
@@ -351,7 +374,7 @@ class ROS2WebSocketClient:
             self.ws = await websockets.connect(self.url)
             self.connected = True
             self.retry_count = 0
-            print(f"ROS2 Bridge 연결 성공: {self.url}")
+            logger.info(f"ROS2 Bridge 연결 성공: {self.url}")
             
             # 기존 구독 복구
             for topic in self.subscriptions.keys():
@@ -361,7 +384,7 @@ class ROS2WebSocketClient:
             self.connected = False
             if self.retry_count < self.max_retries:
                 self.retry_count += 1
-                print(f"ROS2 Bridge 연결 재시도 {self.retry_count}/{self.max_retries}")
+                logger.info(f"ROS2 Bridge 연결 재시도 {self.retry_count}/{self.max_retries}")
                 await asyncio.sleep(settings.ros2.RETRY_INTERVAL)
                 await self.connect()
             else:
@@ -370,42 +393,37 @@ class ROS2WebSocketClient:
                     detail=f"ROS2 Bridge 연결 실패: {str(e)}"
                 )
 
-    async def disconnect(self):
-        """WebSocket 연결을 종료합니다."""
-        if self.ws:
-            await self.ws.close()
-            self.connected = False
-            self.ws = None
+    async def register_client(self, websocket: WebSocket):
+        """새로운 웹소켓 클라이언트 등록"""
+        self.clients.add(websocket)
+        
+        # Redis에 클라이언트 정보 저장
+        client_id = id(websocket)
+        self.redis_client.sadd('active_clients', client_id)
+        logger.info(f"새로운 웹소켓 클라이언트 등록됨: {client_id}")
 
-    async def subscribe_to_topic(self, topic: str):
-        """특정 토픽을 구독합니다."""
-        if not self.connected:
-            await self.connect()
+    async def unregister_client(self, websocket: WebSocket):
+        """웹소켓 클라이언트 연결 해제"""
+        self.clients.remove(websocket)
+        
+        # Redis에서 클라이언트 정보 제거
+        client_id = id(websocket)
+        self.redis_client.srem('active_clients', client_id)
+        logger.info(f"웹소켓 클라이언트 연결 해제: {client_id}")
 
-        subscribe_msg = {
-            "op": "subscribe",
-            "topic": topic
-        }
-        await self.ws.send(json.dumps(subscribe_msg))
-
-    async def unsubscribe_from_topic(self, topic: str):
-        """토픽 구독을 해제합니다."""
-        if not self.connected:
-            return
-
-        unsubscribe_msg = {
-            "op": "unsubscribe",
-            "topic": topic
-        }
-        await self.ws.send(json.dumps(unsubscribe_msg))
-        if topic in self.subscriptions:
-            del self.subscriptions[topic]
-
-    async def add_message_handler(self, topic: str, handler: callable):
-        """토픽별 메시지 핸들러를 등록합니다."""
-        self.subscriptions[topic] = handler
-        if self.connected:
-            await self.subscribe_to_topic(topic)
+    async def broadcast_message(self, message: dict):
+        """모든 연결된 클라이언트에게 메시지를 전송합니다."""
+        disconnected_clients = set()
+        for client in self.clients:
+            try:
+                await client.send_json(message)
+            except Exception as e:
+                logger.error(f"클라이언트 메시지 전송 실패: {str(e)}")
+                disconnected_clients.add(client)
+        
+        # 끊어진 클라이언트 제거
+        for client in disconnected_clients:
+            await self.unregister_client(client)
 
     async def start_listening(self):
         """메시지 수신을 시작합니다."""
@@ -414,119 +432,83 @@ class ROS2WebSocketClient:
                 if not self.connected:
                     await self.connect()
 
-                async for message in self.ws:
-                    data = json.loads(message)
-                    topic = data.get("topic")
-                    
-                    if topic and topic in self.subscriptions:
-                        handler = self.subscriptions[topic]
-                        await handler(data["msg"])
+                if self.ws:
+                    async for message in self.ws:
+                        data = json.loads(message)
+                        logger.debug(f"ROS2 Bridge로부터 메시지 수신: {data}")
+                        
+                        # 테스트 메시지 처리
+                        if "test_message" in data:
+                            test_msg = data["test_message"]
+                            logger.info(f"테스트 메시지 수신: {test_msg}")
+                            await self.broadcast_message({
+                                "type": "test_message",
+                                "data": test_msg
+                            })
+                        
+                        # 토픽 메시지 처리
+                        topic = data.get("topic")
+                        if topic and topic in self.subscriptions:
+                            handler = self.subscriptions[topic]
+                            await handler(data["msg"])
 
             except websockets.ConnectionClosed:
                 self.connected = False
-                print("ROS2 Bridge 연결이 끊어졌습니다. 재연결 시도...")
+                logger.warning("ROS2 Bridge 연결이 끊어졌습니다. 재연결 시도...")
                 await asyncio.sleep(settings.ros2.RETRY_INTERVAL)
                 continue
                 
             except Exception as e:
-                print(f"메시지 처리 중 오류 발생: {str(e)}")
+                logger.error(f"메시지 처리 중 오류 발생: {str(e)}")
                 continue
 
     def is_connected(self) -> bool:
         """현재 연결 상태를 반환합니다."""
-        return self.connected 
-    
+        return self.connected
 
-    async def connect_ros(self):
-        """ROS 연결 및 토픽 구독"""
+    async def send_message(self, message: dict):
+        """ROS2 Bridge로 메시지를 전송합니다."""
         try:
-            self.ros_client.run()
+            if not self.connected or not self.ws:
+                await self.connect()
             
-            # 토픽 설정 및 구독
-            self.topic = roslibpy.Topic(
-                self.ros_client,
-                '/robot_1/status',  # 실제 구독할 토픽 이름으로 변경
-                'robot_custom_interfaces/msg/Status'  # 실제 메시지 타입으로 변경
-            )
+            # 메시지를 JSON 문자열로 변환하여 전송
+            message_str = json.dumps(message)
+            await self.ws.send(message_str)
+            logger.info(f"ROS2 Bridge로 메시지 전송 성공: {message}")
             
-            self.topic.subscribe(self._handle_message)
-            logger.info("ROS 연결 및 토픽 구독 성공")
-            
-        except Exception as e:
-            logger.error(f"ROS 연결 실패: {str(e)}")
-            raise
-            
-    def _handle_message(self, message):
-        """ROS 메시지 처리"""
-        try:
-            # 메시지 파싱 및 가공
-            processed_data = self._process_message(message)
-            
-            # Redis를 통해 모든 클라이언트에게 브로드캐스트
-            self.redis_client.publish('robot_channel', json.dumps(processed_data))
-            
-        except Exception as e:
-            logger.error(f"메시지 처리 중 오류 발생: {str(e)}")
-            
-    def _process_message(self, message):
-        """메시지 가공 로직"""
-        # 실제 메시지 처리 로직 구현
-        return {
-            'type': 'robot_data',
-            'data': message
-        }
-        
-    async def register_client(self, websocket: WebSocket):
-        """새로운 웹소켓 클라이언트 등록"""
-        await websocket.accept()
-        self.clients.add(websocket)
-        
-        # Redis에 클라이언트 정보 저장
-        client_id = id(websocket)
-        self.redis_client.sadd('active_clients', client_id)
-        
-    async def unregister_client(self, websocket: WebSocket):
-        """웹소켓 클라이언트 연결 해제"""
-        self.clients.remove(websocket)
-        
-        # Redis에서 클라이언트 정보 제거
-        client_id = id(websocket)
-        self.redis_client.srem('active_clients', client_id)
-
-    async def subscribe_to_robot_status(self, robot_id: str):
-        """특정 로봇의 상태를 구독합니다."""
-        try:
-            # ROS2 토픽 구독 - robot_1/status 형식으로 구독
-            topic_name = f'/{robot_id}/status'
-            
-            self.topic = roslibpy.Topic(
-                self.ros_client,
-                topic_name,
-                'robot_custom_interfaces/msg/Status'
-            )
-            
-            self.topic.subscribe(self._handle_message)
-            logger.info(f"Subscribed to ROS topic: {topic_name}")
-            
-            # Redis pub/sub 설정
-            self.redis_client.subscribe(f'{robot_id}_status')
-            
-        except Exception as e:
-            logger.error(f"로봇 상태 구독 실패: {str(e)}")
-            raise
-
-    async def broadcast_robot_status(self, robot_id: int, status_data: dict):
-        """로봇 상태를 모든 연결된 클라이언트에게 브로드캐스트합니다."""
-        try:
-            message = {
-                "type": "robot_status",
-                "robot_id": robot_id,
-                "data": status_data
+            # 메시지 전송 성공을 클라이언트들에게 알림
+            status_message = {
+                "type": "bridge_status",
+                "data": {
+                    "status": "success",
+                    "message": "메시지가 ROS2 Bridge로 전송되었습니다",
+                    "sent_data": message
+                }
             }
+            await self.broadcast_message(status_message)
             
-            # Redis를 통해 상태 브로드캐스트
-            self.redis_client.publish(f'robot_{robot_id}_status', json.dumps(message))
+        except websockets.ConnectionClosed:
+            logger.error("ROS2 Bridge 연결이 끊어졌습니다")
+            self.connected = False
+            # 연결 재시도
+            await self.connect()
+            # 재시도 후 메시지 다시 전송
+            await self.send_message(message)
             
         except Exception as e:
-            logger.error(f"로봇 상태 브로드캐스트 실패: {str(e)}")
+            logger.error(f"ROS2 Bridge 메시지 전송 실패: {str(e)}")
+            error_message = {
+                "type": "bridge_status",
+                "data": {
+                    "status": "error",
+                    "message": f"메시지 전송 실패: {str(e)}",
+                    "failed_data": message
+                }
+            }
+            await self.broadcast_message(error_message)
+            raise HTTPException(
+                status_code=500,
+                detail=f"ROS2 Bridge 메시지 전송 실패: {str(e)}"
+            )
 

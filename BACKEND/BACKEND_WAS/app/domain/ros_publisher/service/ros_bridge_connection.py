@@ -12,7 +12,8 @@ class RosBridgeConnection:
     
     HOST = "127.0.0.1"
     # HOST = "localhost"
-    PORT = 10000
+    PORT = 9090
+    # PORT = 10000
     MAX_RETRIES = 3
     RETRY_DELAY = 2  # 초
     
