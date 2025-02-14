@@ -79,25 +79,10 @@ async function handlePatrol() {
   }
 }
 
+// RobotMap.vue (수정된 resetSelection 함수)
 function resetSelection() {
-  console.log("🔴 Resetting selected nodes...") // 디버깅 로그 추가
-  selectedNodes.value = [] // 🚨 selectedNodes를 빈 배열로 초기화
-
-  if (chartRef.value) {
-    chartRef.value.setOption({
-      series: [
-        chartOption.value.series[0], // 기존 라인 유지
-        {
-          ...chartOption.value.series[1],
-          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-          symbolSize: 8, // 🚨 모든 노드를 기본 크기로 되돌리기
-          itemStyle: {
-            color: '#007bff' // 🚨 모든 노드를 기본 색상으로 되돌리기
-          }
-        }
-      ]
-    })
-  }
+  selectedNodes.value = []    // 내부 선택 노드 초기화
+  updateChartSeries()         // 차트 업데이트
 }
 
 async function handleTempStop() {
@@ -130,35 +115,47 @@ const selectedNodesInfo = computed(() => {
   }))
 })
 
-watch(selectedNodes, (newVal) => {
-  console.log("🔵 Selected nodes updated:", newVal) // 디버깅 로그
-
-  // 🚨 선택된 노드가 변경될 때 차트 옵션을 업데이트하여 색상을 반영
+function updateChartSeries() {
   if (chartRef.value) {
-    chartRef.value.setOption({
-      series: [
-        chartOption.value.series[0], // 기존 라인 (edges)
-        {
-          ...chartOption.value.series[1], // 기존 노드 (scatter)
-          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-          symbolSize: (value) =>
-            selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-              ? 15 // 선택된 노드는 더 크게 표시
-              : 8,
-          itemStyle: {
-            color: (p) => {
-              const node = mapData.value.nodes[p.dataIndex]
-              return selectedNodes.value.some(sel =>
-                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-              ) ? '#ff4081' : '#007bff' // 🚨 선택된 노드는 '#ff4081' (핑크색)
-            }
+    const newSeries = [
+      // 기존 엣지 시리즈
+      chartOption.value.series[0],
+      // 노드(산점도) 시리즈 재정의
+      {
+        ...chartOption.value.series[1],
+        data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+        symbolSize: (value) =>
+          selectedNodes.value.some(
+            sel => sel.id[0] === value[0] && sel.id[1] === value[1]
+          )
+            ? 15  // 선택된 노드는 크게
+            : 8,  // 기본 크기
+        itemStyle: {
+          color: (params) => {
+            const node = mapData.value.nodes[params.dataIndex]
+            return selectedNodes.value.some(
+              selected => selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+            )
+              ? '#ff4081' // 선택된 노드: 핑크색
+              : '#007bff' // 기본 색상
           }
         }
-      ]
-    })
+      }
+    ]
+    
+    // notMerge 옵션을 true로 해서 기존 옵션과 병합하지 않고 완전히 교체
+    chartRef.value.setOption(
+      { series: newSeries },
+      { notMerge: true, lazyUpdate: false }
+    )
   }
-})
+}
 
+// 선택된 노드가 변경될 때마다 업데이트
+watch(selectedNodes, (newVal) => {
+  console.log("🔵 Selected nodes updated:", newVal)
+  updateChartSeries()
+})
 
 // 차트 옵션
 const chartOption = computed(() => ({
@@ -263,7 +260,7 @@ function handleNodeClick(params) {
     }
 
     console.log('Selected nodes updated:', selectedNodes.value) // 디버깅 로그 추가
-    emit('selectedNodesChange', selectedNodes.value) // 🚨 부모 컴포넌트(RobotControlView)에 변경사항 전달
+    emit('selectedNodesChange', selectedNodes.value) // 부모 컴포넌트(RobotControlView)에 변경사항 전달
   }
 } 
 
