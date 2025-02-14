@@ -67,6 +67,8 @@
         <SelectedNodes :selectedNodes="selectedNodes" />
         
         <RobotMap 
+          v-if="activeRobot"
+          :key="mapKey"
           ref="robotMap" 
           :robot="activeRobot" 
           @selectedNodesChange="onSelectedNodesChange" 
@@ -180,8 +182,17 @@ function toggleMode() {
   }
 }
 
-watch(selectedNodes, (newVal) => {
-  console.log('Watch detected selectedNodes change:', newVal)
+const mapKey = ref(Date.now())
+
+watch(selectedRobotSeq, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    console.log('Robot changed:', newVal)
+    // 로봇이 변경되면 선택된 노드들을 초기화
+    resetSelection()
+    
+    // RobotMap 컴포넌트 재마운트를 위한 키 값 변경
+    mapKey.value = Date.now()
+  }
 })
 
 onMounted(() => {

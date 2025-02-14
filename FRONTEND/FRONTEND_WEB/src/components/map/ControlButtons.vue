@@ -1,5 +1,5 @@
 <template>
-  <div class="flex space-x-3 mb-4">
+  <div class="flex space-x-3 mb-1">
     <!-- 이동/순찰 버튼 (조건에 따라 다르게 표시) -->
     <button
       class="control-btn"
