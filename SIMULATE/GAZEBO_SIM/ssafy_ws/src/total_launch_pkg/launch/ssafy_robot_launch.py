@@ -85,6 +85,13 @@ def generate_launch_description():
         parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
     )
     
+    robot_speed_node = Node(
+        package='robot_status_publisher',
+        executable='imu_velocity_node',
+        name='imu_velocity_node',
+        output='screen',
+        parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
+    )
     return LaunchDescription([
         robot_name_arg,
         robot_number_arg,
@@ -95,5 +102,6 @@ def generate_launch_description():
         robot_patrol_node,
         robot_vision_node,
         middle_teleop_node,
-        ai_process_node
+        ai_process_node,
+        robot_speed_node
     ])

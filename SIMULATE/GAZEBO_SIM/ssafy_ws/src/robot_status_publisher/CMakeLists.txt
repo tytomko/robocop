@@ -34,8 +34,12 @@ target_link_libraries(robot_status_publisher
   /lib/x86_64-linux-gnu/libGeographic.so
 )
 
+add_executable(imu_velocity_node src/imu_velocity_node.cpp)
+ament_target_dependencies(imu_velocity_node rclcpp sensor_msgs geometry_msgs)
+
 install(TARGETS
   robot_status_publisher
+  imu_velocity_node
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
