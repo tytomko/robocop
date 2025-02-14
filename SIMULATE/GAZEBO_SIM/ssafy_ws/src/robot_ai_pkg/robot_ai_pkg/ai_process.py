@@ -24,7 +24,7 @@ class RobotAI(Node):
 
         # 로봇 번호를 기반으로 포트 설정 (1번 로봇: 5000, 2번 로봇: 5001, ...)
         self.port = BASE_PORT + self.robot_num - 1
-        print(f"현재 포트는? {self.port}\n")
+        # print(f"현재 포트는? {self.port}\n")
         # 서비스 클라이언트 생성 (로봇 번호에 따라 토픽 생성)
         self.temp_stop_client = self.create_client(Estop, f'/robot_{self.robot_num}/temp_stop')
         self.resume_client = self.create_client(Estop, f'/robot_{self.robot_num}/resume')
