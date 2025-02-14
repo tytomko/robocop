@@ -24,7 +24,7 @@ class RobotAI(Node):
 
         # 로봇 번호를 기반으로 포트 설정 (1번 로봇: 5000, 2번 로봇: 5001, ...)
         self.port = BASE_PORT + self.robot_num - 1
-        print(f"현재 포트는?{self.port}\n")
+        # print(f"현재 포트는? {self.port}\n")
         # 서비스 클라이언트 생성 (로봇 번호에 따라 토픽 생성)
         self.temp_stop_client = self.create_client(Estop, f'/robot_{self.robot_num}/temp_stop')
         self.resume_client = self.create_client(Estop, f'/robot_{self.robot_num}/resume')
@@ -41,7 +41,7 @@ class RobotAI(Node):
         # 이미 사용중인 소켓 문제를 피하기 위해 SO_REUSEADDR 옵션 설정
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind((IP_ADDRESS, self.port))
-        self.socket.listen(1)
+        self.socket.listen(5)  # 동시에 대기할 수 있는 연결 수를 늘림
         self.get_logger().info(f'Socket server started on {IP_ADDRESS}:{self.port}, waiting for connections...')
 
         # 소켓 수신 루프를 별도 스레드에서 실행
@@ -51,9 +51,8 @@ class RobotAI(Node):
 
     def accept_connections(self):
         """
-        소켓으로 들어오는 데이터는 "명령" 문자열만 포함합니다.
-        미리 정의된 명령어(CMD_STOP, CMD_RESUME, CMD_DISAPPEAR)는 해당 처리 후,
-        그 외의 명령은 수신한 내용 그대로 ai_info 토픽에 발행합니다.
+        클라이언트 연결을 수락하고, 각 연결마다 별도의 스레드로 handle_client()를 실행하여
+        지속적인 데이터 송수신을 처리합니다.
         """
         while rclpy.ok():
             try:
@@ -63,54 +62,75 @@ class RobotAI(Node):
                 continue
 
             self.get_logger().info(f'Connection from {addr}')
-            try:
-                data = conn.recv(1024).decode('utf-8').strip()
-            except Exception as e:
-                self.get_logger().error(f'Error receiving data: {e}')
-                conn.close()
-                continue
+            # 연결마다 별도 스레드에서 클라이언트 핸들러 실행
+            client_thread = threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True)
+            client_thread.start()
 
-            if not data:
-                conn.close()
-                continue
+    def handle_client(self, conn, addr):
+        """
+        클라이언트와의 지속적인 연결을 유지하며 데이터를 수신합니다.
+        연결이 종료되면 소켓을 닫습니다.
+        """
+        try:
+            while rclpy.ok():
+                try:
+                    data = conn.recv(1024)
+                except Exception as e:
+                    self.get_logger().error(f"Error receiving data from {addr}: {e}")
+                    break
 
-            # 수신된 데이터는 단순한 명령 문자열
-            command = data
+                if not data:
+                    # 클라이언트가 연결을 종료한 경우
+                    self.get_logger().info(f"Connection closed by {addr}")
+                    break
 
-            # 최신 명령 업데이트 (스레드 안전하게)
-            with self.command_lock:
-                self.current_command = command
+                try:
+                    message = data.decode('utf-8').strip()
+                except Exception as e:
+                    self.get_logger().error(f"Decoding error from {addr}: {e}")
+                    continue
 
-            # ai_info 토픽에 수신 메시지 발행 (필요 시 주석 해제)
-            info_msg = String()
-            info_msg.data = f"Received command '{command}' for robot '{self.robot_name}'"
-            # self.ai_info_pub.publish(info_msg)
-
-            # 미리 정의된 명령어에 따른 처리
-            if command == CMD_STOP:
-                self.get_logger().info('Starting service call for temporary stop.')
-                threading.Thread(
-                    target=self.call_service_with_cancellation,
-                    args=(self.temp_stop_client, command),
-                    daemon=True
-                ).start()
-            elif command == CMD_RESUME:
-                self.get_logger().info('Starting service call for resume.')
-                threading.Thread(
-                    target=self.call_service_with_cancellation,
-                    args=(self.resume_client, command),
-                    daemon=True
-                ).start()
-            elif command == CMD_DISAPPEAR:
-                self.get_logger().info('Received disappear command. No service call will be executed.')
-            else:
-                # 미리 정의되지 않은 명령은 그대로 ai_info 토픽에 발행
-                unknown_msg = String()
-                unknown_msg.data = command
-                self.ai_info_pub.publish(unknown_msg)
-                self.get_logger().info(f"Published unknown command to ai_info: {command}")
-
+                if message:
+                    self.get_logger().info(f"Received message from {addr}: {message}")
+                    self.process_command(message)
+        finally:
             conn.close()
+
+    def process_command(self, command):
+        """
+        수신한 명령어에 따라 적절한 처리를 진행합니다.
+        미리 정의된 명령어에 대해서는 서비스 호출을, 그렇지 않은 경우는 ai_info 토픽에 발행합니다.
+        """
+        with self.command_lock:
+            self.current_command = command
+
+        # ai_info 토픽에 수신 메시지 발행 (필요 시 주석 해제)
+        info_msg = String()
+        info_msg.data = f"Received command '{command}' for robot '{self.robot_name}'"
+        # self.ai_info_pub.publish(info_msg)
+
+        if command == CMD_STOP:
+            self.get_logger().info('Starting service call for temporary stop.')
+            threading.Thread(
+                target=self.call_service_with_cancellation,
+                args=(self.temp_stop_client, command),
+                daemon=True
+            ).start()
+        elif command == CMD_RESUME:
+            self.get_logger().info('Starting service call for resume.')
+            threading.Thread(
+                target=self.call_service_with_cancellation,
+                args=(self.resume_client, command),
+                daemon=True
+            ).start()
+        elif command == CMD_DISAPPEAR:
+            self.get_logger().info('Received disappear command. No service call will be executed.')
+        else:
+            # 미리 정의되지 않은 명령은 그대로 ai_info 토픽에 발행
+            unknown_msg = String()
+            unknown_msg.data = command
+            self.ai_info_pub.publish(unknown_msg)
+            self.get_logger().info(f"Published unknown command to ai_info: {command}")
 
     def call_service_with_cancellation(self, client, command):
         """

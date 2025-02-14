@@ -22,11 +22,11 @@
 #include <queue>
 
 // ─── 파라미터들 ─────────────────────────────────────────────────────────────
-const double LOOKAHEAD_DISTANCE       = 0.6;  // Lookahead 거리 (m)
-const double MAX_LINEAR_SPEED         = 0.3;  // 최대 선속도 (m/s)
-const double MAX_ANGULAR_SPEED        = 0.6;  // 최대 각속도 (rad/s)
-const double ACCEL_STEP               = 0.1;  // 선속도 가속도 계수
-const double ANGLE_STEP               = 0.1;  // 각속도 가속도 계수
+const double LOOKAHEAD_DISTANCE       = 1.0;  // Lookahead 거리 (m)
+const double MAX_LINEAR_SPEED         = 3.0;  // 최대 선속도 (m/s)
+const double MAX_ANGULAR_SPEED        = 1.3;  // 최대 각속도 (rad/s)
+const double ACCEL_STEP               = 0.3;  // 선속도 가속도 계수
+const double ANGLE_STEP               = 0.3;  // 각속도 가속도 계수
 const double FRICTION_FACTOR_LINEAR   = 0.9;  // 선속도 감쇠 계수
 const double FRICTION_FACTOR_ANGULAR  = 0.8;  // 각속도 감쇠 계수
 const double POSITION_TOLERANCE       = 0.1;  // 목표점 도달 허용 오차 (m)

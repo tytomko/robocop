@@ -168,7 +168,7 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
 
   static constexpr double ACCEL_STEP = 0.13;
-  static constexpr double ANGLE_STEP = 0.4;
+  static constexpr double ANGLE_STEP = 0.2;
   static constexpr double BRAKE_FACTOR_LINEAR = 0.01;
   static constexpr double BRAKE_FACTOR_ANGULAR = 0.003;
   static constexpr double FRICTION_FACTOR_LINEAR = 0.98;
