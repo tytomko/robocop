@@ -26,6 +26,10 @@ import asyncio
 from fastapi import WebSocketDisconnect
 from pathlib import Path
 from dotenv import load_dotenv
+from app.common.middleware.socket_service import start_socket_server
+import threading
+from .domain.robot.service.robot_service import RobotService, ROS2WebSocketClient
+
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -39,6 +43,12 @@ app = FastAPI(
 )
 
 # CORS 미들웨어 설정
+# origins = [
+#     "https://robocopbackendssafy.duckdns.org",
+#     "http://localhost:5173",
+#     "*"  # 개발 중에는 모든 origin 허용
+# ]
+
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["https://frontend-web-one-omega.vercel.app"],  # 실제 운영 환경에서는 구체적인 origin으로 변경
@@ -63,7 +73,7 @@ app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
 app.include_router(lidar_router, prefix="/api/v1/lidar", tags=["lidar"])
 app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
-app.include_router(map_router, tags=["map"])
+app.include_router(map_router, prefix="/api/v1", tags=["map"])
 
 # 프로젝트 루트 디렉토리 찾기
 base_dir = Path(__file__).resolve().parent.parent
@@ -73,7 +83,8 @@ env_path = os.path.join(base_dir, '.env')
 
 # .env 파일 로드
 load_dotenv(env_path)
-
+ros_client = ROS2WebSocketClient()
+robot_service = RobotService()
 
 @app.on_event("startup")
 async def startup_event():
@@ -125,7 +136,13 @@ async def startup_event():
         except Exception as e:
             logger.warning(f"라이다 서비스 시작 실패: {str(e)}")
         
-        
+        # 소켓 서버 시작
+        threading.Thread(target=start_socket_server, daemon=True).start()
+        logger.info("소켓 서버가 시작되었습니다.")
+        await robot_service.connect_ros()
+
+        await ros_client.connect()
+        logger.info("connected to ROS")
 
         logger.info("모든 초기화 작업이 완료되었습니다.")
     except Exception as e:
@@ -150,15 +167,23 @@ async def root():
         }
     )
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+
+# WebSocket 미들웨어 추가
+@app.middleware("http")
+async def websocket_middleware(request, call_next):
+    if request.url.path.startswith('/ws'):
+        # WebSocket 요청에 대한 CORS 헤더 추가
+        response = await call_next(request)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    return await call_next(request)
+
+# WebSocket 연결 테스트용 엔드포인트
+@app.websocket("/ws/test")
+async def websocket_test(websocket: WebSocket):
     await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message text was: {data}")
-    except WebSocketDisconnect:
-        pass
+    await websocket.send_text("Connected to WebSocket")
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))

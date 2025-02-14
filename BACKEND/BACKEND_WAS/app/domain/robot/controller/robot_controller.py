@@ -2,12 +2,16 @@ from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Bod
 from typing import List, Optional, Dict, Set
 from ..service.robot_service import RobotService
 from ..models.robot_models import (
-    Robot, StatusUpdate, StatusResponse, LogResponse  # RouteRequest, RouteResponse, MapResponse 제거
+    Robot, StatusUpdate, StatusResponse, LogResponse, NicknameResponse  # RouteRequest, RouteResponse, MapResponse, NicknameResponse 제거
 )
+
 from ....common.models.responses import BaseResponse
 from fastapi import HTTPException
+import logging
 
 router = APIRouter()
+robot_service = RobotService()
+logger = logging.getLogger(__name__)
 
 class RobotWebSocketManager:
     def __init__(self):
@@ -16,11 +20,16 @@ class RobotWebSocketManager:
         
     async def connect(self, websocket: WebSocket, robot_id: int):
         """새로운 WebSocket 연결을 추가합니다."""
-        await websocket.accept()
-        if robot_id not in self.active_connections:
-            self.active_connections[robot_id] = set()
-        self.active_connections[robot_id].add(websocket)
-    
+        try:
+            # 이미 accept()가 호출되었으므로 여기서는 생략
+            if robot_id not in self.active_connections:
+                self.active_connections[robot_id] = set()
+            self.active_connections[robot_id].add(websocket)
+            logger.info(f"Added new WebSocket connection for robot {robot_id}")
+        except Exception as e:
+            logger.error(f"Error connecting WebSocket: {str(e)}")
+            raise
+
     async def disconnect(self, websocket: WebSocket, robot_id: int):
         """WebSocket 연결을 제거합니다."""
         self.active_connections[robot_id].remove(websocket)
@@ -177,30 +186,78 @@ async def update_robot_status(
             detail=f"로봇 상태 변경 중 오류가 발생했습니다: {str(e)}"
         )
 
-@router.websocket("/ws/{robot_id}")
-async def websocket_endpoint(
-    websocket: WebSocket, 
-    robot_id: int,
-    robot_service: RobotService = Depends()
+@router.patch("/{seq}/nickname", response_model=BaseResponse[NicknameResponse])
+async def update_robot_nickname(
+    seq: int = Path(..., description="로봇 ID"),
+    new_nickname: str = Body(..., description="새로운 닉네임")
 ):
-    """로봇의 실시간 데이터를 위한 WebSocket 엔드포인트"""
+    """로봇의 닉네임을 변경합니다."""
     try:
-        # 로봇 존재 여부 확인
-        robot = await robot_service.get_robot(robot_id)
-        if not robot:
-            await websocket.close(code=4004, reason="Robot not found")
-            return
+        updated_robot = await robot_service.update_nickname(seq, new_nickname)
+        return BaseResponse[NicknameResponse](
+            status=200,
+            success=True,
+            message="로봇 닉네임이 성공적으로 변경되었습니다.",
+            data=NicknameResponse(
+                seq=str(updated_robot.seq),
+                nickname=updated_robot.nickname,
+                status=updated_robot.status,
+                timestamp=updated_robot.updatedAt
+            )
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"로봇 닉네임 변경 중 오류가 발생했습니다: {str(e)}"
+        )
 
-        # WebSocket 연결
+
+@router.websocket("/ws/monitoring/{robot_id}")
+async def robot_monitoring(
+    websocket: WebSocket,
+    robot_id: int = Path(...),
+):
+    """로봇 모니터링을 위한 웹소켓 연결을 처리합니다."""
+    try:
+        # CORS 헤더 수동 설정
+        await websocket.accept()
+        response_headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Credentials': 'true',
+        }
+        for key, value in response_headers.items():
+            websocket.headers[key] = value
+
+        logger.info(f"새로운 WebSocket 연결 시도: robot_id={robot_id}")
+        
         await ws_manager.connect(websocket, robot_id)
+        logger.info(f"WebSocket 매니저에 연결됨: robot_id={robot_id}")
+        
+        # ROS2 상태 구독
+        ros_robot_id = "robot_1"
+        logger.info(f"ROS2 토픽 구독 시작: {ros_robot_id}")
+        await robot_service.subscribe_to_robot_status(ros_robot_id)
         
         try:
             while True:
                 data = await websocket.receive_json()
-                # 데이터 처리 로직은 추후 구현
-                await ws_manager.broadcast_to_robot(robot_id, data)
+                logger.debug(f"수신된 데이터: robot_id={robot_id}, data={data}")
+                
+                if data.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+                    logger.debug(f"Pong 응답 전송: robot_id={robot_id}")
+                    
         except WebSocketDisconnect:
+            logger.info(f"클라이언트 연결 해제: robot_id={robot_id}")
+        finally:
             await ws_manager.disconnect(websocket, robot_id)
+            logger.info(f"WebSocket 매니저에서 연결 해제: robot_id={robot_id}")
             
     except Exception as e:
-        await websocket.close(code=4000, reason=str(e))
+        logger.error(f"WebSocket 에러 발생: robot_id={robot_id}, error={str(e)}")
+        if not websocket.client_state.disconnected:
+            await websocket.close()

@@ -1,4 +1,9 @@
+version: '3.8'
+
 services:
+  # ---------------------------------------
+  # (A) WAS ????
+  # ---------------------------------------
   was:
     build: .
     image: robocop-was:latest
@@ -6,7 +11,7 @@ services:
     volumes:
       - ./app:/BACKEND_WAS/app
       - ./storage:/BACKEND_WAS/storage
-      - media_volume:/BACKEND_WAS/media
+      - /var/www/media:/BACKEND_WAS/media
     env_file:
       - .env
     depends_on:
@@ -15,17 +20,22 @@ services:
     network_mode: host
     environment:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - ROS_DISCOVERY_SERVER=52.79.51.253:11811    
+      - ROS_DISCOVERY_SERVER=52.79.51.253:11811
+    # WAS ?? ???? ENTRYPOINT? ???? ??? ?
 
+  # ---------------------------------------
+  # (B) MongoDB
+  # ---------------------------------------
   mongodb:
     image: mongo
     container_name: mongodb
     volumes:
       - mongodb_data:/data/db
     network_mode: host
-    environment:
-      - GLIBC_TUNABLES=glibc.pthread.rseq=0
 
+  # ---------------------------------------
+  # (C) Redis
+  # ---------------------------------------
   redis:
     image: redis
     container_name: redis
@@ -34,23 +44,36 @@ services:
     command: redis-server --save 60 1
     network_mode: host
 
+  # ---------------------------------------
+  # (D) ROS2 Discovery Server
+  # ---------------------------------------
   ros2-discovery:
-    build: 
-      context: ./ros2-discovery
+    build:
+      context: ./ros2-discovery   # Dockerfile ??
       dockerfile: Dockerfile
     container_name: ros2-discovery
     environment:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    command: bash -c "source /opt/ros/humble/setup.bash && fastdds discovery -i 0 -l 52.79.51.253 -p 11811"
+      # ? Dockerfile?? ?? ENV ?????, ????
+      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
     network_mode: host
+    # ??? ? ????? ??, ?? Discovery Server? ??
 
+
+  # ---------------------------------------
+  # (E) ROS Bridge (WebSocket)
+  # ---------------------------------------
   rosbridge:
     build: ./rosbridge
     container_name: ros2-bridge
     environment:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - ROS_DISCOVERY_SERVER=52.79.51.253:11811
-    command: ros2 launch rosbridge_server rosbridge_websocket_launch.xml websocket_external_port:=9090 websocket_address:=0.0.0.0
+      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
+    command: >
+      bash -c "source /opt/ros/humble/setup.bash &&
+               ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+                 websocket_external_port:=9090
+                 websocket_address:=0.0.0.0"
     network_mode: host
     depends_on:
       - ros2-discovery

@@ -41,6 +41,7 @@ class Waypoint(BaseModel):
 
 class Robot(BaseModel):
     seq: int
+    # robotID: str
     manufactureName: str
     nickname: str
     ipAddress: str
@@ -72,6 +73,13 @@ class StatusResponse(BaseModel):
     timestamp: datetime
     location: Position
 
+class NicknameResponse(BaseModel):
+    seq: int
+    robotID: str
+    nickname: str
+    status: str
+    timestamp: datetime
+
 class LogEntry(BaseModel):
     x: int
     y: int
@@ -93,7 +101,7 @@ class DetectionInfo(BaseModel):
     status: str
 
 class LogResponse(BaseModel):
-    robotId: str
+    seq: str
     routes: Optional[List[RouteLog]] = None
     detections: Optional[List[DetectionInfo]] = None
     pagination: Dict[str, Any]
@@ -117,3 +125,5 @@ class ROS2RobotStatus(BaseModel):
     error_code: Optional[int] = None
     error_message: Optional[str] = None
     timestamp: datetime
+
+

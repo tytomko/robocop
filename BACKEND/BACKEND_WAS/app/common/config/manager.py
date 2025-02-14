@@ -4,6 +4,8 @@ from .database import DatabaseSettings
 from .security import SecuritySettings
 from .storage import StorageSettings
 from typing import List
+from pydantic_settings import BaseSettings
+
 
 class Settings:
     """설정 관리자"""
@@ -35,6 +37,9 @@ class Settings:
     class ROS:
         ROS_BRIDGE_HOST: str = "172.30.1.78"
         ROS_BRIDGE_PORT: int = 9090
+
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 6379
 
     base: Base
     security: Security
