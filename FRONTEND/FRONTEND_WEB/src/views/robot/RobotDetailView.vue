@@ -62,7 +62,7 @@ const closeNicknameModal = () => {
 const setRobotNickname = async (seq, nickname) => {
   try {
     // 백엔드 API 호출 (PUT 요청)
-    await axios.patch(`https://robocop-backend-app.fly.dev/api/v1/robots/${seq}`, {
+    await axios.patch(`https://robocopbackendssafy.duckdns.org/api/v1/robots/${seq}/nickname`, {
       nickname: nickname
     });
 

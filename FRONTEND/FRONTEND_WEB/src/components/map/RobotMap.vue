@@ -34,6 +34,7 @@ import { GraphicComponent, GridComponent, TooltipComponent, DataZoomComponent, T
 import { ScatterChart, LinesChart } from 'echarts/charts'
 import VChart from 'vue-echarts'
 import SelectedNodes from '@/components/map/SelectedNodes.vue'
+import { useRobotsStore } from '@/stores/robots'
 
 use([
   CanvasRenderer,
@@ -45,6 +46,9 @@ use([
   ScatterChart,
   LinesChart
 ])
+
+const robotsStore = useRobotsStore()
+const emit = defineEmits(['selectedNodesChange'])
 
 // 새로운 prop 추가: showSelectedNodes (기본값: true)
 const props = defineProps({
@@ -59,19 +63,39 @@ const props = defineProps({
   }
 })
 
-// 이벤트 정의
-const emit = defineEmits(['selectedNodesChange'])
+// 현재 선택된 로봇의 seq를 computed로 관리
+const currentRobotSeq = computed(() => {
+  if (props.robot) {
+    return props.robot.seq
+  }
+  // store에서 선택된 로봇 정보 가져오기
+  const selectedRobotSeq = robotsStore.selectedRobot
+  if (selectedRobotSeq) {
+    const selectedRobot = robotsStore.registered_robots.find(
+      robot => robot.seq === selectedRobotSeq
+    )
+    return selectedRobot?.seq
+  }
+  return null
+})
 
 // 네비게이션 요청 처리
 async function handleNavigate() {
-  if (selectedNodes.value.length !== 1) return
+  if (selectedNodes.value.length !== 1 || !currentRobotSeq.value) {
+    console.warn('[RobotMap] 로봇이 선택되지 않았거나 목적지가 선택되지 않았습니다.')
+    return
+  }
+  
   try {
     const goal = {
       x: selectedNodes.value[0].id[0],
       y: selectedNodes.value[0].id[1],
       theta: 0.0
     }
-    await axios.post('https://robocop-backend-app.fly.dev/api/v1/robot_1/call-service/navigate', { goal })
+    await axios.post(
+      `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq.value}/call-service/navigate`, 
+      { goal }
+    )
     console.log('[RobotMap] 이동 명령 전송 완료')
   } catch (error) {
     console.error('Navigation request failed:', error)
@@ -79,14 +103,21 @@ async function handleNavigate() {
 }
 
 async function handlePatrol() {
-  if (selectedNodes.value.length < 2) return
+  if (selectedNodes.value.length < 2 || !currentRobotSeq.value) {
+    console.warn('[RobotMap] 로봇이 선택되지 않았거나 경유지가 충분히 선택되지 않았습니다.')
+    return
+  }
+
   try {
     const goals = selectedNodes.value.map(node => ({
       x: node.id[0],
       y: node.id[1],
       theta: 0.0
     }))
-    await axios.post('https://robocop-backend-app.fly.dev/api/v1/robot_1/call-service/patrol', { goals })
+    await axios.post(
+      `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq.value}/call-service/patrol`, 
+      { goals }
+    )
     console.log('[RobotMap] 순찰 명령 전송 완료')
   } catch (error) {
     console.error('Patrol request failed:', error)
@@ -100,8 +131,15 @@ function resetSelection() {
 }
 
 async function handleTempStop() {
+  if (!currentRobotSeq.value) {
+    console.warn('[RobotMap] 로봇이 선택되지 않았습니다.')
+    return
+  }
+
   try {
-    await axios.post('https://robocop-backend-app.fly.dev/api/v1/robot_1/call-service/temp-stop')
+    await axios.post(
+      `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq.value}/call-service/temp-stop`
+    )
     console.log('[RobotMap] 일시정지 요청 완료')
   } catch (error) {
     console.error('Temporary stop request failed:', error)
@@ -324,7 +362,7 @@ function handleNodeClick(params) {
 async function fetchMapData() {
   try {
     loading.value = true
-    const response = await axios.get('https://robocop-backend-app.fly.dev/map')
+    const response = await axios.get('https://robocopbackendssafy.duckdns.org/api/v1/map')
     mapData.value = { nodes: response.data.nodes, links: response.data.links }
   } catch (error) {
     console.error('맵 데이터 로딩 실패:', error)

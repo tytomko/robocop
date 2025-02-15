@@ -4,7 +4,7 @@
     <button
       class="control-btn"
       :class="{
-        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedNodes.length === 0, // 🚨 비활성화 상태
+        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedNodes.length === 0, // 비활성화 상태
         'bg-blue-500': selectedNodes.length === 1,
         'bg-green-500': selectedNodes.length >= 2
       }"

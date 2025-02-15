@@ -6,7 +6,7 @@ export function useUser() {
 
   function logout() {
     axios
-      .post('https://robocop-backend-app.fly.dev/api/v1/auth/logout', null, {
+      .post('https://robocopbackendssafy.duckdns.org/api/v1/auth/logout', null, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
