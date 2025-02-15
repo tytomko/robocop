@@ -151,6 +151,7 @@ export const useRobotsStore = defineStore('robots', () => {
     }
   }
 
+  // api 연동 필요
   const setBreakdown = (robotSeq) => {
     const robot = registered_robots.value.find(r => r.seq === robotSeq)
     if (robot) robot.status = 'error'
