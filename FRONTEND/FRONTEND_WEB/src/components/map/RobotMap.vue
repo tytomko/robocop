@@ -1,7 +1,6 @@
 <template>
   <div class="flex flex-col h-screen bg-white">
     <div class="flex-1 relative p-1">
-      <!-- (버튼 영역 사라짐) -->
 
       <v-chart
         class="w-5/6 h-[600px] min-h-[300px] mx-auto"
@@ -12,7 +11,10 @@
       />
 
       <!-- showSelectedNodes가 true일 때만 렌더링 -->
-      <SelectedNodes v-if="props.showSelectedNodes" :selectedNodes="selectedNodesInfo" />
+      <SelectedNodes 
+        v-if="props.showSelectedNodes" 
+        :selectedNodes="selectedNodesInfo" 
+      />
 
       <!-- 로딩 표시 -->
       <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90">
@@ -52,7 +54,8 @@ const props = defineProps({
   },
   robot: {
     type: Object,
-    required: true
+    required: false,    // robot prop을 선택적으로 변경
+    default: () => null
   }
 })
 
@@ -183,16 +186,6 @@ watch(selectedNodes, (newVal) => {
     })
   }
 })
-
-watch(() => props.robot, (newRobot) => {
-  if (newRobot) {
-    console.log('Robot changed in RobotMap:', newRobot)
-    // 맵 데이터 다시 불러오기
-    fetchMapData()
-    // 선택된 노드 초기화
-    selectedNodes.value = []
-  }
-}, { deep: true })
 
 // 차트 옵션
 const chartOption = computed(() => ({
@@ -339,6 +332,15 @@ async function fetchMapData() {
     loading.value = false
   }
 }
+
+watch(() => props.robot, (newRobot) => {
+  if (newRobot) {
+    console.log('Robot changed in RobotMap:', newRobot)
+    // 로봇이 변경될 때만 선택된 노드 초기화
+    selectedNodes.value = []
+  }
+}, { deep: true })
+
 onMounted(() => {
   fetchMapData()
 })

@@ -14,11 +14,14 @@ export const useRobotsStore = defineStore('robots', () => {
     ipAddress: '',
   })
 
-  // 🚨 selectedRobot을 우선 숫자로 초기화
+  // selectedRobot을 우선 숫자로 초기화
   // localStorage에서 가져온 문자열을 parseInt로 변환
   const savedRobot = localStorage.getItem('selectedRobot')
   const selectedRobot = ref(savedRobot ? parseInt(savedRobot, 10) : 0) 
   // 숫자가 없으면 0(또는 null, '') 등으로 지정
+
+  let pollingInterval = null
+  const POLLING_INTERVAL = 5000 // 5초마다 폴링
 
   // 로봇 리스트 불러오기
   const loadRobots = async () => {
@@ -158,6 +161,27 @@ export const useRobotsStore = defineStore('robots', () => {
     if (robot) robot.status = 'navigating'
   }
 
+   // 웹소켓으로 받은 데이터로 로봇 상태 업데이트
+   const updateRobotsData = (data) => {
+    if (Array.isArray(data)) {
+      registered_robots.value = data.map(mapRobotData)
+    }
+  }
+
+  // API 폴링 시작
+  const startPolling = () => {
+    loadRobots() // 초기 데이터 로드
+    pollingInterval = setInterval(loadRobots, POLLING_INTERVAL)
+  }
+
+  // API 폴링 중지
+  const stopPolling = () => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
+    }
+  }
+
   return {
     registered_robots,
     showModal,
@@ -181,6 +205,9 @@ export const useRobotsStore = defineStore('robots', () => {
     closeModal,
     handleAddRobot,
     setBreakdown,
-    setActive
+    setActive,
+    updateRobotsData,
+    startPolling,
+    stopPolling
   }
 })

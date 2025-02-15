@@ -1,7 +1,7 @@
 export class RobotControl {
-    constructor(robotId, options = {}) {
+    constructor(robotSeq, options = {}) {
         this.ws = null;
-        this.robotId = robotId;
+        this.robotSeq = robotSeq;
         this.options = options;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
@@ -11,8 +11,8 @@ export class RobotControl {
     connect() {
         try {
             // FastAPI 서버의 WebSocket 엔드포인트에 연결
-            this.ws = new WebSocket(`ws://localhost:8000/ws/control/${this.robotId}`);
-            
+            // this.ws = new WebSocket(`ws://localhost:8000/ws/control/${this.robotId}`);
+            this.ws = new WebSocket(`wss://robocop-backend-app.fly.dev/ws/control/${this.robotSeq}`);
             this.ws.onopen = () => {
                 console.log('제어 연결 성공');
                 this.reconnectAttempts = 0;
@@ -105,27 +105,3 @@ export class RobotControl {
         return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
     }
 }
-
-// 사용 예시:
-/*
-const robotControl = new RobotControl('robot1', {
-    onConnect: () => {
-        console.log('로봇 제어 연결됨');
-    },
-    onDisconnect: () => {
-        console.log('로봇 제어 연결 해제됨');
-    },
-    onError: (error) => {
-        console.error('에러 발생:', error);
-    },
-    onFeedback: (data) => {
-        console.log('로봇 피드백:', data);
-    }
-});
-
-// 연결 시작
-robotControl.connect();
-
-// 연결 해제
-// robotControl.disconnect();
-*/ 
