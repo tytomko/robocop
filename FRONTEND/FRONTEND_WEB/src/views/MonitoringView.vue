@@ -86,9 +86,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { webSocketService } from '@/services/websocket'
-import { useRobotsStore } from '@/stores/robots'
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { webSocketService } from '@/services/websocket';
+import { useRobotsStore } from '@/stores/robots';
 import RobotList from '@/components/dashboard/RobotList.vue';
 import RobotManagement from '@/components/dashboard/RobotManagement.vue';
 import RobotRegistration from '@/components/dashboard/RobotRegistration.vue';
@@ -117,7 +117,7 @@ const setupWebSocket = async () => {
   try {
     await webSocketService.connect('wss://robocopbackendssafy.duckdns.org/ws/test')
     webSocketConnected.value = true
-    console.log('웹소켓 연결 성공')
+    console.log('웹소켓 연결 성공');
 
     // 테스트 메시지 구독
     webSocketService.subscribe('test_message', (data) => {
@@ -164,7 +164,7 @@ const sendMessage = async () => {
     messageInput.value = ''
   } catch (error) {
     console.error('메시지 전송 실패:', error)
-  }
+  };
 }
 
 onMounted(() => {
