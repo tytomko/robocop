@@ -61,7 +61,7 @@ const changePassword = async () => {
   saving.value = true;
   try {
     await axios.post(
-      'https://robocop-backend-app.fly.dev/api/v1/auth/change-password',
+      'https://robocopbackendssafy.duckdns.org/api/v1/auth/change-password',
       {
         currentPassword: passwordForm.value.currentPassword,
         newPassword: passwordForm.value.newPassword,

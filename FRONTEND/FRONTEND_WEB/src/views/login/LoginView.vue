@@ -62,7 +62,7 @@ const handleLogin = async () => {
     params.append('username', loginForm.value.username);
     params.append('password', loginForm.value.password);
 
-    const response = await axios.post('https://robocop-backend-app.fly.dev/api/v1/auth/login', params, {
+    const response = await axios.post('https://robocopbackendssafy.duckdns.org/api/v1/auth/login', params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
