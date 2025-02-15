@@ -26,7 +26,7 @@ export const useRobotsStore = defineStore('robots', () => {
   // 로봇 리스트 불러오기
   const loadRobots = async () => {
     try {
-      const res = await axios.get('https://robocopbackendssafy.duckdns.org/api/v1/robots/')
+      const res = await axios.get('https://robocop-backend-app.fly.dev/api/v1/robots/')
       registered_robots.value = res.data.data.map((robot) => ({
         seq: robot.seq,
         name: robot.manufactureName,
@@ -93,7 +93,7 @@ export const useRobotsStore = defineStore('robots', () => {
     formData.append('nickname', newRobot.value.nickname)
     formData.append('ipAddress', newRobot.value.ipAddress)
 
-    axios.post('https://robocopbackendssafy.duckdns.org/api/v1/robots', formData, {
+    axios.post('https://robocop-backend-app.fly.dev/api/v1/robots', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
       .then((response) => {
@@ -151,6 +151,7 @@ export const useRobotsStore = defineStore('robots', () => {
     }
   }
 
+  // api 연동 필요
   const setBreakdown = (robotSeq) => {
     const robot = registered_robots.value.find(r => r.seq === robotSeq)
     if (robot) robot.status = 'error'
