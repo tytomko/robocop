@@ -10,17 +10,40 @@
 
       <!-- Main Content -->
       <div class="flex flex-col flex-1 overflow-auto">
-
         <!-- Navbar -->
         <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-10 h-[55px] flex items-center justify-between">
           <div class="cursor-pointer" @click="refreshPage">
             <img src="@/assets/whitelogo.png" alt="로고" class="h-14" />
           </div>
           <div :class="navRouterLinkContainerClasses">
-            <router-link to="/" class="font-normal text-base hover:text-blue-400">현황</router-link>
-            <router-link to="/camera" class="font-normal text-base hover:text-blue-400">CCTV</router-link>
-            <router-link to="/control" class="font-normal text-base hover:text-blue-400">제어</router-link>
-            <router-link to="/management" class="font-normal text-base hover:text-blue-400">관리</router-link>
+            <router-link 
+              to="/" 
+              class="nav-link"
+              :class="{ 'nav-link-active': route.path === '/' }"
+            >
+              현황
+            </router-link>
+            <router-link 
+              to="/camera" 
+              class="nav-link"
+              :class="{ 'nav-link-active': route.path === '/camera' }"
+            >
+              CCTV
+            </router-link>
+            <router-link 
+              to="/control" 
+              class="nav-link"
+              :class="{ 'nav-link-active': route.path === '/control' }"
+            >
+              제어
+            </router-link>
+            <router-link 
+              to="/management" 
+              class="nav-link"
+              :class="{ 'nav-link-active': route.path === '/management' }"
+            >
+              관리
+            </router-link>
             <AlarmNotification inline v-if="!isSidebarCollapsed" class="ml-4" />
           </div>
         </nav>
@@ -104,12 +127,48 @@ watch(
 </script>
 
 <style>
-/* 스크롤바 숨기되, 스크롤 가능하게 유지 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+/* 기본 폰트 설정 */
+#app {
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 스크롤바 숨기기 */
 * {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE, Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
 *::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+  display: none;
 }
+
+/* 네비게이션 링크 스타일 */
+.nav-link {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.nav-link-active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+}
+
+/* 전역 타이포그래피 스타일 */
+h1 { font-size: 1.875rem; font-weight: 700; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.25rem; font-weight: 600; }
+h4 { font-size: 1.125rem; font-weight: 600; }
 </style>

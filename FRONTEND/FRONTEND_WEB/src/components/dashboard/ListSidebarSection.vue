@@ -1,52 +1,73 @@
 <template>
   <div class="relative h-full">
-    <!-- 사이드바 -->
     <div
       class="bg-gray-900 text-white h-full overflow-hidden transition-all duration-300 ease-in-out"
       :class="isCollapsed ? 'w-0' : 'w-[240px]'"
     >
       <!-- 상단 로고 -->
-      <div class="p-3 border-b border-gray-700 h-[55px]">
-        <h1 class="text-xl font-bold">ROBOCOP</h1>
+      <div class="px-4 py-3 border-b border-gray-700 h-[55px] bg-gray-800 flex items-center">
+        <h1 class="text-xl font-bold tracking-wide">ROBOCOP</h1>
       </div>
 
       <!-- 로봇 리스트 헤더 -->
-      <div class="p-4 border-b border-gray-700 mt-6">
+      <div class="p-4 border-b border-gray-700 bg-gray-800/50">
         <span class="text-sm font-medium uppercase tracking-wider text-gray-300">
           로봇 리스트
         </span>
-        <!-- 선택된 로봇 정보 표시 (있을 때만) -->
-        <div v-if="selectedRobotItem" class="text-xs text-gray-200 mt-2">
-          선택된 로봇: {{ selectedRobotItem.nickname }}
+        <div v-if="selectedRobotItem" class="mt-2 px-2 py-1 bg-gray-800 rounded-md">
+          <span class="text-xs text-gray-300">선택된 로봇:</span>
+          <span class="text-sm text-white ml-1 font-medium">{{ selectedRobotItem.nickname }}</span>
         </div>
       </div>
 
       <!-- 로봇 목록 -->
-      <div class="overflow-auto flex-1">
-        <ul>
+      <div class="overflow-auto flex-1 py-2">
+        <ul class="space-y-1 px-2">
           <li
             v-for="robot in robots"
             :key="robot.seq"
-            class="flex items-center px-4 py-2 border-b border-gray-700 hover:bg-gray-800 cursor-pointer"
-            @click="toggleRobotSelection(robot.seq)"
+            class="rounded-lg transition-all duration-200"
+            :class="[
+              robotsStore.selectedRobot === robot.seq 
+                ? 'bg-gray-700 shadow-md' 
+                : 'hover:bg-gray-800/70'
+            ]"
           >
-            <!-- 체크 아이콘 -->
-            <span
-              v-if="robotsStore.selectedRobot === robot.seq"
-              class="text-green-500 mr-2"
+            <button
+              class="w-full px-4 py-3 flex items-center gap-3"
+              @click="toggleRobotSelection(robot.seq)"
             >
-              <i class="fas fa-check"></i>
-            </span>
+              <!-- 상태 표시 -->
+              <span
+                class="relative flex h-3 w-3"
+                :class="robot.isActive ? 'text-green-500' : 'text-gray-500'"
+              >
+                <span class="absolute inline-flex h-full w-full rounded-full opacity-75"
+                      :class="robot.isActive ? 'animate-ping bg-green-500' : 'bg-gray-500'"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3"
+                      :class="robot.isActive ? 'bg-green-500' : 'bg-gray-500'"></span>
+              </span>
 
-            <!-- 로봇 활성 표시 -->
-            <span
-              class="inline-block w-3 h-3 rounded-full mr-2"
-              :class="robot.isActive ? 'bg-green-500' : 'bg-gray-500'"
-            ></span>
+              <!-- 로봇 이름 -->
+              <span v-if="!isCollapsed" 
+                    class="flex-1 text-sm font-medium"
+                    :class="robotsStore.selectedRobot === robot.seq ? 'text-white' : 'text-gray-300'">
+                {{ robot.nickname || robot.name }}
+              </span>
 
-            <span v-if="!isCollapsed">
-              {{ robot.nickname || robot.name }}
-            </span>
+              <!-- 선택 표시 -->
+              <span v-if="robotsStore.selectedRobot === robot.seq" 
+                    class="text-green-400">
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                     class="h-5 w-5" 
+                     viewBox="0 0 20 20" 
+                     fill="currentColor">
+                  <path fill-rule="evenodd" 
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
+                        clip-rule="evenodd" />
+                </svg>
+              </span>
+            </button>
           </li>
         </ul>
       </div>
@@ -54,13 +75,15 @@
 
     <!-- 토글 버튼 -->
     <button
-      class="absolute top-1/2 transform -translate-y-1/2 bg-gray-300 text-black px-2 py-1 rounded-r hover:bg-gray-300 z-10 
-             transition-all duration-300 ease-in-out"
+      class="absolute top-1/2 -translate-y-1/2 bg-gray-800 hover:bg-gray-700 
+             text-white w-6 h-20 rounded-r-md transition-all duration-300 ease-in-out
+             flex items-center justify-center shadow-lg"
       :class="isCollapsed ? 'left-0' : 'left-[240px]'"
       @click="$emit('toggle-left-sidebar')"
     >
-      <span v-if="isCollapsed">▶</span>
-      <span v-else>◀</span>
+      <span class="text-sm">
+        {{ isCollapsed ? '▶' : '◀' }}
+      </span>
     </button>
   </div>
 </template>
