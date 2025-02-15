@@ -39,6 +39,7 @@ def generate_launch_description():
         ExecuteProcess(
             cmd=['gazebo', '--verbose', world, '-s', 'libgazebo_ros_init.so'],
             output='screen'),
+
         
         Node(
             package='robot_state_publisher',

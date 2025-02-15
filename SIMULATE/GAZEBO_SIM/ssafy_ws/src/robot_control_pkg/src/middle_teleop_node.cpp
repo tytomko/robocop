@@ -167,12 +167,12 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr speed_publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  static constexpr double ACCEL_STEP = 0.13;
-  static constexpr double ANGLE_STEP = 0.2;
+  static constexpr double ACCEL_STEP = 0.17;
+  static constexpr double ANGLE_STEP = 0.10;
   static constexpr double BRAKE_FACTOR_LINEAR = 0.01;
-  static constexpr double BRAKE_FACTOR_ANGULAR = 0.003;
-  static constexpr double FRICTION_FACTOR_LINEAR = 0.98;
-  static constexpr double FRICTION_FACTOR_ANGULAR = 0.95;
+  static constexpr double BRAKE_FACTOR_ANGULAR = 0.01;
+  static constexpr double FRICTION_FACTOR_LINEAR = 0.90;
+  static constexpr double FRICTION_FACTOR_ANGULAR = 0.90;
   static constexpr double MAX_LINEAR_SPEED = 2.0;
   static constexpr double MAX_ANGULAR_SPEED = 2.0;
 };
