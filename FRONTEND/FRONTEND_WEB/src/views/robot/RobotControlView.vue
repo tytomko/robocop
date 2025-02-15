@@ -64,8 +64,6 @@
           @tempStop="handleTempStop"
         />
 
-        <SelectedNodes :selectedNodes="selectedNodes" />
-        
         <RobotMap 
           v-if="activeRobot"
           :key="mapKey"
@@ -77,7 +75,12 @@
 
       <div v-else-if="mode === 'manual'" class="flex justify-between items-start">
         <div class="flex flex-row items-center w-full">
-          <Cctv :robot="activeRobot" class="w-full h-96 bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" />
+          <Cctv 
+            v-if="activeRobot"
+            :robotSeq="activeRobot.seq" 
+            :cameraType="'front'" 
+            class="w-full h-[600px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
+          />
 
           <div class="flex flex-col items-center ml-5 space-y-2">
             <button 
@@ -118,7 +121,6 @@ import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 import ControlButtons from '@/components/map/ControlButtons.vue'
-import SelectedNodes from '@/components/map/SelectedNodes.vue'
 
 const robotsStore = useRobotsStore()
 const selectedRobotSeq = ref('')

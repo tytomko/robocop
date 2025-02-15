@@ -1,5 +1,5 @@
 <template>
-  <div class="settings-container p-5 flex flex-col gap-5 max-w-4xl mx-auto h-screen overflow-y-auto">
+  <div class="settings-container p-5 flex flex-col gap-5 max-w-6xl mx-auto h-screen overflow-y-auto">
     
     <!-- ✅ 계정 관리 섹션 -->
     <div class="bg-white p-5 rounded-lg shadow-md">

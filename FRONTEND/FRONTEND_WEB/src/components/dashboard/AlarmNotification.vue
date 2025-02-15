@@ -1,12 +1,12 @@
 <template>
   <div :class="notificationWrapperClass">
     <!-- 알림 아이콘 -->
-    <div class="relative cursor-pointer" @click="toggleNotifications">
-      <div class="bg-white p-1 rounded-full">
+    <div class="relative cursor-pointer group" @click="toggleNotifications">
+      <div class="bg-transparent p-1 rounded-full transition-all duration-200 group-hover:bg-gray-700">
         <i :class="bellIconClass"></i>
         <span
           v-if="unreadCount > 0"
-          class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center"
         >
           {{ unreadCount }}
         </span>
@@ -14,29 +14,36 @@
     </div>
 
     <!-- 알림 드롭다운 -->
-    <!-- transition 속성 명: "slide-fade" (원하는 대로 수정 가능) -->
     <transition name="slide-fade">
       <div
         v-if="isNotificationsOpen"
         :class="dropdownClasses"
       >
+        <div class="py-2 px-4 bg-gray-50 border-b border-gray-200">
+          <h3 class="text-sm font-semibold text-gray-700">알림</h3>
+        </div>
         <ul class="list-none p-0">
           <li
             v-for="(notification, index) in notifications"
             :key="index"
-            class="flex items-center gap-3 p-3 border-b border-gray-200 cursor-pointer text-sm hover:bg-gray-100"
+            class="flex items-center gap-3 p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
           >
-            <img
-              :src="getNotificationImage(notification.message)"
-              alt="알림 아이콘"
-              class="w-10 h-10 rounded-full object-cover"
-            />
+            <div class="w-8 h-8 rounded-full overflow-hidden">
+              <img
+                :src="getNotificationImage(notification.message)"
+                alt="알림 아이콘"
+                class="w-full h-full object-cover"
+              />
+            </div>
             <div class="flex-1">
-              <p class="text-gray-800 font-medium">{{ notification.message }}</p>
-              <span class="text-xs text-gray-500">{{ getTimeAgo(index) }}</span>
+              <p class="text-sm text-gray-800 font-medium leading-snug">{{ notification.message }}</p>
+              <span class="text-xs text-gray-500 mt-1 block">{{ getTimeAgo(index) }}</span>
             </div>
           </li>
         </ul>
+        <div v-if="notifications.length === 0" class="p-4 text-center text-sm text-gray-500">
+          새로운 알림이 없습니다
+        </div>
       </div>
     </transition>
   </div>
@@ -61,8 +68,8 @@ const isNotificationsOpen = ref(false);
 
 const bellIconClass = computed(() => {
   return isNotificationsOpen.value
-    ? "fa-solid fa-bell text-black text-2xl"
-    : "fa-regular fa-bell text-black text-2xl";
+    ? "fa-solid fa-bell text-white text-xl"
+    : "fa-regular fa-bell text-white text-xl";
 });
 
 const getNotificationImage = (message) => {
@@ -97,19 +104,17 @@ const toggleNotifications = () => {
   isNotificationsOpen.value = !isNotificationsOpen.value;
 };
 
-// 알림 아이콘 위치 조정
 const notificationWrapperClass = computed(() => {
   if (props.inline) {
-    return "relative ml-4"; // 네비게이션 바 내부일 때
+    return "relative"; 
   }
-  return "fixed top-2 right-10 z-50"; // 사이드바가 축소된 경우
+  return "fixed top-3 right-10 z-50";
 });
 
-// 알림 드롭다운 위치 조정
 const dropdownClasses = computed(() => {
   return props.isCollapsed
-    ? "absolute top-full right-0 mt-2 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn"
-    : "absolute top-full left-[-290px] mt-2 bg-white rounded-lg border border-gray-300 w-80 max-h-96 overflow-y-auto shadow-lg z-50 animate-slideIn";
+    ? "absolute top-full right-0 mt-2 bg-white rounded-lg border border-gray-200 w-80 max-h-[32rem] overflow-y-auto shadow-lg z-50 divide-y divide-gray-100"
+    : "absolute top-full left-[-290px] mt-2 bg-white rounded-lg border border-gray-200 w-80 max-h-[32rem] overflow-y-auto shadow-lg z-50 divide-y divide-gray-100";
 });
 
 onMounted(() => {
@@ -119,27 +124,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 진입/퇴장 시 전체적인 트랜지션 시간과 이징 설정 */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: all 0.5s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 들어올 때(enter)와 나갈 때(leave) 초기/최종 상태 */
-.slide-fade-enter,   /* 시작 시점 */
-.slide-fade-leave-to /* 끝나는 시점 */
-{
+.slide-fade-enter-from,
+.slide-fade-leave-to {
   transform: translateY(-10px);
   opacity: 0;
 }
 
-/* 이미 작성한 keyframes를 활용하고 싶다면
-   .animate-slideIn { ... } 라는 클래스 대신 
-   <transition> 속성에 enter/leave 시점별 keyframe 클래스를 연결해줘도 됩니다. */
-
-@keyframes slideIn {
-  from { transform: translateY(-10px); opacity: 0; }
-  to   { transform: translateY(0);     opacity: 1; }
+.slide-fade-enter-to,
+.slide-fade-leave-from {
+  transform: translateY(0);
+  opacity: 1;
 }
-
 </style>
