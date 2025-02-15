@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 
 class ROSConfig(BaseModel):
     """ROS 연결 설정"""
-    host: str = "192.168.100.104"
-    port: int = 9090
+    host: str = "127.0.0.1"
+    port: int = 10000
     retry_interval: float = 5.0
     max_retries: int = 3
 

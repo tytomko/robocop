@@ -35,11 +35,11 @@ class Settings:
         IMAGE_STORAGE_PATH: str
 
     class ROS:
-        ROS_BRIDGE_HOST: str = "172.30.1.78"
-        ROS_BRIDGE_PORT: int = 9090
+        ROS_BRIDGE_HOST: str = "localhost"
+        ROS_BRIDGE_PORT: int = 10000
 
     class ROS2:
-        BRIDGE_URL: str = "ws://localhost:9090"
+        BRIDGE_URL: str = "ws://localhost:10000"
         RETRY_INTERVAL: int = 5
         MAX_RETRIES: int = 3
 

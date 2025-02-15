@@ -1,4 +1,5 @@
 import roslibpy
+import asyncio
 import logging
 import time
 from typing import Optional
@@ -11,20 +12,17 @@ class RosBridgeConnection:
     _client = None
     
     HOST = "127.0.0.1"
-    # HOST = "localhost"
-    PORT = 9090
-    # PORT = 10000
+    PORT = 10001
     MAX_RETRIES = 3
-    RETRY_DELAY = 2  # 초
-    
+    RETRY_DELAY = 2
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(RosBridgeConnection, cls).__new__(cls)
             cls._instance._connect()
         return cls._instance
-    
-    def _connect(self) -> Optional[roslibpy.Ros]:
-        """ROS Bridge 서버에 연결 시도"""
+
+    async def _connect(self):
         retries = 0
         while retries < self.MAX_RETRIES:
             if not self._client or not self._client.is_connected:
@@ -39,18 +37,21 @@ class RosBridgeConnection:
                     self._client = None
                     retries += 1
                     if retries < self.MAX_RETRIES:
-                        logger.info(f"{self.RETRY_DELAY}초 후 재시도합니다...")
-                        time.sleep(self.RETRY_DELAY)
-        
-        raise Exception("최대 재시도 횟수를 초과했습니다.")
-    
-    @property
-    def client(self):
-        """ROS Bridge 클라이언트 반환"""
-        if not self._client or not self._client.is_connected:
-            self._connect()
-        return self._client
-    
+                        await asyncio.sleep(self.RETRY_DELAY)
+
+    async def publish(self, topic_name: str, msg_type: str, message: dict):
+        try:
+            if not self._client or not self._client.is_connected:
+                await self._connect()
+            
+            topic = roslibpy.Topic(self._client, topic_name, msg_type)
+            topic.publish(message)
+            logger.info(f"Published to {topic_name}: {message}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to publish to {topic_name}: {str(e)}")
+            return False
+
     def disconnect(self):
         """ROS Bridge 연결 종료"""
         if self._client and self._client.is_connected:

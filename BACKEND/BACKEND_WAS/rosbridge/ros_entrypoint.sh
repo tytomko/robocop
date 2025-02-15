@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-# ROS2 환경 설정
-source /opt/ros/humble/setup.bash
+# setup ros environment
+source "/opt/ros/humble/setup.bash"
+source "/ros2_ws/install/setup.bash"
 
 exec "$@"
 

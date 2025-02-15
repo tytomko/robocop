@@ -9,7 +9,7 @@ import time
 app = FastAPI()
 
 class CameraService:
-    def __init__(self, ros_host='127.0.0.1', ros_port=9090):
+    def __init__(self, ros_host='127.0.0.1', ros_port=10000):
         self.client = roslibpy.Ros(host=ros_host, port=ros_port)
         self.latest_frame = None
         self.fps = 30  # FPS 제한 추가
@@ -22,7 +22,7 @@ class CameraService:
         # 카메라 토픽 설정
         self.topic = roslibpy.Topic(
             self.client,
-            '/ssafy/tb3_front_camera/image_raw/compressed',
+            '/Isaacbot/front/img_compressed',
             'sensor_msgs/CompressedImage'
         )
         

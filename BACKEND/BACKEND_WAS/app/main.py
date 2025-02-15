@@ -28,10 +28,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from app.common.middleware.socket_service import start_socket_server
 import threading
-from .domain.robot.service.robot_service import RobotService, ROS2WebSocketClient
+from .domain.robot.service.robot_service import ROS2WebSocketClient, RobotService
 import time
 from datetime import datetime
 import json
+import traceback
 
 
 logger = logging.getLogger(__name__)
@@ -86,12 +87,15 @@ env_path = os.path.join(base_dir, '.env')
 
 # .env 파일 로드
 load_dotenv(env_path)
-ros_client = ROS2WebSocketClient()
+# ros_bridge_client = ROS2WebSocketClient(
+#     ros_host=settings.ros2.BRIDGE_HOST,
+#     ros_port=settings.ros2.BRIDGE_PORT
+# )
+ros_bridge_client = ROS2WebSocketClient()
 robot_service = RobotService()
 
 @app.on_event("startup")
 async def startup_event():
-    """Application startup event handler"""
     logger.info("Starting up application...")
     
     try:
@@ -145,7 +149,7 @@ async def startup_event():
 
         # Attempt ROS2 websocket connection
         try:
-            await ros_client.connect()
+            await ros_bridge_client.connect()
             logger.info("ROS2 websocket connection successful")
         except Exception as e:
             logger.warning(f"ROS2 websocket connection failed: {str(e)}")
@@ -158,13 +162,11 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    #"""애플리케이션 종료 시 실행되는 이벤트 핸들러"""
     logger.info("Shutting down application...")
     await DatabaseConnection.disconnect()
 
 @app.get("/", response_model=BaseResponse)
 async def root():
-    #"""루트 엔드포인트"""
     return BaseResponse(
         success=True,
         message="Welcome to the Robot Management System API",
@@ -192,55 +194,41 @@ async def websocket_test(websocket: WebSocket):
         await websocket.accept()
         logger.info("New websocket client connected")
         
-        # Register frontend client
         await robot_service.register_frontend_client(websocket)
+        await ros_bridge_client.start_listening()
         
-        # Register with ROS2 client
-        await ros_client.register_client(websocket)
-        
+        # 토픽 정의
+        topics = {
+            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
+            "/robot_1/status": "robot_custom_interfaces/msg/Status",
+        }
+
+        # 구독 및 브로드캐스트 루프
         while True:
             try:
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
-                logger.info(f"Message received from client: {data}")
-                
-                # Parse received message
-                message_data = json.loads(data)
-                if message_data.get('type') == 'user_message':
-                    user_text = message_data.get('data', {}).get('text')
-                    logger.info(f"User input message: {user_text}")
+                for topic_name, msg_type in topics.items():
+                    # 토픽 구독 및 메시지 수신
+                    message = await ros_bridge_client.subscribe_to_topic(topic_name, msg_type)
+                    logger.info(f"Got message from subscribe_to_topic: {message}")
                     
-                    # Forward message to ROS2 Bridge
-                    bridge_message = {
-                        "op": "publish",
-                        "topic": "/user_messages",
-                        "msg": {
-                            "data": user_text
-                        }
-                    }
-                    await ros_client.send_message(bridge_message)
-                    logger.info(f"Message sent to ROS2 Bridge: {bridge_message}")
+                    # 메시지가 있으면 프론트엔드로 전송
+                    if message:
+                        logger.info("Broadcasting message to frontend")
+                        await robot_service.broadcast_to_frontend(message)
+                        logger.info("Broadcast completed")
+                    else:
+                        logger.info(f"No message to broadcast for topic: {topic_name}")
+                        
+                await asyncio.sleep(1)  # 1초 대기
                 
-            except asyncio.TimeoutError:
-                test_message = {
-                    "type": "test_message",
-                    "data": f"Server time: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}"
-                }
-                await robot_service.broadcast_to_frontend(test_message)
-                await asyncio.sleep(1)
-                continue
-            except WebSocketDisconnect:
-                break
-            except json.JSONDecodeError as e:
-                logger.error(f"Message parsing error: {str(e)}")
             except Exception as e:
-                logger.error(f"Error processing message: {str(e)}")
+                logger.error(f"Loop error: {str(e)}")
+                logger.error(f"Error traceback: {traceback.format_exc()}")
+                await asyncio.sleep(1)
                 
     except WebSocketDisconnect:
         logger.info("Websocket client disconnected")
         await robot_service.unregister_frontend_client(websocket)
-        await ros_client.unregister_client(websocket)
-    except Exception as e:
-        logger.error(f"Error in websocket handling: {str(e)}")
 
 
 if __name__ == "__main__":

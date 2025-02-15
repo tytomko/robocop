@@ -71,13 +71,22 @@ services:
     container_name: ros2-bridge
     environment:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    command: >
-      bash -c "source /opt/ros/humble/setup.bash &&
-               (ros2 launch rosbridge_server rosbridge_websocket_launch.xml 
-               port:=9090 
-               address:=0.0.0.0) && python3 /ros2_ws/test_publisher.py"
     network_mode: host
     restart: unless-stopped
+#  rosbridge:
+#    build: 
+#      context: ./rosbridge
+#      dockerfile: Dockerfile
+#    container_name: ros2-bridge
+#    environment:
+#      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#    command: >
+#      bash -c "source /opt/ros/humble/setup.bash &&
+#               (ros2 launch rosbridge_server rosbridge_websocket_launch.xml 
+#               port:=9090 
+#               address:=0.0.0.0) && python3 /ros2_ws/test_publisher.py"
+#    network_mode: host
+#    restart: unless-stopped
 
 volumes:
   media_volume:
