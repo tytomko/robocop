@@ -37,39 +37,39 @@ import json
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# FastAPI 앱 생성
+# FastAPI �� ����
 app = FastAPI(
     title="Robot Management System API",
-    description="로봇 관리 시스템 API",
+    description="Robot Management System API",
     version="1.0.0",
     debug=settings.base.DEBUG
 )
 
-# CORS 미들웨어 설정
+# CORS �̵���� ����
 # origins = [
 #     "https://robocopbackendssafy.duckdns.org",
 #     "http://localhost:5173",
-#     "*"  # 개발 중에는 모든 origin 허용
+#     "*"  # ���� �߿��� ��� origin ���
 # ]
 
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["https://frontend-web-one-omega.vercel.app"],  # 실제 운영 환경에서는 구체적인 origin으로 변경
+    # allow_origins=["https://frontend-web-one-omega.vercel.app"],  # ���� � ȯ�濡���� ��ü���� origin���� ����
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 로깅 미들웨어 추가
+# �α� �̵���� �߰�
 app.add_middleware(RequestLoggingMiddleware)
 
-# 예외 핸들러 등록
+# ���� �ڵ鷯 ���
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(ValueError, validation_exception_handler)
 app.add_exception_handler(Exception, internal_exception_handler)
 
-# 라우터 등록
+# ����� ���
 app.include_router(robot_router, prefix="/api/v1/robots", tags=["robots"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
@@ -78,42 +78,42 @@ app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
 app.include_router(map_router, prefix="/api/v1", tags=["map"])
 
-# 프로젝트 루트 디렉토리 찾기
+# ������Ʈ ��Ʈ ���丮 ã��
 base_dir = Path(__file__).resolve().parent.parent
 
-# .env 파일 경로 설정
+# .env ���� ��� ����
 env_path = os.path.join(base_dir, '.env')
 
-# .env 파일 로드
+# .env ���� �ε�
 load_dotenv(env_path)
 ros_client = ROS2WebSocketClient()
 robot_service = RobotService()
 
 @app.on_event("startup")
 async def startup_event():
-    """애플리케이션 시작 시 실행되는 이벤트 핸들러"""
+    """Application startup event handler"""
     logger.info("Starting up application...")
     
     try:
-        # 데이터베이스 초기화
+        # Database initialization
         await DatabaseConnection.connect()
-        logger.info("데이터베이스 연결 성공")
+        logger.info("Database connection successful")
         
-        # DB 연결 테스트
+        # DB connection test
         db = await DatabaseConnection.get_db()
         if db is None:
-            logger.error("데이터베이스 객체를 가져올 수 없습니다.")
-            raise Exception("데이터베이스 연결 실패")
+            logger.error("Unable to get database object")
+            raise Exception("Database connection failed")
             
-        # 연결 테스트를 위한 간단한 쿼리 실행
+        # Simple query for connection test
         try:
             await db.command("ping")
-            logger.info("데이터베이스 연결 테스트 성공")
+            logger.info("Database connection test successful")
         except Exception as e:
-            logger.error(f"데이터베이스 연결 테스트 실패: {str(e)}")
+            logger.error(f"Database connection test failed: {str(e)}")
             raise
             
-        # counters 컬렉션 초기화
+        # Initialize counters collection
         try:
             counter = await db.counters.find_one({"_id": "robot_id"})
             if counter is None:
@@ -121,51 +121,50 @@ async def startup_event():
                     "_id": "robot_id",
                     "seq": 0
                 })
-                logger.info("Robot ID 시퀀스가 초기화되었습니다.")
+                logger.info("Robot ID sequence initialized")
         except Exception as e:
-            logger.error(f"시퀀스 초기화 실패: {str(e)}")
+            logger.error(f"Sequence initialization failed: {str(e)}")
             raise
 
-        # 컬렉션 인덱스 초기화
+        # Initialize collection indexes
         await DatabaseConnection.init_collections()
         
-        # 관리자 계정 생성
+        # Create admin account
         await create_admin_user()
         
-        # 라이다 서비스 시작
+        # Start lidar service
         try:
             asyncio.create_task(start_lidar_subscriber())
-            logger.info("라이다 서비스가 시작되었습니다.")
+            logger.info("Lidar service started")
         except Exception as e:
-            logger.warning(f"라이다 서비스 시작 실패: {str(e)}")
+            logger.warning(f"Failed to start lidar service: {str(e)}")
         
-        # 소켓 서버 시작
+        # Start socket server
         threading.Thread(target=start_socket_server, daemon=True).start()
-        logger.info("소켓 서버가 시작되었습니다.")
+        logger.info("Socket server started")
 
-        # ROS2 웹소켓 연결 시도
+        # Attempt ROS2 websocket connection
         try:
             await ros_client.connect()
-            logger.info("ROS2 웹소켓 연결 성공")
+            logger.info("ROS2 websocket connection successful")
         except Exception as e:
-            logger.warning(f"ROS2 웹소켓 연결 실패: {str(e)}")
-            logger.warning("ROS2 Bridge 없이 서버를 계속 실행합니다.")
+            logger.warning(f"ROS2 websocket connection failed: {str(e)}")
+            logger.warning("Continuing server operation without ROS2 Bridge")
         
-        logger.info("모든 초기화 작업이 완료되었습니다.")
+        logger.info("All initialization tasks completed")
     except Exception as e:
-        logger.error(f"애플리케이션 시작 중 오류 발생: {str(e)}")
-        # 치명적인 오류가 아닌 경우 서버 시작을 계속 진행
-        logger.warning("일부 서비스 초기화 실패, 서버를 계속 실행합니다.")
+        logger.error(f"Error during application startup: {str(e)}")
+        logger.warning("Some services failed to initialize, continuing server operation")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """애플리케이션 종료 시 실행되는 이벤트 핸들러"""
+    #"""���ø����̼� ���� �� ����Ǵ� �̺�Ʈ �ڵ鷯"""
     logger.info("Shutting down application...")
     await DatabaseConnection.disconnect()
 
 @app.get("/", response_model=BaseResponse)
 async def root():
-    """루트 엔드포인트"""
+    #"""��Ʈ ��������Ʈ"""
     return BaseResponse(
         success=True,
         message="Welcome to the Robot Management System API",
@@ -176,42 +175,41 @@ async def root():
     )
 
 
-# WebSocket 미들웨어 추가
+# WebSocket �̵���� �߰�
 @app.middleware("http")
 async def websocket_middleware(request, call_next):
     if request.url.path.startswith('/ws'):
-        # WebSocket 요청에 대한 CORS 헤더 추가
+        # WebSocket ��û�� ���� CORS ��� �߰�
         response = await call_next(request)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     return await call_next(request)
 
-# WebSocket 연결 테스트용 엔드포인트
+# WebSocket ���� �׽�Ʈ�� ��������Ʈ
 @app.websocket("/ws/test")
 async def websocket_test(websocket: WebSocket):
     try:
         await websocket.accept()
-        logger.info("새로운 웹소켓 클라이언트 연결됨")
+        logger.info("New websocket client connected")
         
-        # 프론트엔드 클라이언트로 등록
+        # Register frontend client
         await robot_service.register_frontend_client(websocket)
         
-        # ROS2 클라이언트에도 등록
+        # Register with ROS2 client
         await ros_client.register_client(websocket)
         
         while True:
             try:
-                # 클라이언트로부터 메시지 수신 (비동기로 처리)
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
-                logger.info(f"클라이언트로부터 메시지 수신: {data}")
+                logger.info(f"Message received from client: {data}")
                 
-                # 수신된 메시지 파싱
+                # Parse received message
                 message_data = json.loads(data)
                 if message_data.get('type') == 'user_message':
                     user_text = message_data.get('data', {}).get('text')
-                    logger.info(f"사용자 입력 메시지: {user_text}")
+                    logger.info(f"User input message: {user_text}")
                     
-                    # ROS2 Bridge로 메시지 전달
+                    # Forward message to ROS2 Bridge
                     bridge_message = {
                         "op": "publish",
                         "topic": "/user_messages",
@@ -219,15 +217,13 @@ async def websocket_test(websocket: WebSocket):
                             "data": user_text
                         }
                     }
-                    # ROS2 Bridge로 메시지 전송 (이미 내부적으로 broadcast 포함)
                     await ros_client.send_message(bridge_message)
-                    logger.info(f"ROS2 Bridge로 메시지 전송: {bridge_message}")
+                    logger.info(f"Message sent to ROS2 Bridge: {bridge_message}")
                 
             except asyncio.TimeoutError:
-                # 타임아웃 시 새로운 메시지 전송 (기존 코드 유지)
                 test_message = {
                     "type": "test_message",
-                    "data": f"실시간 서버 시간: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}"
+                    "data": f"Server time: {datetime.now().strftime('%H:%M:%S.%f')[:-3]}"
                 }
                 await robot_service.broadcast_to_frontend(test_message)
                 await asyncio.sleep(1)
@@ -235,16 +231,16 @@ async def websocket_test(websocket: WebSocket):
             except WebSocketDisconnect:
                 break
             except json.JSONDecodeError as e:
-                logger.error(f"메시지 파싱 오류: {str(e)}")
+                logger.error(f"Message parsing error: {str(e)}")
             except Exception as e:
-                logger.error(f"메시지 처리 중 오류: {str(e)}")
+                logger.error(f"Error processing message: {str(e)}")
                 
     except WebSocketDisconnect:
-        logger.info("웹소켓 클라이언트 연결 해제")
+        logger.info("Websocket client disconnected")
         await robot_service.unregister_frontend_client(websocket)
         await ros_client.unregister_client(websocket)
     except Exception as e:
-        logger.error(f"웹소켓 처리 중 오류: {str(e)}")
+        logger.error(f"Error in websocket handling: {str(e)}")
 
 
 if __name__ == "__main__":

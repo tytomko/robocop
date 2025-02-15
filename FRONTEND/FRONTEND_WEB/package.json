@@ -12,6 +12,7 @@
     "@fortawesome/fontawesome-free": "^6.7.2",
     "axios": "^1.7.9",
     "chart.js": "^3.9.1",
+    "echarts": "^5.6.0",
     "leaflet": "^1.9.4",
     "pinia": "^2.3.1",
     "vue": "^3.3.11",
@@ -22,6 +23,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
     "vite": "^5.0.10",
     "vite-plugin-vue-devtools": "^7.7.0"
   }

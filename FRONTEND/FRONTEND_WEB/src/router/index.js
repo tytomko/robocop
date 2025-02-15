@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/views/LoginView.vue'
+import LoginView from '@/views/login/LoginView.vue'
 import MonitoringView from '@/views/MonitoringView.vue'
-import SettingsView from '@/views/SettingsView.vue'
-import RobotDetailView from '@/views/RobotDetailView.vue'
-import CameraView from '@/views/CameraView.vue'
-import EnrollmentView from '@/views/EnrollmentView.vue'
-import RobotControlView from '@/views/RobotControlView.vue'
+import RobotDetailView from '@/views/robot/RobotDetailView.vue'
+import CameraView from '@/views/camera/CameraView.vue'
+import EnrollmentView from '@/views/enrollment/EnrollmentView.vue'
+import RobotControlView from '@/views/robot/RobotControlView.vue'
+import StatisticsView from '@/views/statistics/StatisticsView.vue'
+import ManagementView from '@/views/management/ManagementView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,12 +22,12 @@ const router = createRouter({
       component: LoginView
     },
     {
-      path: '/settings',
-      name: 'settings', 
-      component: SettingsView
+      path: '/management',
+      name: 'management', 
+      component: ManagementView
     },
     {
-      path: '/:robotId',
+      path: '/:seq',
       name: 'detail', 
       component: RobotDetailView
     },
@@ -44,6 +45,11 @@ const router = createRouter({
       path: '/control',
       name: 'control', 
       component: RobotControlView
+    },
+    {
+      path: '/statistics',
+      name: 'statistics', 
+      component: StatisticsView
     }
   ]
 })
