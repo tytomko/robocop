@@ -20,7 +20,8 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
+      meta: { guestOnly: true }
     },
     {
       path: '/management',
@@ -66,10 +67,15 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = !!localStorage.getItem('accessToken'); // 로그인 상태 확인
 
   if (to.meta.requiresAuth && !isAuthenticated) {
+    // 로그인 안 된 상태에서 인증이 필요한 페이지로 가려고 하면 로그인 페이지로 이동
     alert('로그인이 필요합니다.');
-    next('/login'); // 로그인 페이지로 리디렉트
+    next('/login');
+  } else if (to.meta.guestOnly && isAuthenticated) {
+    // 로그인된 사용자가 로그인 페이지(`/login`)에 접근하려고 하면 차단
+    alert('이미 로그인된 상태입니다.');
+    next('/');
   } else {
-    next(); // 정상 이동
+    next(); // 정상적으로 이동
   }
 });
 

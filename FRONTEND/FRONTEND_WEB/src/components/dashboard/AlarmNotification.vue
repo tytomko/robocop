@@ -1,14 +1,14 @@
 <template>
   <div :class="notificationWrapperClass">
     <!-- 알림 아이콘 -->
-    <div class="relative cursor-pointer group" @click="toggleNotifications">
+    <div class="relative cursor-pointer group" @click="notificationsStore.toggleNotifications">
       <div class="bg-transparent p-1 rounded-full transition-all duration-200 group-hover:bg-gray-700">
         <i :class="bellIconClass"></i>
         <span
-          v-if="unreadCount > 0"
+          v-if="notificationsStore.unreadCount > 0"
           class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center"
         >
-          {{ unreadCount }}
+          {{ notificationsStore.unreadCount }}
         </span>
       </div>
     </div>
@@ -16,7 +16,7 @@
     <!-- 알림 드롭다운 -->
     <transition name="slide-fade">
       <div
-        v-if="isNotificationsOpen"
+        v-if="notificationsStore.isNotificationsOpen"
         :class="dropdownClasses"
       >
         <div class="py-2 px-4 bg-gray-50 border-b border-gray-200">
@@ -24,8 +24,8 @@
         </div>
         <ul class="list-none p-0">
           <li
-            v-for="(notification, index) in notifications"
-            :key="index"
+            v-for="notification in notificationsStore.notifications"
+            :key="notification.id"
             class="flex items-center gap-3 p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
           >
             <div class="w-8 h-8 rounded-full overflow-hidden">
@@ -37,11 +37,11 @@
             </div>
             <div class="flex-1">
               <p class="text-sm text-gray-800 font-medium leading-snug">{{ notification.message }}</p>
-              <span class="text-xs text-gray-500 mt-1 block">{{ getTimeAgo(index) }}</span>
+              <span class="text-xs text-gray-500 mt-1 block">{{ getTimeAgo(notification.timestamp) }}</span>
             </div>
           </li>
         </ul>
-        <div v-if="notifications.length === 0" class="p-4 text-center text-sm text-gray-500">
+        <div v-if="notificationsStore.notifications.length === 0" class="p-4 text-center text-sm text-gray-500">
           새로운 알림이 없습니다
         </div>
       </div>
@@ -50,7 +50,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useNotificationsStore } from '@/stores/notifications';
 
 const props = defineProps({
   isCollapsed: {  
@@ -63,11 +64,10 @@ const props = defineProps({
   }
 });
 
-const notifications = ref([]);
-const isNotificationsOpen = ref(false);
+const notificationsStore = useNotificationsStore();
 
 const bellIconClass = computed(() => {
-  return isNotificationsOpen.value
+  return notificationsStore.isNotificationsOpen
     ? "fa-solid fa-bell text-white text-xl"
     : "fa-regular fa-bell text-white text-xl";
 });
@@ -81,27 +81,25 @@ const getNotificationImage = (message) => {
   return "/images/unknown.png";
 };
 
-const getTimeAgo = (index) => {
-  const timeList = ["방금 전", "1시간 전", "3시간 전", "1일 전", "3일 전", "1주 전"];
-  return timeList[index % timeList.length];
-};
-
-const addNotification = (message) => {
-  notifications.value.unshift({ message, isRead: false });
-  if (notifications.value.length > 7) {
-    notifications.value.pop();
+// 인자로 timestamp를 받아서 현재 시간과 비교하여 상대적인 시간을 반환
+const getTimeAgo = (timestamp) => {
+  const now = new Date();
+  const notificationDate = new Date(timestamp);
+  const diff = now - notificationDate;
+  
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 60) {
+    return "방금 전";
+  } else if (hours < 24) {
+    return `${hours}시간 전`;
+  } else if (days < 7) {
+    return `${days}일 전`;
+  } else {
+    return "1주 전";
   }
-};
-
-const unreadCount = computed(() => {
-  return notifications.value.filter(notification => !notification.isRead).length;
-});
-
-const toggleNotifications = () => {
-  if (!isNotificationsOpen.value) {
-    notifications.value.forEach(notification => (notification.isRead = true));
-  }
-  isNotificationsOpen.value = !isNotificationsOpen.value;
 };
 
 const notificationWrapperClass = computed(() => {
@@ -118,8 +116,8 @@ const dropdownClasses = computed(() => {
 });
 
 onMounted(() => {
-  addNotification("거수자를 발견하였습니다");
-  addNotification("새 로봇이 등록되었습니다");
+  // store에서 테스트 알림 초기화 호출
+  notificationsStore.initializeTestNotifications();
 });
 </script>
 
