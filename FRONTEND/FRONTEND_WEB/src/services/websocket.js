@@ -3,7 +3,8 @@ import { ref } from 'vue'
 class WebSocketService {
   constructor() {
     this.ws = null
-    this.isConnected = ref(false)
+    this.handlers = new Map()
+    this.isConnected = false
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
     this.reconnectTimeout = 3000
@@ -12,41 +13,39 @@ class WebSocketService {
     this.pendingMessages = []
   }
 
-  connect(url) {
+  // 싱글톤 인스턴스
+  static getInstance() {
+    if (!this.instance) {
+      this.instance = new WebSocketService()
+    }
+    return this.instance
+  }
+
+  // 웹소켓 연결
+  async connect(url) {
+    if (this.ws) return
+    
+    this.ws = new WebSocket(url)
+    
+    this.ws.onmessage = (event) => {
+      const message = JSON.parse(event.data)
+      const handlers = this.handlers.get(message.type) || []
+      handlers.forEach(handler => handler(message))
+    }
+
     return new Promise((resolve, reject) => {
-      try {
-        this.ws = new WebSocket(url)
-
-        this.ws.onopen = () => {
-          console.log('WebSocket 연결됨')
-          this.isConnected.value = true
-          this.reconnectAttempts = 0
-          this.processPendingMessages()
-          resolve()
-        }
-
-        this.ws.onclose = () => {
-          console.log('WebSocket 연결 끊김')
-          this.isConnected.value = false
-          this.handleReconnect()
-        }
-
-        this.ws.onerror = (error) => {
-          console.error('WebSocket 에러:', error)
-          reject(error)
-        }
-
-        this.ws.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data)
-            this.handleMessage(message)
-          } catch (error) {
-            console.error('메시지 파싱 에러:', error)
-          }
-        }
-      } catch (error) {
-        reject(error)
+      this.ws.onopen = () => {
+        this.isConnected = true
+        this.reconnectAttempts = 0
+        this.processPendingMessages()
+        resolve()
       }
+      this.ws.onclose = () => {
+        console.log('WebSocket 연결 끊김')
+        this.isConnected = false
+        this.handleReconnect()
+      }
+      this.ws.onerror = reject
     })
   }
 
@@ -89,47 +88,37 @@ class WebSocketService {
   }
 
   registerHandler(type, handler) {
-    if (!this.messageHandlers.has(type)) {
-      this.messageHandlers.set(type, new Set())
+    if (!this.handlers.has(type)) {
+      this.handlers.set(type, [])
     }
-    this.messageHandlers.get(type).add(handler)
+    this.handlers.get(type).push(handler)
   }
 
   removeHandler(type, handler) {
-    if (this.messageHandlers.has(type)) {
-      this.messageHandlers.get(type).delete(handler)
+    if (this.handlers.has(type)) {
+      const handlers = this.handlers.get(type)
+      const index = handlers.indexOf(handler)
+      if (index > -1) {
+        handlers.splice(index, 1)
+      }
     }
   }
 
   handleMessage(message) {
-    console.log('Raw message received:', message);  // 디버깅용
-    
-    try {
-        // 메시지가 이미 파싱되었는지 확인
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        const { type, topic, data: messageData } = data;
-
-        console.log('Parsed message:', { type, topic, messageData });  // 디버깅용
-
-        // type이 있고 해당 type이 구독된 경우
-        if (type && this.subscriptions.has(type)) {
-            this.subscriptions.get(type).forEach(callback => callback(data));
-        }
-        
-        // topic 기반 구독 처리
-        if (topic && this.subscriptions.has(topic)) {
-            this.subscriptions.get(topic).forEach(callback => callback(messageData));
-        }
-    } catch (error) {
-        console.error('Message handling error:', error);
-        console.log('Failed to handle message:', message);
-    }
+    const handlers = this.handlers.get(message.type) || []
+    handlers.forEach(handler => {
+      try {
+        handler(message)
+      } catch (error) {
+        console.error('Handler error:', error)
+      }
+    })
   }
 
   send(type, data) {
     const message = JSON.stringify({ type, data })
     
-    if (this.isConnected.value && this.ws.readyState === WebSocket.OPEN) {
+    if (this.isConnected && this.ws.readyState === WebSocket.OPEN) {
       try {
         this.ws.send(message)
       } catch (error) {
@@ -158,4 +147,4 @@ class WebSocketService {
   }
 }
 
-export const webSocketService = new WebSocketService() 
+export const webSocketService = WebSocketService.getInstance() 
