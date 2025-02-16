@@ -6,9 +6,11 @@
       <p><strong>상태:</strong> {{ getStatusLabel(robot.status) }}</p>
       <p><strong>배터리:</strong> {{ robot.battery }}%</p>
       <p><strong>네트워크 상태:</strong> {{ robot.networkStatus }}</p>
-      <p><strong>작동 시작 시간:</strong> {{ robot.startAt }}</p>
+      <p><strong>CPU 온도:</strong> {{ robot.cpuTemp }}°C</p>
+      <p><strong>작동 시작 시간:</strong> {{ getOperationTime(robot.startAt) }}</p>
     </div>
     <hr class="border-gray-300 my-4">
+
 
     <!-- 센서 데이터 -->
     <div class="mb-4">
@@ -56,24 +58,24 @@ const getStatusLabel = (status) => {
   return labels[status] || status;
 };
 
-const getStatusClass = (status) => {
-  const statusClasses = {
-    charging: 'bg-green-500',
-    navigating: 'bg-blue-500',
-    patrolling: 'bg-blue-500',
-    emergencyStopped: 'bg-red-500',
-    error: 'bg-red-600',
-    waiting: 'bg-gray-500',
-    homing: 'bg-teal-500',
-  };
-  return statusClasses[status] || 'bg-yellow-500';
-};
-
 const getSensorClass = (status) => {
   return {
     normal: 'bg-green-500',
     warning: 'bg-yellow-500 text-black',
     error: 'bg-red-500'
   }[status] || 'bg-gray-500';
+};
+
+const getOperationTime = (startTime) => {
+  if (!startTime) return '알 수 없음'
+  
+  const start = new Date(startTime)
+  const now = new Date()
+  const diff = now - start
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  
+  return `${hours}시간 ${minutes}분`
 };
 </script>

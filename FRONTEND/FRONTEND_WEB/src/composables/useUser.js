@@ -1,9 +1,11 @@
 import { useRouter } from 'vue-router';
+import { useRobotsStore } from '@/stores/robots';
 import axios from 'axios';
 
 export function useUser() {
   const router = useRouter();
-
+  const robotsStore = useRobotsStore();
+  
   function logout() {
     axios
       .post('https://robocopbackendssafy.duckdns.org/api/v1/auth/logout', null, {

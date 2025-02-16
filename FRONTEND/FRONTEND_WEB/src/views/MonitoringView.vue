@@ -1,41 +1,17 @@
 <template>
   <div class="h-full flex flex-col gap-1.5 p-5 overflow-y-auto bg-gray-100">
-    <!-- 웹소켓 테스트 섹션 -->
-    <div class="bg-white rounded-lg p-4 mb-4 shadow">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-lg font-semibold">WebSocket 테스트</h3>
+    <!-- 연결 상태 표시 -->
+    <div class="bg-white rounded-lg p-3 mb-4 shadow">
+      <div class="flex justify-between items-center">
         <div class="flex items-center gap-2">
-          <span class="text-sm">{{ connectionMode }}</span>
-          <span :class="['connection-badge', webSocketConnected ? 'bg-green-500' : 'bg-red-500']">
-            {{ webSocketConnected ? 'WebSocket' : 'REST API' }}
+          <span class="font-semibold">연결 상태:</span>
+          <span :class="['status-badge', webSocketConnected ? 'connected' : 'disconnected']">
+            {{ connectionStatus }}
           </span>
         </div>
-      </div>
-      
-      <!-- 웹소켓 메시지 표시 영역 -->
-      <div v-if="webSocketConnected" class="bg-gray-100 rounded p-3 mb-3">
-        <div class="font-medium mb-1">최근 메시지:</div>
-        <div v-if="lastTestMessage?.data" class="bg-gray-800 text-white p-2 rounded font-mono text-sm">
-          {{ lastTestMessage.data }}
-          <div class="text-xs text-gray-400 text-right mt-1">{{ lastMessageTime }}</div>
+        <div class="text-sm text-gray-600">
+          {{ webSocketConnected ? '실시간 데이터 수신 중' : 'DB에서 데이터 폴링 중' }}
         </div>
-        <div v-else class="text-gray-500 italic">수신된 메시지 없음</div>
-      </div>
-
-      <!-- 메시지 입력 영역 -->
-      <div v-if="webSocketConnected" class="flex gap-2">
-        <input 
-          v-model="messageInput"
-          @keyup.enter="sendMessage"
-          placeholder="메시지를 입력하세요..."
-          class="flex-1 px-3 py-2 border rounded"
-        />
-        <button 
-          @click="sendMessage"
-          class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          전송
-        </button>
       </div>
     </div>
 
@@ -97,11 +73,8 @@ import StatisticsView from '@/views/statistics/StatisticsView.vue';
 // 모니터링 컴포넌트 순서 관리
 const robotsStore = useRobotsStore()
 const robots = computed(() => robotsStore.registered_robots)
-const webSocketConnected = ref(false)
-const lastTestMessage = ref(null)
-const lastMessageTime = ref('')
-const messageInput = ref('')
-const connectionMode = computed(() => 
+const webSocketConnected = computed(() => robotsStore.webSocketConnected)
+const connectionStatus = computed(() => 
   webSocketConnected.value ? '실시간 모드' : 'API 모드'
 )
 
@@ -112,76 +85,49 @@ const tabs = ref([
   { name: 'statistics', label: '통계' }
 ])
 
-// WebSocket 설정
-const setupWebSocket = async () => {
-  try {
-    await webSocketService.connect('wss://robocopbackendssafy.duckdns.org/ws/test')
-    webSocketConnected.value = true
-    console.log('웹소켓 연결 성공');
-
-    // 테스트 메시지 구독
-    webSocketService.subscribe('test_message', (data) => {
-      console.log('수신된 원본 데이터:', data);
-      
-      try {
-        const messageData = typeof data === 'string' ? JSON.parse(data) : data;
-        
-        if (messageData.type === 'test_message') {
-          lastTestMessage.value = messageData;
-          lastMessageTime.value = new Date().toLocaleTimeString();
-          console.log('처리된 테스트 메시지:', messageData);
-        } else {
-          console.warn('알 수 없는 메시지 형식:', messageData);
+// 웹소켓 메시지 핸들러
+const handleWebSocketMessage = (message) => {
+  if (message.type === 'ros_topic') {
+    const robotId = message.topic.split('/')[1]
+    
+    switch (message.topic) {
+      case `/${robotId}/status`:
+        robotsStore.updateRobotWebSocketData(robotId, message.data)
+        break
+      case `/${robotId}/utm_pose`:
+        const poseData = message.messageData || message.data
+        if (poseData?.position) {
+          robotsStore.updateRobotWebSocketData(robotId, {
+            position: `x: ${poseData.position.x.toFixed(2)}, y: ${poseData.position.y.toFixed(2)}`
+          })
         }
-      } catch (e) {
-        console.error('메시지 처리 중 오류:', e);
-        console.log('처리 실패한 원본 데이터:', data);
-      }
-    });
-
-    // 로봇 상태 구독
-    webSocketService.subscribe('monitoring/robots', (data) => {
-      console.log('로봇 상태 데이터:', data);
-      robotsStore.updateRobotsData(data)
-    })
-
-  } catch (error) {
-    console.error('WebSocket 연결 실패:', error)
-    webSocketConnected.value = false
-    // API 모드로 전환
-    robotsStore.startPolling()
+        break
+    }
   }
-};
-
-// 메시지 전송
-const sendMessage = async () => {
-  if (!messageInput.value.trim()) return
-  
-  try {
-    await webSocketService.send('user_message', {
-      text: messageInput.value
-    })
-    messageInput.value = ''
-  } catch (error) {
-    console.error('메시지 전송 실패:', error)
-  };
 }
 
 onMounted(() => {
-  setupWebSocket();
-});
-
-onUnmounted(() => {
-  if (webSocketService.isConnected()) {
-    webSocketService.disconnect()
-  }
-  robotsStore.stopPolling()
+  // 핸들러만 등록
+  webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
 })
 
+onUnmounted(() => {
+  // 핸들러만 제거
+  webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
+})
 </script>
 
 <style scoped>
-.connection-badge {
+.status-badge {
   @apply px-2 py-1 rounded text-white text-sm;
 }
+
+.connected {
+  background-color: #4CAF50;
+}
+
+.disconnected {
+  background-color: #FF5757;
+}
+
 </style>

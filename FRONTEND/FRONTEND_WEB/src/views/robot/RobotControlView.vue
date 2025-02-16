@@ -20,7 +20,7 @@
             :key="robot.seq" 
             :value="robot.seq"
           >
-            {{ robot.nickname || robot.name }}
+            {{ robot.nickname || robot.manufactureName }}
           </option>
         </select>
       </div>
@@ -49,7 +49,6 @@
       </div>
     </div>
 
-    <!-- 나머지 코드는 동일 -->
     <div v-if="!activeRobot" class="text-center text-gray-500">
       로봇을 먼저 선택해주세요.
     </div>
@@ -84,6 +83,7 @@
 
           <div class="flex flex-col items-center ml-5 space-y-2">
             <button 
+              @click="handleDirectionClick('up')"
               :class="[
                 'w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-200 shadow-md',
                 activeArrows.has('ArrowUp') 
@@ -95,16 +95,21 @@
             </button>
             <div class="flex space-x-2">
               <button 
-                v-for="arrow in ['ArrowLeft', 'ArrowDown', 'ArrowRight']"
+                v-for="(direction, arrow) in {
+                    left: 'ArrowLeft',
+                    down: 'ArrowDown',
+                    right: 'ArrowRight'
+                  }"
                 :key="arrow"
+                @click="handleDirectionClick(direction)"
                 :class="[
                   'w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-200 shadow-md',
-                  activeArrows.has(arrow)
+                  activeArrows.has(direction)
                     ? 'bg-blue-700 text-white border-blue-700 shadow-blue-300'
                     : 'border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white'
                 ]"
               >
-                {{ arrow === 'ArrowLeft' ? '←' : arrow === 'ArrowDown' ? '↓' : '→' }}
+                {{ direction === 'ArrowLeft' ? '←' : direction === 'ArrowDown' ? '↓' : '→' }}
               </button>
             </div>
           </div>
@@ -115,12 +120,12 @@
 </template>
 
 <script setup>
-// script 부분은 이전과 동일
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 import ControlButtons from '@/components/map/ControlButtons.vue'
+import axios from 'axios'
 
 const robotsStore = useRobotsStore()
 const selectedRobotSeq = ref('')
@@ -138,7 +143,6 @@ const activeRobot = computed(() => {
 })
 
 function onSelectedNodesChange(newNodes) {
-  console.log('[RobotControlView] selectedNodes changed:', newNodes)
   selectedNodes.value = [...newNodes]
 }
 
@@ -159,16 +163,46 @@ function handleTempStop() {
   robotMap.value?.handleTempStop?.()
 }
 
-function handleKeyDown(event) {
+async function handleKeyDown(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key) && mode.value === 'manual') {
     event.preventDefault()
     activeArrows.value.add(event.key)
+
+    // 방향키에 따른 엔드포인트 매핑
+    const direction = {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right'
+    }[event.key]
+
+    try {
+      // cmd_vel 토픽 발행
+      await axios.post(`https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/cmd_vel?direction=${direction}`)
+    } catch (error) {
+      console.error('로봇 제어 실패:', error)
+    }
   }
 }
 
-function handleKeyUp(event) {
+async function handleKeyUp(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
     activeArrows.value.delete(event.key)
+    // 키를 떼었을 때는 별도의 정지 명령이 필요 없을 수 있음
+    // 백엔드에서 자동으로 처리하는 것으로 보임
+  }
+}
+
+// 버튼 클릭 핸들러 추가
+async function handleDirectionClick(direction) {
+  if (mode.value === 'manual') {
+    try {
+      console.log(`Sending ${direction} command to robot ${selectedRobotSeq.value}`)  // 요청 로그
+      const response = await axios.post(`https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/cmd_vel?direction=${direction}`)
+      console.log('Response:', response.data)  // 응답 로그
+    } catch (error) {
+      console.error('로봇 제어 실패:', error)
+    }
   }
 }
 
