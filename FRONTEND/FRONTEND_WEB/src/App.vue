@@ -113,7 +113,7 @@ const navRouterLinkContainerClasses = computed(() => {
 
 // 페이지 새로고침
 const refreshPage = () => {
-  window.location.href = "http://localhost:3000";
+  window.location.href = "https://robocopbackendssafy.duckdns.org/";
 };
 
 watch(
