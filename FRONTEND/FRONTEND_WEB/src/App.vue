@@ -65,11 +65,16 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import MapSidebarSection from "@/components/dashboard/MapSidebarSection.vue";
 import AlarmNotification from "@/components/dashboard/AlarmNotification.vue";
 import ListSidebarSection from "./components/dashboard/ListSidebarSection.vue";
+import { webSocketService } from '@/services/websocket'
+import { useRobotsStore } from '@/stores/robots'
+
+const robotsStore = useRobotsStore()
+
 
 const route = useRoute();
 const isLoginPage = computed(() => route.path === "/login");
@@ -113,7 +118,7 @@ const navRouterLinkContainerClasses = computed(() => {
 
 // 페이지 새로고침
 const refreshPage = () => {
-  window.location.href = "http://localhost:3000";
+  window.location.href = "https://robocopbackendssafy.duckdns.org/";
 };
 
 watch(
@@ -124,6 +129,22 @@ watch(
     }, 350);
   }
 );
+
+onMounted(async () => {
+  try {
+    await webSocketService.connect('wss://robocopbackendssafy.duckdns.org/ws/test')
+    robotsStore.setWebSocketConnected(true)
+    console.log('웹소켓 연결 성공')
+  } catch (error) {
+    console.error('WebSocket 연결 실패:', error)
+    robotsStore.setWebSocketConnected(false)
+  }
+})
+
+onUnmounted(() => {
+  webSocketService.disconnect()
+})
+
 </script>
 
 <style>

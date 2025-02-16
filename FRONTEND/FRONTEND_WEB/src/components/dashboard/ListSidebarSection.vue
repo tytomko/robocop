@@ -40,12 +40,12 @@
               <!-- 상태 표시 -->
               <span
                 class="relative flex h-3 w-3"
-                :class="robot.isActive ? 'text-green-500' : 'text-gray-500'"
+                :class="isActiveInWebSocket(robot) ? 'text-green-500' : 'text-gray-500'"
               >
                 <span class="absolute inline-flex h-full w-full rounded-full opacity-75"
-                      :class="robot.isActive ? 'animate-ping bg-green-500' : 'bg-gray-500'"></span>
+                      :class="isActiveInWebSocket(robot) ? 'animate-ping bg-green-500' : 'bg-gray-500'"></span>
                 <span class="relative inline-flex rounded-full h-3 w-3"
-                      :class="robot.isActive ? 'bg-green-500' : 'bg-gray-500'"></span>
+                      :class="isActiveInWebSocket(robot) ? 'bg-green-500' : 'bg-gray-500'"></span>
               </span>
 
               <!-- 로봇 이름 -->
@@ -101,7 +101,16 @@ const props = defineProps({
 defineEmits(['toggle-left-sidebar'])
 
 const robotsStore = useRobotsStore()
-const robots = computed(() => robotsStore.registered_robots)
+const robots = computed(() => {
+  return robotsStore.displayRobots.slice().sort((a, b) => {
+    const isActiveA = isActiveInWebSocket(a) ? 1 : 0;
+    const isActiveB = isActiveInWebSocket(b) ? 1 : 0;
+    return isActiveB - isActiveA; // 활성화된 로봇을 위로 정렬
+  });
+});
+const isActiveInWebSocket = (robot) => {
+  return /^robot_\d+$/.test(robot.manufactureName) && robot.isActive;
+}
 
 onMounted(() => {
   // 새로고침 후에도 선택한 로봇 유지

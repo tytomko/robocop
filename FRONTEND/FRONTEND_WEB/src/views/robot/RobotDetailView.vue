@@ -2,7 +2,7 @@
   <div class="robot-detail max-w-xl mx-auto p-5 overflow-y-auto max-h-[80vh]">
     <div class="robot-header flex items-center gap-3">
       <h1 v-if="robot" class="text-xl font-bold">
-        {{ robot.nickname || robot.name }} 
+        {{ robot.nickname || robot.manufactureName }} 
         <span class="text-sm" :class="robot.isActive ? 'text-green-500' : 'text-red-500'">
           ({{ robot.isActive ? '활성화' : '비활성화' }})
         </span>
@@ -30,9 +30,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
+import { webSocketService } from '@/services/websocket';
 import RobotNickname from '@/components/detail/RobotNickname.vue';
 import RobotInfo from '@/components/detail/RobotInfo.vue';
 import axios from 'axios'
@@ -42,13 +43,9 @@ const router = useRouter();
 const robotsStore = useRobotsStore();
 const seq = route.params.seq;
 
-const robot = computed(() => {
-  return robotsStore.registered_robots.find(r => r.seq == seq) || null;
-});
-
+// 닉네임 관련
 const showNicknameModal = ref(false);
 const selectedRobotForNickname = ref(null);
-
 const openNicknameModal = (robot) => {
   selectedRobotForNickname.value = { seq: robot.seq, nickname: robot.nickname || '' };
   showNicknameModal.value = true;
@@ -58,13 +55,17 @@ const closeNicknameModal = () => {
   showNicknameModal.value = false;
 };
 
-// 닉네임 저장 시 DB에 반영하는 함수 추가
 const setRobotNickname = async (seq, nickname) => {
   try {
     // 백엔드 API 호출 (PUT 요청)
-    await axios.patch(`https://robocopbackendssafy.duckdns.org/api/v1/robots/${seq}/nickname`, {
-      nickname: nickname
-    });
+    await axios.patch(`https://robocopbackendssafy.duckdns.org/api/v1/robots/${seq}/nickname`, 
+      nickname, // 객체가 아니라 단순 문자열 전달
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
     // 성공적으로 업데이트하면 로컬 데이터도 반영
     const robotIndex = robotsStore.registered_robots.findIndex(r => r.seq === seq);
@@ -92,13 +93,74 @@ const goBack = () => {
   router.push('/');
 };
 
-onMounted(() => {
-  robotsStore.loadRobots();
-});
+// 웹소켓 관련
+// 웹소켓 메시지 핸들러
+const handleWebSocketMessage = (message) => {
+  if (message.type === 'ros_topic') {
+    const robotId = message.topic.split('/')[1]
+    
+    switch (message.topic) {
+      case `/${robotId}/status`:
+        robotsStore.updateRobotWebSocketData(robotId, message.data, 'status')
+        break
 
+      case `/${robotId}/utm_pose`:
+        if (message.messageData?.position) {
+          const formattedData = {
+            position: `x: ${message.messageData.position.x.toFixed(2)}, y: ${message.messageData.position.y.toFixed(2)}`,
+            rawPosition: message.messageData.position,
+            orientation: message.messageData.orientation
+          }
+          robotsStore.updateRobotWebSocketData(robotId, formattedData, 'utm_pose')
+        }
+        break
+    }
+  }
+}
+
+// DB와 웹소켓 데이터를 병합하여 로봇 정보 가져오기
+const robot = computed(() => {
+  const dbRobot = robotsStore.registered_robots.find(r => r.seq == seq)
+  if (!dbRobot) return null
+  
+  if (robotsStore.webSocketConnected) {
+    // manufactureName으로만 매칭
+    const wsRobot = robotsStore.websocket_robots.find(r => 
+      r.manufactureName === dbRobot.manufactureName
+    )
+    if (wsRobot) {
+      return {
+        ...dbRobot,
+        isWebSocketConnected: true,
+        battery: wsRobot.battery,
+        networkHealth: wsRobot.network,
+        status: wsRobot.status,
+        position: wsRobot.position,
+        cpuTemp: wsRobot.temperature,
+        isActive: wsRobot.is_active,
+        rawPosition: wsRobot.rawPosition,
+        orientation: wsRobot.orientation
+      }
+    }
+  }
+  return { ...dbRobot, isWebSocketConnected: false }
+})
+
+onMounted(() => {
+  // 핸들러만 등록
+  webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
+  robotsStore.loadRobots()
+})
+
+onUnmounted(() => {
+  // 핸들러만 제거
+  webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
+})
+
+// watch 수정 - 로봇이 없을 때만 다시 로드
 watch(() => robotsStore.registered_robots, () => {
   if (!robot.value) {
-    robotsStore.loadRobots();
+    robotsStore.loadRobots()
   }
-}, { deep: true });
+}, { deep: true })
 </script>
