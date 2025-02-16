@@ -62,9 +62,14 @@ const closeNicknameModal = () => {
 const setRobotNickname = async (seq, nickname) => {
   try {
     // 백엔드 API 호출 (PUT 요청)
-    await axios.patch(`https://robocopbackendssafy.duckdns.org/api/v1/robots/${seq}/nickname`, {
-      nickname: nickname
-    });
+    await axios.patch(`https://robocopbackendssafy.duckdns.org/api/v1/robots/${seq}/nickname`, 
+      nickname, // 객체가 아니라 단순 문자열 전달
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
     // 성공적으로 업데이트하면 로컬 데이터도 반영
     const robotIndex = robotsStore.registered_robots.findIndex(r => r.seq === seq);
