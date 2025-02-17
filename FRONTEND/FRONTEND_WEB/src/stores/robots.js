@@ -228,17 +228,6 @@ export const useRobotsStore = defineStore('robots', () => {
     }
   }
 
-  // api 연동 필요
-  const setBreakdown = (robotSeq) => {
-    const robot = registered_robots.value.find(r => r.seq === robotSeq)
-    if (robot) robot.status = 'error'
-  }
-
-  const setActive = (robotSeq) => {
-    const robot = registered_robots.value.find(r => r.seq === robotSeq)
-    if (robot) robot.status = 'navigating'
-  }
-
   return {
     registered_robots,
     showModal,
@@ -263,8 +252,6 @@ export const useRobotsStore = defineStore('robots', () => {
     handleRobotSelection,
     closeModal,
     handleAddRobot,
-    setBreakdown,
-    setActive,
     updateRobotWebSocketData,
     setWebSocketConnected,
     startPolling,
