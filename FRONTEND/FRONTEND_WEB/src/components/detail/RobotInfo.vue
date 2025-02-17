@@ -5,7 +5,7 @@
       <h3 class="text-lg font-semibold mb-2">기본 정보</h3>
       <p><strong>상태:</strong> {{ getStatusLabel(robot.status) }}</p>
       <p><strong>배터리:</strong> {{ robot.battery }}%</p>
-      <p><strong>네트워크 상태:</strong> {{ robot.networkStatus }}</p>
+      <p><strong>네트워크 상태:</strong> {{ robot.networkHealth }}</p>
       <p><strong>CPU 온도:</strong> {{ robot.cpuTemp }}°C</p>
       <p><strong>작동 시작 시간:</strong> {{ getOperationTime(robot.startAt) }}</p>
     </div>

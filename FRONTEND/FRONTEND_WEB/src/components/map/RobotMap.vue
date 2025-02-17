@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -35,6 +35,7 @@ import { ScatterChart, LinesChart } from 'echarts/charts'
 import VChart from 'vue-echarts'
 import SelectedNodes from '@/components/map/SelectedNodes.vue'
 import { useRobotsStore } from '@/stores/robots'
+import { useRobotCommandsStore } from '@/stores/robotCommands'
 
 use([
   CanvasRenderer,
@@ -48,6 +49,7 @@ use([
 ])
 
 const robotsStore = useRobotsStore()
+const robotCommandsStore = useRobotCommandsStore()
 const emit = defineEmits(['selectedNodesChange'])
 
 // 새로운 prop 추가: showSelectedNodes (기본값: true)
@@ -68,6 +70,7 @@ const currentRobotSeq = computed(() => {
   if (props.robot) {
     return props.robot.seq
   }
+
   // store에서 선택된 로봇 정보 가져오기
   const selectedRobotSeq = robotsStore.selectedRobot
   if (selectedRobotSeq) {
@@ -81,69 +84,20 @@ const currentRobotSeq = computed(() => {
 
 // 네비게이션 요청 처리
 async function handleNavigate() {
-  if (selectedNodes.value.length !== 1 || !currentRobotSeq.value) {
-    console.warn('[RobotMap] 로봇이 선택되지 않았거나 목적지가 선택되지 않았습니다.')
-    return
-  }
-  
-  try {
-    const goal = {
-      x: selectedNodes.value[0].id[0],
-      y: selectedNodes.value[0].id[1],
-      theta: 0.0
-    }
-    await axios.post(
-      `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq.value}/call-service/navigate`, 
-      { goal }
-    )
-    console.log('[RobotMap] 이동 명령 전송 완료')
-  } catch (error) {
-    console.error('Navigation request failed:', error)
-  }
+  await robotCommandsStore.navigateCommand(selectedNodes.value, currentRobotSeq.value)
 }
 
 async function handlePatrol() {
-  if (selectedNodes.value.length < 2 || !currentRobotSeq.value) {
-    console.warn('[RobotMap] 로봇이 선택되지 않았거나 경유지가 충분히 선택되지 않았습니다.')
-    return
-  }
-
-  try {
-    const goals = selectedNodes.value.map(node => ({
-      x: node.id[0],
-      y: node.id[1],
-      theta: 0.0
-    }))
-    await axios.post(
-      `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq.value}/call-service/patrol`, 
-      { goals }
-    )
-    console.log('[RobotMap] 순찰 명령 전송 완료')
-  } catch (error) {
-    console.error('Patrol request failed:', error)
-  }
+  await robotCommandsStore.patrolCommand(selectedNodes.value, currentRobotSeq.value)
 }
 
-// RobotMap.vue (수정된 resetSelection 함수)
 function resetSelection() {
-  selectedNodes.value = []    // 내부 선택 노드 초기화
-  updateChartSeries()         // 차트 업데이트
+  selectedNodes.value = robotCommandsStore.resetSelectionCommand()
+  updateChartSeries()
 }
 
 async function handleTempStop() {
-  if (!currentRobotSeq.value) {
-    console.warn('[RobotMap] 로봇이 선택되지 않았습니다.')
-    return
-  }
-
-  try {
-    await axios.post(
-      `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq.value}/call-service/temp-stop`
-    )
-    console.log('[RobotMap] 일시정지 요청 완료')
-  } catch (error) {
-    console.error('Temporary stop request failed:', error)
-  }
+  await robotCommandsStore.tempStopCommand(currentRobotSeq.value)
 }
 
 // expose로 부모 컴포넌트가 직접 접근 가능
@@ -169,31 +123,33 @@ const selectedNodesInfo = computed(() => {
 
 function updateChartSeries() {
   if (chartRef.value) {
-    const newSeries = [
-      // 기존 엣지 시리즈
-      chartOption.value.series[0],
-      // 노드(산점도) 시리즈 재정의
-      {
-        ...chartOption.value.series[1],
-        data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-        symbolSize: (value) =>
-          selectedNodes.value.some(
-            sel => sel.id[0] === value[0] && sel.id[1] === value[1]
-          )
-            ? 15  // 선택된 노드는 크게
-            : 8,  // 기본 크기
-        itemStyle: {
-          color: (params) => {
-            const node = mapData.value.nodes[params.dataIndex]
-            return selectedNodes.value.some(
-              selected => selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+    chartRef.value.setOption({
+      series: [
+        // 기존 엣지 시리즈 유지
+        chartOption.value.series[0],
+        // 노드(산점도) 시리즈 업데이트
+        {
+          ...chartOption.value.series[1],
+          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+          symbolSize: (value) =>
+            selectedNodes.value.some(
+              sel => sel.id[0] === value[0] && sel.id[1] === value[1]
             )
-              ? '#ff4081' // 선택된 노드: 핑크색
-              : '#007bff' // 기본 색상
+              ? 15  // 선택된 노드
+              : 8,  // 기본 크기
+          itemStyle: {
+            color: (params) => {
+              const node = mapData.value.nodes[params.dataIndex];
+              return selectedNodes.value.some(
+                selected => selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+              )
+                ? '#ff4081' // 선택된 노드: 핑크색
+                : '#007bff' // 기본 색상
+            }
           }
         }
-      }
-    ]
+      ]
+    })
   }
 }
 
