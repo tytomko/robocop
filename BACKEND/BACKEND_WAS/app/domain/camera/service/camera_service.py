@@ -7,27 +7,26 @@ import numpy as np
 import time
 import logging
 
-app = FastAPI()
-
 logger = logging.getLogger(__name__)
 
 class CameraService:
     def __init__(self):
-        self.latest_frame = None
+        self.front_frame = None
+        self.rear_frame = None
         self.fps = 30
-        self.last_frame_time = 0
+        self.last_front_frame_time = 0
+        self.last_rear_frame_time = 0
         self.jpeg_quality = 80
         self.frame_size = (640, 480)
         
-        # 기본 ROS 클라이언트 설정 (일반 로봇용)
+        # 기본 ROS 클라이언트 설정
         self.client = roslibpy.Ros(host='127.0.0.1', port=10000)
-        self.topic = None
-        
-        # Isaac 로봇용 별도 클라이언트
         self.isaac_client = roslibpy.Ros(host='127.0.0.1', port=10001)
         
+        self.front_topic = None
+        self.rear_topic = None
+        
     def set_robot_connection(self, is_isaac=False):
-        """로봇 타입에 따라 적절한 ROS 클라이언트 선택"""
         if is_isaac:
             if not self.isaac_client.is_connected:
                 self.isaac_client.run()
@@ -37,95 +36,113 @@ class CameraService:
                 self.client.run()
             return self.client
 
-    def set_topic(self, topic_name: str, topic_type: str, is_isaac=False):
-        """토픽 설정 - 로봇 타입에 따라 다른 클라이언트 사용"""
+    def set_front_topic(self, topic_name: str, topic_type: str, is_isaac=False):
         client = self.set_robot_connection(is_isaac)
         
-        # 기존 토픽이 있다면 구독 해제
-        if self.topic:
+        if self.front_topic:
             try:
-                self.topic.unsubscribe()
+                self.front_topic.unsubscribe()
             except:
                 pass
         
-        # 새로운 토픽 설정
-        self.topic = roslibpy.Topic(
+        self.front_topic = roslibpy.Topic(
             client,
             topic_name,
             topic_type
         )
-        self.topic.subscribe(self._on_image_message)
+        self.front_topic.subscribe(self._on_front_image_message)
 
-    def _on_image_message(self, message):
-        """이미지 메시지 수신 처리"""
+    def set_rear_topic(self, topic_name: str, topic_type: str, is_isaac=False):
+        client = self.set_robot_connection(is_isaac)
+        
+        if self.rear_topic:
+            try:
+                self.rear_topic.unsubscribe()
+            except:
+                pass
+        
+        self.rear_topic = roslibpy.Topic(
+            client,
+            topic_name,
+            topic_type
+        )
+        self.rear_topic.subscribe(self._on_rear_image_message)
+
+    def _process_image_message(self, message):
         try:
-            # 메시지 타입에 따른 처리
             format_str = message.get('format', '')
             
-            if 'compressed' in format_str.lower():  # CompressedImage 타입 (jpeg 압축된 경우)
+            if 'compressed' in format_str.lower():
                 image_data = base64.b64decode(message['data'])
                 np_arr = np.frombuffer(image_data, np.uint8)
                 frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
                 
-            elif 'rgb8' in format_str.lower() or 'bgr8' in format_str.lower():  # 일반 Image 타입
-                # ROS Image 메시지를 numpy 배열로 변환
+            elif 'rgb8' in format_str.lower() or 'bgr8' in format_str.lower():
                 width = message.get('width', 0)
                 height = message.get('height', 0)
-                
-                # 이미지 데이터를 numpy 배열로 변환
                 np_arr = np.frombuffer(base64.b64decode(message['data']), np.uint8)
                 
                 if 'rgb8' in format_str.lower():
                     frame = np_arr.reshape(height, width, 3)
                     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                else:  # bgr8
+                else:
                     frame = np_arr.reshape(height, width, 3)
             else:
                 logger.error(f"Unsupported format: {format_str}")
-                return
+                return None
             
-            # 프레임이 유효한지 확인
             if frame is not None and frame.size > 0:
-                # 프레임 크기 조정
-                frame = cv2.resize(frame, self.frame_size)
-                self.latest_frame = frame
-            else:
-                logger.error("Invalid frame received")
+                return cv2.resize(frame, self.frame_size)
+            return None
             
         except Exception as e:
             logger.error(f"이미지 처리 에러: {str(e)}")
-            logger.error(f"Message content: {message}")
-            logger.error(f"Format string: {format_str}")
+            return None
 
-    def get_frame(self):
-        """현재 프레임 스트리밍"""
+    def _on_front_image_message(self, message):
+        frame = self._process_image_message(message)
+        if frame is not None:
+            self.front_frame = frame
+
+    def _on_rear_image_message(self, message):
+        frame = self._process_image_message(message)
+        if frame is not None:
+            self.rear_frame = frame
+
+    def get_front_frame(self):
         while True:
             current_time = time.time()
             
-            # FPS 제한
-            if current_time - self.last_frame_time < 1.0/self.fps:
-                time.sleep(0.001)  # CPU 사용량 감소
+            if current_time - self.last_front_frame_time < 1.0/self.fps:
+                time.sleep(0.001)
                 continue
                 
-            if self.latest_frame is not None:
-                # JPEG 압축 품질 설정
+            if self.front_frame is not None:
                 encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.jpeg_quality]
-                _, buffer = cv2.imencode('.jpg', self.latest_frame, encode_param)
+                _, buffer = cv2.imencode('.jpg', self.front_frame, encode_param)
                 frame_bytes = buffer.tobytes()
                 
-                self.last_frame_time = current_time
+                self.last_front_frame_time = current_time
                 
                 yield (b'--frame\r\n'
                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-# 싱글톤 인스턴스 생성
+    def get_rear_frame(self):
+        while True:
+            current_time = time.time()
+            
+            if current_time - self.last_rear_frame_time < 1.0/self.fps:
+                time.sleep(0.001)
+                continue
+                
+            if self.rear_frame is not None:
+                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.jpeg_quality]
+                _, buffer = cv2.imencode('.jpg', self.rear_frame, encode_param)
+                frame_bytes = buffer.tobytes()
+                
+                self.last_rear_frame_time = current_time
+                
+                yield (b'--frame\r\n'
+                      b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
 camera_service = CameraService()
-
-# 초기 연결 시도 제거 (실제 요청이 올 때 연결하도록)
-
-# @app.get("/video_feed")
-# async def video_feed():
-#     return StreamingResponse(
-#         get_frame(),
-#         media_type="multipart/x-mixed-replace; boundary=frame"
-#     )

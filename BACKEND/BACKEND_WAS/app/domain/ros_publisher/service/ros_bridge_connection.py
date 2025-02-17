@@ -19,8 +19,16 @@ class RosBridgeConnection:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(RosBridgeConnection, cls).__new__(cls)
-            asyncio.create_task(cls._instance._connect())
+            cls._instance.connect()  # 동기적으로 연결
         return cls._instance
+
+    def connect(self):
+        """동기적으로 ROS Bridge에 연결합니다."""
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            loop.create_task(self._connect())
+        else:
+            loop.run_until_complete(self._connect())
 
     async def _connect(self):
         retries = 0
@@ -38,6 +46,15 @@ class RosBridgeConnection:
                     retries += 1
                     if retries < self.MAX_RETRIES:
                         await asyncio.sleep(self.RETRY_DELAY)
+            else:
+                logger.info("이미 연결되어 있습니다.")
+                return self.client
+
+    def ensure_connected(self):
+        """연결이 되어 있는지 확인하고, 필요 시 재연결합니다."""
+        if not self.client or not self.client.is_connected:
+            logger.warning("ROS Bridge 연결이 끊어졌습니다. 재연결을 시도합니다.")
+            self.connect()
 
     async def publish(self, topic_name: str, msg_type: str, message: dict):
         try:

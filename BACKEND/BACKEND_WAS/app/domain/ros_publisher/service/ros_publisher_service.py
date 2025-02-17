@@ -56,6 +56,7 @@ def call_navigate_service(seq: str, goal: dict):
     """ROS Navigate 서비스 호출"""
     try:
         ros_connection = RosBridgeConnection()
+        ros_connection.ensure_connected()  # 연결 상태 확인 및 재연결 시도
         client = ros_connection.client
 
         service = roslibpy.Service(client, f'/robot_{seq}/navigate', 'robot_custom_interfaces/srv/Navigate')

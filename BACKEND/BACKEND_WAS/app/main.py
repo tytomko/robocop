@@ -186,56 +186,56 @@ async def websocket_middleware(request, call_next):
     return await call_next(request)
 
 # WebSocket ?? ???? ?????
-@app.websocket("/ws/test")
-async def websocket_test(websocket: WebSocket):
-    try:
-        await websocket.accept()
-        logger.info("New websocket client connected")
-        
-        await robot_service.register_frontend_client(websocket)
-        await ros_bridge_client.start_listening()
-        
-        # ?? ??
-        topics = {
-            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
-            "/robot_1/status": "robot_custom_interfaces/msg/Status",
-        }
-
-        # ?? ? ?????? ??
-        while True:
-            try:
-                await asyncio.sleep(1)  # ?? ?? ? 1? ??
+#@app.websocket("/ws/test")
+#async def websocket_test(websocket: WebSocket):
+#    try:
+#        await websocket.accept()
+#        logger.info("New websocket client connected")
+#        
+#        await robot_service.register_frontend_client(websocket)
+#        await ros_bridge_client.start_listening()
+#        
+#        # ?? ??
+#        topics = {
+#            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
+#            "/robot_1/status": "robot_custom_interfaces/msg/Status",
+#        }
+#
+#        # ?? ? ?????? ??
+#        while True:
+#            try:
+#                await asyncio.sleep(1)  # ?? ?? ? 1? ??
+#                
+#                for topic_name, msg_type in topics.items():
+#                    retry_count = 0
+#                    max_retries = 3
+#                    
+#                    while retry_count < max_retries:
+#                        # ?? ?? ? ??? ??
+#                        message = await ros_bridge_client.subscribe_to_topic(topic_name, msg_type)
+#                        #logger.info(f"Got message from subscribe_to_topic: {message}")
+#                        
+#                        if message:
+#                            # ???? ??? ???????? ?? ????
+#                            await robot_service.broadcast_to_frontend(message)
+#                            logger.info("Broadcast completed")
+#                            break
+#                        else:
+#                            retry_count += 1
+#                            if retry_count == max_retries:
+#                                logger.warning(f"No message received after {max_retries} attempts for topic: {topic_name}")
+#                            else:
+#                                logger.debug(f"No message to broadcast for topic: {topic_name}, retry {retry_count}/{max_retries}")
+#                                await asyncio.sleep(1)  # ??? ? 1? ??
                 
-                for topic_name, msg_type in topics.items():
-                    retry_count = 0
-                    max_retries = 3
-                    
-                    while retry_count < max_retries:
-                        # ?? ?? ? ??? ??
-                        message = await ros_bridge_client.subscribe_to_topic(topic_name, msg_type)
-                        #logger.info(f"Got message from subscribe_to_topic: {message}")
-                        
-                        if message:
-                            # ???? ??? ???????? ?? ????
-                            await robot_service.broadcast_to_frontend(message)
-                            logger.info("Broadcast completed")
-                            break
-                        else:
-                            retry_count += 1
-                            if retry_count == max_retries:
-                                logger.warning(f"No message received after {max_retries} attempts for topic: {topic_name}")
-                            else:
-                                logger.debug(f"No message to broadcast for topic: {topic_name}, retry {retry_count}/{max_retries}")
-                                await asyncio.sleep(1)  # ??? ? 1? ??
+#            except Exception as e:
+#                logger.error(f"Loop error: {str(e)}")
+#                logger.error(f"Error traceback: {traceback.format_exc()}")
+#                await asyncio.sleep(1)
                 
-            except Exception as e:
-                logger.error(f"Loop error: {str(e)}")
-                logger.error(f"Error traceback: {traceback.format_exc()}")
-                await asyncio.sleep(1)
-                
-    except WebSocketDisconnect:
-        logger.info("Websocket client disconnected")
-        await robot_service.unregister_frontend_client(websocket)
+#    except WebSocketDisconnect:
+#        logger.info("Websocket client disconnected")
+#        await robot_service.unregister_frontend_client(websocket)
 
 
 if __name__ == "__main__":
