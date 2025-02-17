@@ -13,26 +13,29 @@ import time
 
 matplotlib.use('TkAgg')
 
-# 보간 간격 (보간된 노드 간격)
+# Constants
 SEGMENT_DIST = 0.3  
-# 노드간 연결 최대 거리
 EDGE_CONNECTION_DISTANCE = 0.6  
-# (참고용) 연속 위치의 최소 차이 - 여기서는 사용하지 않음.
 POSITION_TOLERANCE = 0.1        
+SELECTION_TOLERANCE = 0.5  # 클릭 시 노드 선택 허용 범위
 
 class PathMaker(Node):
     def __init__(self):
         super().__init__('path_maker')
-        # 엔터 입력 시 기록된 위치들 (사용자가 원하는 지점)
+        # 터미널 입력(엔터)로 기록된 위치들
         self.positions = []  
-        # 최신 위치만 업데이트 (ROS 토픽)
+        # 보간 선택 단계에서 생성된 중간 노드들
+        self.interpolated_nodes = []  
+        # ROS 토픽으로부터 최신 위치 저장
         self.current_position = None  
         self.graph = nx.Graph()
         self.cluster_centers = {}
 
-        self.recording = True
+        self.input_phase = True           # 노드 입력 단계 플래그
+        self.interpolation_phase = False  # 보간 선택 단계 플래그
+        self.selected_pair = []           # 보간 선택 시 현재 선택된 노드 2개
 
-        # ROS 구독: 최신 위치만 업데이트
+        # ROS 구독: 최신 위치 업데이트
         self.subscription = self.create_subscription(
             PoseStamped,
             '/robot_1/utm_pose',
@@ -40,7 +43,7 @@ class PathMaker(Node):
             10
         )
 
-        # Matplotlib 초기화: 기록된 위치와 현재 위치 표시
+        # Matplotlib 초기화: 실시간 플롯 표시
         self.fig, self.ax = plt.subplots()
         self.fig.canvas.manager.set_window_title("Real-time Robot Path")
         self.line_path, = self.ax.plot([], [], 'b.-', label='Recorded Points')
@@ -52,12 +55,10 @@ class PathMaker(Node):
         self.ax.grid(True)
 
     def pose_callback(self, msg):
-        """ROS 토픽으로부터 최신 UTM 위치를 업데이트"""
         pos = (msg.pose.position.x, msg.pose.position.y)
         self.current_position = pos
 
     def update_live_plot(self):
-        """실시간 플롯 갱신: 기록된 점들과 최신 위치 표시"""
         if len(self.positions) > 0:
             x_data, y_data = zip(*self.positions)
             self.line_path.set_xdata(x_data)
@@ -69,58 +70,86 @@ class PathMaker(Node):
         plt.draw()
         plt.pause(0.01)
 
-    def finalize_in_main_thread(self):
-        """
-        녹화 종료 후 최종 처리:
-        1) 보간을 통해 입력된 점들 사이에 일정 간격 노드 생성
-        2) 노드간 연결(엣지 생성)
-        3) JSON 파일로 저장
-        4) 최종 그래프 시각화
-        """
-        self.recording = False
-        plt.close(self.fig)
+    # 노드 입력 단계 종료 (터미널에서 'q' 입력)
+    def finalize_node_input(self):
+        self.input_phase = False
+        self.get_logger().info("Node input phase finished. Recorded {} positions.".format(len(self.positions)))
 
-        self.generate_fixed_distance_nodes(SEGMENT_DIST)
+    # 보간 선택 단계 시작: 기록된 노드 표시 후 이벤트 핸들러 연결
+    def start_interpolation_mode(self):
+        self.interpolation_phase = True
+        self.get_logger().info("Interpolation mode: Select two recorded nodes by clicking. Press 'q' to finish interpolation mode.")
+        # 기록된 노드들을 파란 원으로 표시
+        recorded_array = np.array(self.positions)
+        self.ax.scatter(recorded_array[:, 0], recorded_array[:, 1], c='blue', s=100, marker='o', label='Recorded Nodes')
+        plt.draw()
+        # 마우스 클릭 및 키보드 이벤트 핸들러 연결
+        self.cid_click = self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+        self.cid_key = self.fig.canvas.mpl_connect('key_press_event', self.on_key_press)
+
+    # 마우스 클릭 시: 기록된 노드 중 가장 가까운 노드를 선택하여 쌍을 구성
+    def on_click(self, event):
+        if not self.interpolation_phase:
+            return
+        if event.inaxes != self.ax:
+            return
+        clicked = (event.xdata, event.ydata)
+        if not self.positions:
+            return
+        # 클릭 위치와 각 기록된 노드 간의 거리 계산
+        distances = [np.linalg.norm(np.array(clicked) - np.array(pos)) for pos in self.positions]
+        min_idx = np.argmin(distances)
+        if distances[min_idx] > SELECTION_TOLERANCE:
+            self.get_logger().info("Clicked position not close enough to any recorded node.")
+            return
+        selected_node = self.positions[min_idx]
+        # 현재 선택된 쌍에 추가 (같은 노드 중복 선택 방지)
+        if len(self.selected_pair) == 0 or self.selected_pair[-1] != selected_node:
+            self.selected_pair.append(selected_node)
+            self.ax.scatter(selected_node[0], selected_node[1], c='magenta', s=150, marker='o')
+            plt.draw()
+        # 두 노드가 선택되면 보간 진행
+        if len(self.selected_pair) == 2:
+            p1, p2 = self.selected_pair
+            new_nodes = self.interpolate_between_points(p1, p2, SEGMENT_DIST)
+            self.interpolated_nodes.extend(new_nodes)
+            # 선택된 두 점 사이를 시각적으로 연결
+            self.ax.plot([p1[0], p2[0]], [p1[1], p2[1]], 'c-', linewidth=2)
+            plt.draw()
+            self.selected_pair = []  # 다음 쌍 선택을 위해 초기화
+
+    # 보간 선택 단계에서 'q' 키 입력 시 종료
+    def on_key_press(self, event):
+        if event.key == 'q':
+            self.interpolation_phase = False
+            # 이벤트 핸들러 해제
+            self.fig.canvas.mpl_disconnect(self.cid_click)
+            self.fig.canvas.mpl_disconnect(self.cid_key)
+            plt.close(self.fig)
+            self.finalize_interpolation_phase()
+
+    # 보간 선택 단계 종료 후 최종 그래프 생성
+    def finalize_interpolation_phase(self):
+        # 원본 노드와 보간된 노드들을 합치고 중복 제거
+        all_nodes = self.positions + self.interpolated_nodes
+        unique_nodes = list({tuple(n) for n in all_nodes})
+        self.cluster_centers = {i: node for i, node in enumerate(unique_nodes)}
+        self.get_logger().info("Total unique nodes after interpolation: {}".format(len(self.cluster_centers)))
         self.create_edges()
         self.save_graph_to_json()
         self.plot_final_graph()
 
+    # 두 점 사이 선형 보간 (중간 노드 생성)
     def interpolate_between_points(self, p1, p2, segment_dist):
-        """
-        두 점 p1, p2 사이를 선형 보간하여 segment_dist 간격의 중간 노드들을 생성.
-        거리가 segment_dist 미만이면 빈 리스트 반환.
-        """
         vec = np.array(p2) - np.array(p1)
         total_dist = np.linalg.norm(vec)
         if total_dist < segment_dist:
             return []
         num_segments = int(total_dist // segment_dist)
-        # p1과 p2 사이에 num_segments개의 보간 점 생성
         points = [tuple(np.array(p1) + vec * (i / (num_segments + 1))) for i in range(1, num_segments + 1)]
         return points
 
-    def generate_fixed_distance_nodes(self, segment_dist):
-        """
-        사용자가 엔터 입력으로 기록한 positions 사이에 보간 노드를 생성.
-        시작점과 끝점는 그대로 사용하고, 중간에 보간된 노드를 추가.
-        """
-        if len(self.positions) < 2:
-            self.get_logger().info("Not enough positions recorded to generate nodes.")
-            self.cluster_centers = {}
-            return
-
-        nodes = [self.positions[0]]
-        for i in range(1, len(self.positions)):
-            p_prev = self.positions[i - 1]
-            p_curr = self.positions[i]
-            intermediate_nodes = self.interpolate_between_points(p_prev, p_curr, segment_dist)
-            nodes.extend(intermediate_nodes)
-            nodes.append(p_curr)
-        self.cluster_centers = {i: node for i, node in enumerate(nodes)}
-        self.get_logger().info(f"Generated {len(nodes)} fixed-distance nodes from {len(self.positions)} recorded points.")
-
     def create_edges(self):
-        """노드들 간 거리가 EDGE_CONNECTION_DISTANCE 이내이면 엣지 생성 (cost=거리)"""
         self.graph.clear()
         if self.cluster_centers:
             nodes_array = np.array(list(self.cluster_centers.values()))
@@ -131,12 +160,11 @@ class PathMaker(Node):
                     if i != idx:
                         dist = float(np.linalg.norm(point - nodes_array[idx]))
                         self.graph.add_edge(tuple(nodes_array[i]), tuple(nodes_array[idx]), cost=dist)
-            self.get_logger().info(f"Total nodes: {len(nodes_array)}, Total edges: {len(self.graph.edges)}")
+            self.get_logger().info("Total nodes: {}, Total edges: {}".format(len(nodes_array), len(self.graph.edges)))
         else:
             self.get_logger().info("No nodes available for creating edges.")
 
     def save_graph_to_json(self):
-        """NetworkX 그래프를 node-link 형식의 JSON으로 저장"""
         if len(self.graph.nodes) > 0:
             data = nx.node_link_data(self.graph)
             filename = f'global_map_{datetime.now().strftime("%Y%m%d%H%M%S")}.json'
@@ -147,7 +175,6 @@ class PathMaker(Node):
             self.get_logger().info('Graph is empty. No file saved.')
 
     def plot_final_graph(self):
-        """노드와 엣지를 최종적으로 시각화"""
         if not self.cluster_centers:
             return
         plt.ioff()
@@ -170,39 +197,46 @@ def main(args=None):
     rclpy.init(args=args)
     node = PathMaker()
 
-    # ROS 스레드 실행
+    # ROS 스핀 스레드 실행
     def ros_spin():
         rclpy.spin(node)
     spin_thread = threading.Thread(target=ros_spin, daemon=True)
     spin_thread.start()
 
-    # 엔터 입력 시 현재 위치 기록
+    # 터미널 입력: Enter는 현재 위치 기록, 'q'는 노드 입력 종료
     def wait_input():
-        while node.recording:
-            input("Press Enter to record the current position (or Ctrl+C to finalize)...\n")
-            if node.current_position is not None:
-                node.positions.append(node.current_position)
-                node.get_logger().info(f"Recorded position: {node.current_position}")
+        while node.input_phase:
+            user_input = input("Press Enter to record the current position (or type 'q' to finish node input)...\n")
+            if user_input.lower() == 'q':
+                node.finalize_node_input()
+                break
             else:
-                node.get_logger().info("No current position available.")
+                if node.current_position is not None:
+                    node.positions.append(node.current_position)
+                    node.get_logger().info(f"Recorded position: {node.current_position}")
+                else:
+                    node.get_logger().info("No current position available.")
     input_thread = threading.Thread(target=wait_input, daemon=True)
     input_thread.start()
 
+    # 실시간 플롯 갱신 (노드 입력 단계)
     try:
-        # 실시간 플롯 갱신 루프
-        while rclpy.ok() and node.recording:
+        while rclpy.ok() and node.input_phase:
             node.update_live_plot()
             time.sleep(0.1)
     except KeyboardInterrupt:
-        node.get_logger().info("KeyboardInterrupt received. Finalizing...")
-    finally:
-        if node.recording:
-            node.finalize_in_main_thread()
-        node.destroy_node()
-        rclpy.shutdown()
+        node.get_logger().info("KeyboardInterrupt received during node input.")
+        node.finalize_node_input()
 
-    spin_thread.join()
     input_thread.join()
+
+    # 노드 입력 단계가 종료되면 보간 선택 단계 시작
+    node.start_interpolation_mode()
+    plt.show()  # 보간 선택 단계의 이벤트 루프가 실행됨 (종료 시 'q'를 누름)
+
+    node.destroy_node()
+    rclpy.shutdown()
+    spin_thread.join()
 
 if __name__ == '__main__':
     main()
