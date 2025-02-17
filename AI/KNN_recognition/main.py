@@ -58,29 +58,29 @@ def handle_message(message, IP, PORT):
         print(f"❌ [handle_message] 메시지 처리 중 오류 발생: {e}")
 
 
-def handle_all_update_person(people):
-    """
-    ALL_UPDATE_PERSON을 처리하는 함수
-    """
-    for person in people:
-        person_id = person.get("person_id")
-        update_time = person.get("update_time")
-        image_urls = person.get("image_urls", [])
+# def handle_all_update_person(people):
+#     """
+#     ALL_UPDATE_PERSON을 처리하는 함수
+#     """
+#     for person in people:
+#         person_id = person.get("person_id")
+#         update_time = person.get("update_time")
+#         image_urls = person.get("image_urls", [])
         
-        print(f"🔄 업데이트된 사용자 ID: {person_id}, 업데이트 시간: {update_time}")
-        print("📷 이미지 목록:")
-        for url in image_urls:
-            print(f"  - {url}")
+#         print(f"🔄 업데이트된 사용자 ID: {person_id}, 업데이트 시간: {update_time}")
+#         print("📷 이미지 목록:")
+#         for url in image_urls:
+#             print(f"  - {url}")
         
-        # 필요한 추가 처리 (예: 이미지 다운로드, 데이터베이스 업데이트 등)
-        process_person_data(person_id, update_time, image_urls)
+#         # 필요한 추가 처리 (예: 이미지 다운로드, 데이터베이스 업데이트 등)
+#         process_person_data(person_id, update_time, image_urls)
 
 
-def process_person_data(person_id, update_time, image_urls):
-    """
-    받은 인물 데이터를 처리하는 함수 (예: DB 업데이트, 파일 저장 등)
-    """
-    print(f"📝 {person_id}번 사용자의 데이터를 처리합니다.")
+# def process_person_data(person_id, update_time, image_urls):
+#     """
+#     받은 인물 데이터를 처리하는 함수 (예: DB 업데이트, 파일 저장 등)
+#     """
+#     print(f"📝 {person_id}번 사용자의 데이터를 처리합니다.")
 
 # 콜백 함수 등록
 socket_network.set_callback(handle_message)
@@ -212,7 +212,7 @@ try:
                 safe_person_count += 1
 
             if isCheckNow:
-                if distance <= 0.38:
+                if distance <= 0.35:
                     power = (10 / distance) * delta_time
                     isCheckCount += power
             
