@@ -34,8 +34,8 @@
                 <span :class="getStatusClass(robot.status)" class="px-2 py-1 rounded text-white">{{ getStatusLabel(robot.status) }}</span>
               </td>
               <td class="px-2 py-2 truncate">
-                <button v-if="robot.status !== 'error'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="setBreakdown(robot.seq)">고장</button>
-                <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="setActive(robot.seq)">가동</button>
+                <button v-if="robot.status !== 'error'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="handleBreakdown(robot.seq)">고장</button>
+                <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="handleActivate(robot.seq)">가동</button>
               </td>
             </tr>
           </tbody>
@@ -51,7 +51,22 @@ const props = defineProps({
   robots: Array
 });
 
-const emit = defineEmits(['close', 'openAddRobotModal', 'setBreakdown', 'setActive']);
+const emit = defineEmits(['close', 'openAddRobotModal']);
+
+// 로컬 함수로 로봇 상태 변경 (고장/가동) -> api 연동 필요
+const handleBreakdown = (robotSeq) => {
+  const robot = props.robots.find(r => r.seq === robotSeq);
+  if (robot) {
+    robot.status = 'error';
+  }
+};
+
+const handleActivate = (robotSeq) => {
+  const robot = props.robots.find(r => r.seq === robotSeq);
+  if (robot) {
+    robot.status = 'navigating';
+  }
+};
 
 const getStatusClass = (status) => {
   const statusClasses = {
@@ -79,13 +94,6 @@ const getStatusLabel = (status) => {
   return labels[status] || status;
 };
 
-const setBreakdown = (robotSeq) => {
-  emit('setBreakdown', robotSeq);
-};
-
-const setActive = (robotSeq) => {
-  emit('setActive', robotSeq);
-};
 </script>
 
 <style scoped>

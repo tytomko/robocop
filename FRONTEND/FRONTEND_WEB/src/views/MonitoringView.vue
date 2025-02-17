@@ -47,8 +47,6 @@
       :robots="robots"
       @close="robotsStore.closeRobotManagementModal"
       @openAddRobotModal="robotsStore.openAddRobotModal"
-      @setBreakdown="robotsStore.setBreakdown"
-      @setActive="robotsStore.setActive"
     />
 
     <!-- 로봇 등록 모달 -->
