@@ -44,16 +44,30 @@
 
 @layer components {
   /* 레이아웃 컴포넌트 */
-  .layout-container {
-    @apply w-full h-full flex flex-col lg:flex-row;
+   /* Modal 관련 스타일 추가 */
+   .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-[9999];
+  }
+
+  .modal-container {
+    @apply fixed inset-0 flex items-center justify-center z-[10000];
+  }
+
+  .modal-content {
+    @apply relative bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4;
+  }
+
+   /* 레이아웃 컨테이너 */
+   .layout-container {
+    @apply w-full h-full flex flex-col lg:flex-row relative z-0;
   }
 
   .sidebar-container {
-    @apply hidden lg:block bg-white shadow-md transition-all duration-300 ease-in-out;
+    @apply hidden lg:block bg-white shadow-md transition-all duration-300 ease-in-out relative z-10;
   }
 
   .main-content {
-    @apply flex-1 overflow-auto px-2 sm:px-4 lg:px-6;
+    @apply flex-1 overflow-auto px-4 lg:px-6 py-4 relative z-0;
   }
 
   /* 네비게이션 링크 스타일 */
@@ -68,6 +82,58 @@
   /* 모바일 네비게이션 */
   .mobile-nav-link {
     @apply block w-full px-4 py-2 text-sm text-white/90 hover:bg-white/10 hover:text-white transition-colors;
+  }
+
+   /* 반응형 설정 */
+   @media (max-width: 1279px) {
+    .mobile-only {
+      @apply block;
+    }
+    .desktop-only {
+      @apply hidden;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .mobile-only {
+      @apply hidden;
+    }
+    .desktop-only {
+      @apply block;
+    }
+  }
+
+   /* 로봇 카드 스타일 */
+   .robot-card {
+    @apply bg-white rounded-lg shadow-md p-4 flex flex-col;
+  }
+
+  /* 로봇 상태 정보 */
+  .robot-status {
+    @apply flex flex-col gap-2;
+  }
+
+  /* 배터리 상태 바 */
+  .battery-bar {
+    @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .battery-level {
+    @apply h-full bg-green-500 transition-all duration-300;
+  }
+
+  /* 로봇 제어 버튼 그룹 */
+  .control-buttons {
+    @apply grid grid-cols-2 gap-2 mt-4;
+  }
+
+  /* 제어 버튼 스타일 */
+  .control-button {
+    @apply px-4 py-2 rounded-md text-white text-sm font-medium transition-colors;
+  }
+
+  .button-primary {
+    @apply bg-gray-800 hover:bg-gray-700;
   }
 
   /* 테이블 반응형 스타일 */

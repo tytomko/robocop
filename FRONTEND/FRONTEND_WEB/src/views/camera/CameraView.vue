@@ -15,25 +15,34 @@
             :key="robot.seq" 
             :value="robot.seq"
             :selected="selectedRobots.includes(robot.seq)"> 
-            {{ robot.nickname || robot.name }}
+            {{ robot.nickname || robot.manufactureName }}
           </option>
         </select>
       </div>
 
+      <!-- 카메라 방향 선택 -->
+      <select
+        v-model="selectedDirection"
+        class="w-32 p-2 border border-gray-300 rounded bg-white text-sm"
+      >
+        <option value="both">전/후방</option>
+        <option value="front">전방만</option>
+        <option value="rear">후방만</option>
+      </select>
+    </div>
+
       <!-- 선택된 로봇 카메라들 (화면 내에서 크기 자동 조정) -->
       <div v-if="selectedRobots.length > 0" :class="gridClass" class="video-container">
+        <!-- cameras computed 속성을 사용하여 카메라 배열 렌더링 -->
         <Cctv
-          v-for="robotSeq in selectedRobots"
-          :key="robotSeq"
-          :cameraName="'카메라 ' + robotSeq"
-          :cameraStatus="'연결 대기 중'"
-          :streamInfo="streamInfoMap[robotSeq]"
+          v-for="camera in cameras"
+          :key="`${camera.robotSeq}-${camera.type}`"
+          :robotSeq="camera.robotSeq"
+          :cameraType="camera.type"
           class="video-item"
         />
-        <div v-if="selectedRobots.length === 3" class="video-item empty"></div>
       </div>
-      <div v-else class="p-5 text-center text-gray-500">로봇을 선택해주세요</div>
-    </div>
+    <div v-else class="p-5 text-center text-gray-500">로봇을 선택해주세요</div>
   </div>
 </template>
 
@@ -45,52 +54,75 @@ import Cctv from '@/components/camera/Cctv.vue'
 // robotsStore 활용하기
 const robotsStore = useRobotsStore()
 
-// ✅ 선택된 로봇 리스트 (초기값: 빈 배열)
+// 선택된 로봇 리스트 (초기값: 빈 배열)
 const selectedRobots = ref([])
+const selectedDirection = ref('both') // 기본값: 전/후방 모두 표시
 
-// 각 로봇의 스트림 정보
-const streamInfoMap = ref({})
+// 카메라 표시 여부 계산
+const showFrontCamera = computed(() => 
+  selectedDirection.value === 'both' || selectedDirection.value === 'front'
+)
+
+const showRearCamera = computed(() => 
+  selectedDirection.value === 'both' || selectedDirection.value === 'rear'
+)
 
 // 선택한 로봇 개수에 따라 배치 스타일 변경
 const gridClass = computed(() => {
-  const count = selectedRobots.value.length
-  if (count === 1) return "single"
-  if (count === 2) return "double"
-  if (count === 3) return "triple"
+  const camerasPerRobot = selectedDirection.value === 'both' ? 2 : 1
+  const totalCameras = selectedRobots.value.length * camerasPerRobot
+  if (totalCameras === 1) return "single"
+  if (totalCameras === 2) return "double"
+  if (totalCameras === 3) return "triple"
   return "quad" // 4개일 때
 })
 
-// ✅ 로봇 선택 후 상태 변경
-const handleRobotSelection = () => {
+// 표시할 카메라 배열 계산
+const cameras = computed(() => {
+  const result = [];
+  
   selectedRobots.value.forEach(robotSeq => {
-    streamInfoMap.value[robotSeq] = robotsStore.getStreamInfo(robotSeq)
-  })
+    if (showFrontCamera.value) {
+      result.push({ robotSeq, type: 'front' });
+    }
+    if (showRearCamera.value) {
+      result.push({ robotSeq, type: 'rear' });
+    }
+  });
+  
+  return result;
+});
+
+// 로봇 선택 후 상태 변경
+const handleRobotSelection = () => {
+  console.log('Selected robots:', selectedRobots.value)
 }
 
-// ✅ 로봇 데이터 불러오기 (기본값 설정 추가)
+// 로봇 데이터 불러오기 (기본값 설정 추가)
 onMounted(() => {
   robotsStore.loadRobots()
 
-  // 1️⃣ 기존에 선택된 로봇을 `localStorage`에서 가져오기
+  // 1️기존에 선택된 로봇을 `localStorage`에서 가져오기
   const savedRobots = localStorage.getItem('selectedRobots')
   if (savedRobots) {
     const parsedRobots = JSON.parse(savedRobots)
 
-    // 2️⃣ 저장된 로봇 리스트에서, 실제 등록된 로봇만 선택되도록 필터링
+    // 2️저장된 로봇 리스트에서, 실제 등록된 로봇만 선택되도록 필터링
     selectedRobots.value = Array.isArray(parsedRobots)
       ? parsedRobots.filter(seq => robotsStore.registered_robots.some(robot => robot.seq === seq))
       : []
   }
 
-  // 3️⃣ `store.selectedRobot`이 설정되어 있으면 기본값으로 추가 (이미 선택되지 않았다면)
+  // 3️`store.selectedRobot`이 설정되어 있으면 기본값으로 추가 (이미 선택되지 않았다면)
   if (robotsStore.selectedRobot && !selectedRobots.value.includes(robotsStore.selectedRobot)) {
     selectedRobots.value.push(robotsStore.selectedRobot)
   }
 })
 
-// ✅ `selectedRobots`가 변경될 때마다 `localStorage`에 저장
+// `selectedRobots`가 변경될 때마다 `localStorage`에 저장
 watch(selectedRobots, (newRobots) => {
   localStorage.setItem('selectedRobots', JSON.stringify(newRobots))
+  console.log('Selected robots:', newRobots)
 })
 </script>
 

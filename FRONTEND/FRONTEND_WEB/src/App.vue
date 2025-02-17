@@ -6,14 +6,14 @@
         v-if="!isLoginPage"
         :is-collapsed="isLeftSidebarCollapsed"
         @toggle-left-sidebar="toggleLeftSidebar"
-        class="sidebar-container z-20"
+        class="sidebar-container z-30"
       />
 
       <!-- Main Content -->
       <div class="flex flex-col flex-1 overflow-auto relative">
-        <!-- Navbar - 상단에 고정하고 더 높은 z-index 적용 -->
-        <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-4 lg:px-10 h-[55px] flex items-center justify-between sticky top-0 z-30">
-          <!-- 로고 -->
+        <!-- Navbar -->
+        <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-4 lg:px-10 h-[55px] flex items-center justify-between sticky top-0 z-40">
+           <!-- 로고 -->
           <div class="cursor-pointer" @click="refreshPage">
             <img src="@/assets/whitelogo.png" alt="로고" class="h-10 lg:h-14" />
           </div>
@@ -84,7 +84,7 @@
         v-if="!isLoginPage" 
         :class="[
           sidebarClasses,
-          'sidebar-container z-20'
+          'sidebar-container z-30'
         ]"
       >
         <MapSidebarSection 
@@ -98,7 +98,8 @@
     <AlarmNotification 
       v-if="!isLoginPage && isSidebarCollapsed" 
       :isCollapsed="true"
-      class="hidden lg:block fixed top-2 right-2 z-25" 
+      class="hidden lg:block fixed right-2 z-35"
+      :class="{'top-[55px]': !isSidebarCollapsed, 'top-[10px]': isSidebarCollapsed}"
     />
   </div>
 </template>
