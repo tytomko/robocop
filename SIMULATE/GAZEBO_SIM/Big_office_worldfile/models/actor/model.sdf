@@ -2,15 +2,14 @@
 <sdf version="1.6">
   <actor name="actor">
      <skin>
-        <filename>model://actor_walk/meshes/SKIN_man_green_shirt.dae</filename>
+        <filename>https://fuel.gazebosim.org/1.0/Mingfei/models/actor/tip/files/meshes/walk.dae</filename>
         <scale>1.0</scale>
-     </skin>
+    </skin>
      <pose>0 0 0 0 0 0</pose>
-     <animation name="walking">
-        <filename>model://actor_walk/meshes/ANIMATION_walking.dae</filename>
-        <scale>1.000000</scale>
+     <animation name="walk">
+        <filename>/home/ssafy/S12P11C101/SIMULATE/GAZEBO_SIM/Big_office_worldfile/models/actor/meshes/ANIMATION_walking.dae</filename>
         <interpolate_x>true</interpolate_x>
-     </animation>
+    </animation>
      <script>
         <loop>true</loop>
         <delay_start>0.000000</delay_start>
