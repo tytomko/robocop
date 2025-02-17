@@ -91,8 +91,8 @@ async function handlePatrol() {
   await robotCommandsStore.patrolCommand(selectedNodes.value, currentRobotSeq.value)
 }
 
-function resetSelection() {
-  selectedNodes.value = robotCommandsStore.resetSelectionCommand()
+async function resetSelection() {
+  selectedNodes.value = await robotCommandsStore.resetSelectionCommand(currentRobotSeq.value)
   updateChartSeries()
 }
 
@@ -100,12 +100,17 @@ async function handleTempStop() {
   await robotCommandsStore.tempStopCommand(currentRobotSeq.value)
 }
 
+async function handleResume() {
+  await robotCommandsStore.resumeCommand(currentRobotSeq.value)
+}
+
 // expose로 부모 컴포넌트가 직접 접근 가능
 defineExpose({
   handleNavigate,
   handlePatrol,
   resetSelection,
-  handleTempStop
+  handleTempStop,
+  handleResume
 })
 
 const chartRef = ref(null)

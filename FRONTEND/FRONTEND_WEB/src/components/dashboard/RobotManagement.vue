@@ -74,24 +74,37 @@
 
 <script setup>
 import { Teleport } from 'vue'
+import { useRobotCommandsStore } from '@/stores/robotCommands'
+
 const props = defineProps({
   show: Boolean,
   robots: Array
 });
 
 const emit = defineEmits(['close', 'openAddRobotModal']);
+const robotCommandsStore = useRobotCommandsStore();
 
-const handleBreakdown = (robotSeq) => {
-  const robot = props.robots.find(r => r.seq === robotSeq);
-  if (robot) {
-    robot.status = 'error';
+const handleBreakdown = async (robotSeq) => {
+  try {
+    const newStatus = await robotCommandsStore.robotBreakdownCommand(robotSeq);
+    const robot = props.robots.find(r => r.seq === robotSeq);
+    if (robot && newStatus) {
+      robot.status = newStatus;
+    }
+  } catch (error) {
+    console.error('Error in handleBreakdown:', error);
   }
 };
 
-const handleActivate = (robotSeq) => {
-  const robot = props.robots.find(r => r.seq === robotSeq);
-  if (robot) {
-    robot.status = 'navigating';
+const handleActivate = async (robotSeq) => {
+  try {
+    const newStatus = await robotCommandsStore.robotActivateCommand(robotSeq);
+    const robot = props.robots.find(r => r.seq === robotSeq);
+    if (robot && newStatus) {
+      robot.status = newStatus;
+    }
+  } catch (error) {
+    console.error('Error in handleActivate:', error);
   }
 };
 

@@ -62,9 +62,22 @@ export const useRobotCommandsStore = defineStore('robotCommands', () => {
     }
   }
 
-  // 선택 초기화 함수 (빈 배열 반환)
-  const resetSelectionCommand = () => {
-    return []
+  // reset => estop 후 resume까지
+  const resetSelectionCommand = async (currentRobotSeq) => {
+    if (!currentRobotSeq) {
+      console.warn('[RobotCommandsStore] 로봇이 선택되지 않았습니다.')
+      return []
+    }
+    try {
+      await axios.post(
+        `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq}/reset`
+      )
+      console.log('[RobotCommandsStore] 리셋 명령 전송 완료')
+      return [] // API 호출 후에도 선택된 노드 배열은 비워줌
+    } catch (error) {
+      console.error('Reset request failed:', error)
+      return [] // 에러가 발생해도 선택된 노드 배열은 비워줌
+    }
   }
 
   // 복귀 명령 함수 (homing)
@@ -99,12 +112,64 @@ export const useRobotCommandsStore = defineStore('robotCommands', () => {
     }
   }
 
+  const resumeCommand = async (currentRobotSeq) => {
+    if (!currentRobotSeq) {
+      console.warn('[RobotCommandsStore] 로봇이 선택되지 않았습니다.')
+      return
+    }
+    try {
+      await axios.post(
+        `https://robocopbackendssafy.duckdns.org/api/v1/${currentRobotSeq}/call-service/resume`
+      )
+      console.log('[RobotCommandsStore] 자동 모드 명령 전송 완료')
+    } catch (error) {
+      console.error('Resume request failed:', error)
+    }
+  }
+
+  const robotBreakdownCommand = async (robotSeq) => {
+    if (!robotSeq) {
+      console.warn('[RobotCommandsStore] 로봇이 선택되지 않았습니다.')
+      return
+    }
+    try {
+      await axios.post(
+        `https://robocopbackendssafy.duckdns.org/api/v1/${robotSeq}/call-service/estop`
+      )
+      console.log('[RobotCommandsStore] 로봇 고장 명령 전송 완료')
+      return 'error' // 상태 반환
+    } catch (error) {
+      console.error('Robot breakdown request failed:', error)
+      throw error
+    }
+  }
+  
+  const robotActivateCommand = async (robotSeq) => {
+    if (!robotSeq) {
+      console.warn('[RobotCommandsStore] 로봇이 선택되지 않았습니다.')
+      return
+    }
+    try {
+      await axios.post(
+        `https://robocopbackendssafy.duckdns.org/api/v1/${robotSeq}/call-service/waiting`
+      )
+      console.log('[RobotCommandsStore] 로봇 가동 명령 전송 완료')
+      return 'waiting' // 상태 반환
+    } catch (error) {
+      console.error('Robot activate request failed:', error)
+      throw error
+    }
+  }
+
   return {
     navigateCommand,
     patrolCommand,
     tempStopCommand,
     resetSelectionCommand,
     homingCommand,
-    estopCommand
+    estopCommand,
+    robotBreakdownCommand,
+    robotActivateCommand,
+    resumeCommand
   }
 })

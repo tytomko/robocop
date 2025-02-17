@@ -1,10 +1,10 @@
 <template>
   <div class="flex space-x-3 mb-1">
-    <!-- 이동/순찰 버튼 (조건에 따라 다르게 표시) -->
+    <!-- 이동/순찰 버튼 -->
     <button
       class="control-btn"
       :class="{
-        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedNodes.length === 0, // 비활성화 상태
+        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedNodes.length === 0,
         'bg-blue-500': selectedNodes.length === 1,
         'bg-green-500': selectedNodes.length >= 2
       }"
@@ -26,28 +26,32 @@
       리셋
     </button>
 
-    <!-- 일시정지 버튼 (항상 활성화) -->
+    <!-- 일시정지/재가동 토글 버튼 -->
     <button 
-      class="control-btn bg-orange-500"
-      @click="$emit('tempStop')"
+      class="control-btn"
+      :class="isPaused ? 'bg-green-500' : 'bg-orange-500'"
+      @click="handlePauseToggle"
     >
-      <i class="mdi mdi-pause-circle"></i>
-      일시정지
+      <i class="mdi" :class="isPaused ? 'mdi-play-circle' : 'mdi-pause-circle'"></i>
+      {{ isPaused ? '재가동' : '일시정지' }}
     </button>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 const props = defineProps({
   selectedNodes: {
     type: Array,
-    default: () => [] // 기본값을 빈 배열로 설정하여 undefined 방지
+    default: () => []
   }
 })
 
-const emits = defineEmits(['navigate', 'patrol', 'reset', 'tempStop'])
+const emits = defineEmits(['navigate', 'patrol', 'reset', 'tempStop', 'resume'])
 
-// 동작 함수
+const isPaused = ref(false)
+
 function handleNavigate() {
   emits('navigate')
 }
@@ -56,6 +60,14 @@ function handlePatrol() {
   emits('patrol')
 }
 
+function handlePauseToggle() {
+  if (isPaused.value) {
+    emits('resume')
+  } else {
+    emits('tempStop')
+  }
+  isPaused.value = !isPaused.value
+}
 </script>
 
 <style scoped>
