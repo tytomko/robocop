@@ -13,13 +13,19 @@ class UserCreate(BaseModel):
     username: str
     password: str
     role: str = "user"
-    is_active: bool = True
-    is_default_password: bool = False
+    isActive: bool = True
+    isDefaultPassword: bool = False
 
 class UserLogin(BaseModel):
     """사용자 로그인 모델"""
     username: str = Field(..., description="사용자 이름")
     password: str = Field(..., description="비밀번호")
+
+class Token(BaseModel):
+    """토큰 모델"""
+    accessToken: str
+    refreshToken: str
+    tokenType: str = "bearer"
 
 class User(UserBase):
     """사용자 모델"""
@@ -30,6 +36,7 @@ class User(UserBase):
     isDefaultPassword: bool = Field(default=False)  # admin 계정은 True로 설정
     createdAt: datetime = Field(default_factory=datetime.utcnow)
     updatedAt: Optional[datetime] = None
+    tokens: Optional[Token] = None  # 토큰 정보 포함
 
     class Config:
         populate_by_name = True
@@ -39,12 +46,6 @@ class User(UserBase):
     def set_default_password(cls, v, values):
         # admin 계정인 경우 default_password = True
         return True if values.get('username') == 'admin' else v
-
-class Token(BaseModel):
-    """토큰 모델"""
-    accessToken: str
-    refreshToken: str
-    tokenType: str = "bearer"
 
 class TokenData(BaseModel):
     username: Optional[str] = None

@@ -34,15 +34,13 @@ class AuthRepository:
         await self.connect()
         user_data = await self.collection.find_one({"username": username})
         if user_data:
-            print("Found user_data:", user_data)
             user_data["id"] = str(user_data.pop("_id"))
-            # hashedPassword를 hashed_password로 변환
-            if "hashedPassword" in user_data:
-                user_data["hashed_password"] = user_data.pop("hashedPassword")
             return User(**user_data)
         return None
 
     async def update_user_refresh_token(self, username: str, refresh_token: str):
+        """사용자의 리프레시 토큰을 업데이트합니다."""
+        await self.connect()
         return await self.collection.update_one(
             {"username": username},
             {
@@ -67,6 +65,8 @@ class AuthRepository:
         )
 
     async def invalidate_refresh_token(self, username: str):
+        """사용자의 리프레시 토큰을 무효화합니다."""
+        await self.connect()
         return await self.collection.update_one(
             {"username": username},
             {

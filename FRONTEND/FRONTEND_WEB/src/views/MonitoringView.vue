@@ -14,12 +14,20 @@
       
       <!-- 웹소켓 메시지 표시 영역 -->
       <div v-if="webSocketConnected" class="bg-gray-100 rounded p-3 mb-3">
-        <div class="font-medium mb-1">최근 메시지:</div>
-        <div v-if="lastTestMessage?.data" class="bg-gray-800 text-white p-2 rounded font-mono text-sm">
-          {{ lastTestMessage.data }}
+        <div class="font-medium mb-1">Latest Message:</div>
+        <div v-if="lastTestMessage" class="bg-gray-800 text-white p-2 rounded font-mono text-sm">
+          <div v-if="lastTestMessage.type === 'ros_topic'" class="mb-2">
+            <div class="text-blue-400">Topic: {{ lastTestMessage.topic }}</div>
+            <div v-if="lastTestMessage.data && lastTestMessage.data.msg">
+              <pre class="whitespace-pre-wrap">{{ JSON.stringify(lastTestMessage.data.msg, null, 2) }}</pre>
+            </div>
+          </div>
+          <div v-else>
+            {{ lastTestMessage }}
+          </div>
           <div class="text-xs text-gray-400 text-right mt-1">{{ lastMessageTime }}</div>
         </div>
-        <div v-else class="text-gray-500 italic">수신된 메시지 없음</div>
+        <div v-else class="text-gray-500 italic">No messages received</div>
       </div>
 
       <!-- 메시지 입력 영역 -->
@@ -82,6 +90,22 @@
       @handleAddRobot="robotsStore.handleAddRobot"
       @close="robotsStore.closeModal"
     />
+
+    <!-- 로봇 상태 표시 -->
+    <div class="status-panel">
+      <h3>로봇 상태</h3>
+      <p>상태: {{ robotStatus?.status || '연결 대기중' }}</p>
+      <p>속도: {{ robotSpeed.toFixed(2) }} m/s</p>
+      <p>방향: {{ robotHeading.toFixed(2) }}°</p>
+    </div>
+
+    <!-- 위치 정보 표시 -->
+    <div class="position-panel" v-if="robotPosition">
+      <h3>로봇 위치</h3>
+      <p>X: {{ robotPosition.pose.position.x.toFixed(2) }}</p>
+      <p>Y: {{ robotPosition.pose.position.y.toFixed(2) }}</p>
+      <p>Z: {{ robotPosition.pose.position.z.toFixed(2) }}</p>
+    </div>
   </div>
 </template>
 
@@ -89,14 +113,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { webSocketService } from '@/services/websocket'
 import { useRobotsStore } from '@/stores/robots'
-import RobotList from '@/components/dashboard/RobotList.vue';
-import RobotManagement from '@/components/dashboard/RobotManagement.vue';
-import RobotRegistration from '@/components/dashboard/RobotRegistration.vue';
-import StatisticsView from '@/views/statistics/StatisticsView.vue';
+import RobotList from '@/components/dashboard/RobotList.vue'
+import RobotManagement from '@/components/dashboard/RobotManagement.vue'
+import RobotRegistration from '@/components/dashboard/RobotRegistration.vue'
+import StatisticsView from '@/views/statistics/StatisticsView.vue'
 
 const robotsStore = useRobotsStore()
 const robots = computed(() => robotsStore.registered_robots)
-const webSocketConnected = ref(false)
+const webSocketConnected = computed(() => webSocketService.isConnected.value)
 const lastTestMessage = ref(null)
 const lastMessageTime = ref('')
 const messageInput = ref('')
@@ -105,49 +129,66 @@ const connectionMode = computed(() =>
 )
 
 // 탭 관리
-const activeTab = ref('robotList') // 기본값: 로봇 목록 탭
+const activeTab = ref('robotList')
 const tabs = ref([
   { name: 'robotList', label: '로봇 목록' },
   { name: 'statistics', label: '통계' }
 ])
 
-// WebSocket 설정
+const robotStatus = ref(null)
+const robotPosition = ref(null)
+const robotSpeed = ref(0)
+const robotHeading = ref(0)
+
+// 웹소켓 메시지 핸들러
+const handleWebSocketMessage = (message) => {
+  if (message.type === 'ros_topic') {
+    switch (message.topic) {
+      case '/robot_1/status':
+        robotStatus.value = message.data.msg
+        break
+      case '/robot_1/utm_pose':
+        robotPosition.value = message.data.msg
+        break
+      case '/robot_1/speed_mps':
+        robotSpeed.value = message.data.msg.data
+        break
+      case '/robot_1/heading':
+        robotHeading.value = message.data.msg.data
+        break
+    }
+  }
+}
+
+// 웹소켓 설정
 const setupWebSocket = async () => {
   try {
     await webSocketService.connect('wss://robocopbackendssafy.duckdns.org/ws/test')
-    webSocketConnected.value = true
-    console.log('웹소켓 연결 성공')
+    
+    // 메시지 핸들러 등록
+    webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
+    
+    // 프론트엔드 토픽 구독
+    const frontendTopics = [
+      '/robot_1/status',
+      '/robot_1/utm_pose',
+      '/robot_1/speed_mps',
+      '/robot_1/heading'
+    ]
 
-    // 테스트 메시지 구독
-    webSocketService.subscribe('test_message', (data) => {
-      console.log('수신된 원본 데이터:', data);
-      
-      try {
-        const messageData = typeof data === 'string' ? JSON.parse(data) : data;
-        
-        if (messageData.type === 'test_message') {
-          lastTestMessage.value = messageData;
-          lastMessageTime.value = new Date().toLocaleTimeString();
-          console.log('처리된 테스트 메시지:', messageData);
-        } else {
-          console.warn('알 수 없는 메시지 형식:', messageData);
+    frontendTopics.forEach(topic => {
+      webSocketService.subscribe(topic, (data) => {
+        lastTestMessage.value = {
+          type: 'ros_topic',
+          topic: topic,
+          data: data
         }
-      } catch (e) {
-        console.error('메시지 처리 중 오류:', e);
-        console.log('처리 실패한 원본 데이터:', data);
-      }
-    });
-
-    // 로봇 상태 구독
-    webSocketService.subscribe('monitoring/robots', (data) => {
-      console.log('로봇 상태 데이터:', data);
-      robotsStore.updateRobotsData(data)
+        lastMessageTime.value = new Date().toLocaleTimeString()
+      })
     })
 
   } catch (error) {
-    console.error('WebSocket 연결 실패:', error)
-    webSocketConnected.value = false
-    // API 모드로 전환
+    console.error('WebSocket connection failed:', error)
     robotsStore.startPolling()
   }
 }
@@ -171,9 +212,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (webSocketService.isConnected()) {
-    webSocketService.disconnect()
-  }
+  webSocketService.disconnect()
   robotsStore.stopPolling()
 })
 </script>
@@ -181,5 +220,13 @@ onUnmounted(() => {
 <style scoped>
 .connection-badge {
   @apply px-2 py-1 rounded text-white text-sm;
+}
+
+.status-panel {
+  @apply bg-white rounded-lg p-4 mb-4 shadow;
+}
+
+.position-panel {
+  @apply bg-white rounded-lg p-4 mb-4 shadow;
 }
 </style>

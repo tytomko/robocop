@@ -37,18 +37,28 @@ async def create_admin_user():
         raise e
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-    return await auth_service.verify_token(token)
+    try:
+        logger.debug(f"토큰 검증 시도: {token[:10]}...")  # 토큰의 일부만 로그
+        user = await auth_service.verify_token(token)
+        logger.debug(f"토큰 검증 성공: {user.username}")
+        return user
+    except Exception as e:
+        logger.error(f"토큰 검증 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="유효하지 않은 토큰입니다.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await auth_service.authenticate_user(form_data.username, form_data.password)
-    tokens = await auth_service.create_tokens(username=form_data.username)
-    logger.info(tokens)
-
+    logger.info(f"로그인 성공: 사용자 {user.username}")
+    
     return {
-        "accessToken": tokens.access_token,
-        "refreshToken": tokens.refresh_token,
-        "tokenType": tokens.token_type
+        "accessToken": user.tokens.accessToken,
+        "refreshToken": user.tokens.refreshToken,
+        "tokenType": user.tokens.tokenType
     }
 #나중에 반드시 확인 필요. 리프레시 토큰이 들어가는지 아닌지 알아야함.
 @router.post("/refresh", response_model=Token)
@@ -56,9 +66,9 @@ async def refresh_token(refresh_token: str):
     tokens = await auth_service.refresh_tokens(refresh_token=refresh_token)
 
     return {
-        "accessToken": tokens.access_token,
-        "refreshToken": tokens.refresh_token,
-        "tokenType": tokens.token_type
+        "accessToken": tokens.accessToken,
+        "refreshToken": tokens.refreshToken,
+        "tokenType": tokens.tokenType
     }
 
 @router.post("/change-password", response_model=BaseResponse,
@@ -113,13 +123,21 @@ async def logout(
     current_user: User = Depends(get_current_user),
     token: str = Depends(oauth2_scheme)
 ):
+    logger.info(f"로그아웃 시도: 사용자 {current_user.username}")
+    
     # 토큰 검증
     try:
         await auth_service.verify_token(token)
+        logger.info("토큰 검증 성공")
     except:
+        logger.error("유효하지 않은 토큰")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="유효하지 않은 토큰입니다.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return await auth_service.logout(current_user.username)
+    
+    # 로그아웃 처리
+    result = await auth_service.logout(current_user.username)
+    logger.info(f"로그아웃 성공: 사용자 {current_user.username}")
+    return result

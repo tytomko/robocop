@@ -239,3 +239,28 @@ class RobotRepository:
                 detail=f"로봇 상태 업데이트 실패: {str(e)}"
             )
 
+    async def update_robot_nickname(self, seq: int, new_nickname: str) -> Optional[Robot]:
+        """로봇의 닉네임을 업데이트합니다."""
+        await self.initialize()
+        try:
+            result = await self.db.robots.find_one_and_update(
+                {"seq": seq, "IsDeleted": False},
+                {"$set": {
+                    "nickname": new_nickname,
+                    "updatedAt": datetime.now()
+                }},
+                return_document=True
+            )
+            
+            if not result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="로봇을 찾을 수 없습니다."
+                )
+            
+            return Robot(**result)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"로봇 닉네임 업데이트 실패: {str(e)}"
+            )

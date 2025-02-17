@@ -65,16 +65,6 @@ class WebSocketService {
       this.subscriptions.set(topic, new Set())
     }
     this.subscriptions.get(topic).add(callback)
-
-    // 구독 시작 메시지 전송 (비동기로 처리)
-    setTimeout(() => {
-      this.send('subscribe', { topic })
-    }, 0)
-
-    // 구독 해제 함수 반환
-    return () => {
-      this.unsubscribe(topic, callback)
-    }
   }
 
   unsubscribe(topic, callback) {
@@ -82,8 +72,6 @@ class WebSocketService {
       this.subscriptions.get(topic).delete(callback)
       if (this.subscriptions.get(topic).size === 0) {
         this.subscriptions.delete(topic)
-        // 구독 해제 메시지 전송
-        this.send('unsubscribe', { topic })
       }
     }
   }
@@ -102,27 +90,28 @@ class WebSocketService {
   }
 
   handleMessage(message) {
-    console.log('Raw message received:', message);  // 디버깅용
-    
     try {
-        // 메시지가 이미 파싱되었는지 확인
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        const { type, topic, data: messageData } = data;
+      const { type, topic, data } = message
 
-        console.log('Parsed message:', { type, topic, messageData });  // 디버깅용
-
-        // type이 있고 해당 type이 구독된 경우
-        if (type && this.subscriptions.has(type)) {
-            this.subscriptions.get(type).forEach(callback => callback(data));
+      // ROS 토픽 메시지 처리
+      if (type === 'ros_topic' && topic) {
+        if (this.subscriptions.has(topic)) {
+          this.subscriptions.get(topic).forEach(callback => callback(data))
         }
         
-        // topic 기반 구독 처리
-        if (topic && this.subscriptions.has(topic)) {
-            this.subscriptions.get(topic).forEach(callback => callback(messageData));
+        // 일반 메시지 핸들러에도 전달
+        if (this.messageHandlers.has(type)) {
+          this.messageHandlers.get(type).forEach(handler => handler(message))
         }
+        return
+      }
+
+      // 다른 타입의 메시지 처리
+      if (type && this.messageHandlers.has(type)) {
+        this.messageHandlers.get(type).forEach(handler => handler(data))
+      }
     } catch (error) {
-        console.error('Message handling error:', error);
-        console.log('Failed to handle message:', message);
+      console.error('Message handling error:', error)
     }
   }
 
@@ -130,12 +119,7 @@ class WebSocketService {
     const message = JSON.stringify({ type, data })
     
     if (this.isConnected.value && this.ws.readyState === WebSocket.OPEN) {
-      try {
-        this.ws.send(message)
-      } catch (error) {
-        console.error('Send error:', error)
-        this.pendingMessages.push(message)
-      }
+      this.ws.send(message)
     } else {
       this.pendingMessages.push(message)
     }
@@ -158,4 +142,63 @@ class WebSocketService {
   }
 }
 
-export const webSocketService = new WebSocketService() 
+export const webSocketService = new WebSocketService()
+
+// 웹소켓 연결 및 메시지 처리
+export const connectWebSocket = () => {
+  const ws = new WebSocket('wss://robocopbackendssafy.duckdns.org/ws/test');
+
+  ws.onopen = () => {
+    console.log('WebSocket 연결됨');
+  };
+
+  ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    console.log('Raw message received:', message);
+
+    // 메시지 타입에 따른 처리
+    switch (message.type) {
+      case 'connection_status':
+        console.log('WebSocket connected');
+        break;
+      case 'ros_topic':  // 브릿지에서 받은 토픽 메시지
+        handleRosTopic(message);
+        break;
+      default:
+        console.log('Unknown message type:', message.type);
+    }
+  };
+
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+
+  ws.onclose = () => {
+    console.log('WebSocket 연결 종료');
+    // 재연결 로직 추가
+    setTimeout(() => {
+      console.log('WebSocket 재연결 시도...');
+      connectWebSocket();
+    }, 3000);
+  };
+
+  return ws;
+};
+
+// ROS 토픽 메시지 처리
+const handleRosTopic = (message) => {
+  const { topic, data } = message;
+  console.log(`Received ROS topic: ${topic}`);
+  console.log('Topic data:', data);
+
+  // 토픽별 처리 로직
+  switch (topic) {
+    case '/robot_1/status':
+      // 로봇 상태 업데이트
+      updateRobotStatus(data);
+      break;
+    // 다른 토픽들에 대한 처리 추가
+    default:
+      console.log('Unhandled topic:', topic);
+  }
+}; 

@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 class RosBridgeConnection:
     _instance = None
-    _client = None
+    client = None
     
     HOST = "127.0.0.1"
-    PORT = 10001
+    PORT = 10000
     MAX_RETRIES = 3
     RETRY_DELAY = 2
 
@@ -25,26 +25,26 @@ class RosBridgeConnection:
     async def _connect(self):
         retries = 0
         while retries < self.MAX_RETRIES:
-            if not self._client or not self._client.is_connected:
+            if not self.client or not self.client.is_connected:
                 try:
                     logger.info(f"ROS Bridge 연결 시도 중... (시도 {retries + 1}/{self.MAX_RETRIES})")
-                    self._client = roslibpy.Ros(host=self.HOST, port=self.PORT)
-                    self._client.run()
+                    self.client = roslibpy.Ros(host=self.HOST, port=self.PORT)
+                    self.client.run()
                     logger.info("ROS Bridge 서버에 연결되었습니다.")
-                    return self._client
+                    return self.client
                 except Exception as e:
                     logger.error(f"ROS Bridge 연결 실패: {e}")
-                    self._client = None
+                    self.client = None
                     retries += 1
                     if retries < self.MAX_RETRIES:
                         await asyncio.sleep(self.RETRY_DELAY)
 
     async def publish(self, topic_name: str, msg_type: str, message: dict):
         try:
-            if not self._client or not self._client.is_connected:
+            if not self.client or not self.client.is_connected:
                 await self._connect()
             
-            topic = roslibpy.Topic(self._client, topic_name, msg_type)
+            topic = roslibpy.Topic(self.client, topic_name, msg_type)
             topic.publish(message)
             logger.info(f"Published to {topic_name}: {message}")
             return True
@@ -54,6 +54,6 @@ class RosBridgeConnection:
 
     def disconnect(self):
         """ROS Bridge 연결 종료"""
-        if self._client and self._client.is_connected:
-            self._client.terminate()
+        if self.client and self.client.is_connected:
+            self.client.terminate()
             logger.info("ROS Bridge 연결이 종료되었습니다.") 

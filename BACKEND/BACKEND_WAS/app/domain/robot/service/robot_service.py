@@ -80,9 +80,9 @@ class RobotService:
             try:
                 logger.info(f"Sending to client {id(client)}")
                 await client.send_json(message)
-                logger.info(f"Successfully sent to client {id(client)}, message: {message}")
+                #logger.info(f"Successfully sent to client {id(client)}, message: {message}")
             except Exception as e:
-                logger.error(f"Failed to send to client {id(client)}: {str(e)}")
+                #logger.error(f"Failed to send to client {id(client)}: {str(e)}")
                 disconnected.add(client)
         
         # 끊어진 클라이언트 제거

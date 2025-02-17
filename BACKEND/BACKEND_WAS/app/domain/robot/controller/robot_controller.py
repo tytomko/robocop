@@ -199,7 +199,8 @@ async def update_robot_nickname(
             success=True,
             message="로봇 닉네임이 성공적으로 변경되었습니다.",
             data=NicknameResponse(
-                seq=str(updated_robot.seq),
+                seq=updated_robot.seq,
+                robotID=str(updated_robot.seq),
                 nickname=updated_robot.nickname,
                 status=updated_robot.status,
                 timestamp=updated_robot.updatedAt

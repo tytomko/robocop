@@ -38,7 +38,7 @@ import traceback
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# FastAPI ¾Û »ý¼º
+# FastAPI ?? ????
 app = FastAPI(
     title="Robot Management System API",
     description="Robot Management System API",
@@ -46,31 +46,29 @@ app = FastAPI(
     debug=settings.base.DEBUG
 )
 
-# CORS ¹Ìµé¿þ¾î ¼³Á¤
-# origins = [
-#     "https://robocopbackendssafy.duckdns.org",
-#     "http://localhost:5173",
-#     "*"  # °³¹ß Áß¿¡´Â ¸ðµç origin Çã¿ë
-# ]
+origins = [
+    "https://robocopbackendssafy.duckdns.org/",
+    "http://52.79.51.253",
+]
 
+# CORS ???? ??
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["https://frontend-web-one-omega.vercel.app"],  # ½ÇÁ¦ ¿î¿µ È¯°æ¿¡¼­´Â ±¸Ã¼ÀûÀÎ originÀ¸·Î º¯°æ
-    allow_origins=["*"],
+    #allow_origins=[origins], # ?? ?? ??? ?? ??
+    allow_origins=["*"], # ?? ????
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ·Î±ë ¹Ìµé¿þ¾î Ãß°¡
+# ?a? ?????? ???
 app.add_middleware(RequestLoggingMiddleware)
 
-# ¿¹¿Ü ÇÚµé·¯ µî·Ï
+# ???? ??? ???
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(ValueError, validation_exception_handler)
 app.add_exception_handler(Exception, internal_exception_handler)
 
-# ¶ó¿ìÅÍ µî·Ï
+# ????? ???
 app.include_router(robot_router, prefix="/api/v1/robots", tags=["robots"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(camera_router, prefix="/api/v1/cameras", tags=["cameras"])
@@ -79,13 +77,13 @@ app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
 app.include_router(map_router, prefix="/api/v1", tags=["map"])
 
-# ÇÁ·ÎÁ§Æ® ·çÆ® µð·ºÅä¸® Ã£±â
+# ??????T ??T ???? ã??
 base_dir = Path(__file__).resolve().parent.parent
 
-# .env ÆÄÀÏ °æ·Î ¼³Á¤
+# .env ???? ??? ????
 env_path = os.path.join(base_dir, '.env')
 
-# .env ÆÄÀÏ ·Îµå
+# .env ???? ?e?
 load_dotenv(env_path)
 # ros_bridge_client = ROS2WebSocketClient(
 #     ros_host=settings.ros2.BRIDGE_HOST,
@@ -177,17 +175,17 @@ async def root():
     )
 
 
-# WebSocket ¹Ìµé¿þ¾î Ãß°¡
+# WebSocket ?????? ???
 @app.middleware("http")
 async def websocket_middleware(request, call_next):
     if request.url.path.startswith('/ws'):
-        # WebSocket ¿äÃ»¿¡ ´ëÇÑ CORS Çì´õ Ãß°¡
+        # WebSocket ??û?? ???? CORS ??? ???
         response = await call_next(request)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     return await call_next(request)
 
-# WebSocket ¿¬°á Å×½ºÆ®¿ë ¿£µåÆ÷ÀÎÆ®
+# WebSocket ?? ???? ?????
 @app.websocket("/ws/test")
 async def websocket_test(websocket: WebSocket):
     try:
@@ -197,29 +195,38 @@ async def websocket_test(websocket: WebSocket):
         await robot_service.register_frontend_client(websocket)
         await ros_bridge_client.start_listening()
         
-        # ÅäÇÈ Á¤ÀÇ
+        # ?? ??
         topics = {
             "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
             "/robot_1/status": "robot_custom_interfaces/msg/Status",
         }
 
-        # ±¸µ¶ ¹× ºê·ÎµåÄ³½ºÆ® ·çÇÁ
+        # ?? ? ?????? ??
         while True:
             try:
+                await asyncio.sleep(1)  # ?? ?? ? 1? ??
+                
                 for topic_name, msg_type in topics.items():
-                    # ÅäÇÈ ±¸µ¶ ¹× ¸Þ½ÃÁö ¼ö½Å
-                    message = await ros_bridge_client.subscribe_to_topic(topic_name, msg_type)
-                    logger.info(f"Got message from subscribe_to_topic: {message}")
+                    retry_count = 0
+                    max_retries = 3
                     
-                    # ¸Þ½ÃÁö°¡ ÀÖÀ¸¸é ÇÁ·ÐÆ®¿£µå·Î Àü¼Û
-                    if message:
-                        logger.info("Broadcasting message to frontend")
-                        await robot_service.broadcast_to_frontend(message)
-                        logger.info("Broadcast completed")
-                    else:
-                        logger.info(f"No message to broadcast for topic: {topic_name}")
+                    while retry_count < max_retries:
+                        # ?? ?? ? ??? ??
+                        message = await ros_bridge_client.subscribe_to_topic(topic_name, msg_type)
+                        #logger.info(f"Got message from subscribe_to_topic: {message}")
                         
-                await asyncio.sleep(1)  # 1ÃÊ ´ë±â
+                        if message:
+                            # ???? ??? ???????? ?? ????
+                            await robot_service.broadcast_to_frontend(message)
+                            logger.info("Broadcast completed")
+                            break
+                        else:
+                            retry_count += 1
+                            if retry_count == max_retries:
+                                logger.warning(f"No message received after {max_retries} attempts for topic: {topic_name}")
+                            else:
+                                logger.debug(f"No message to broadcast for topic: {topic_name}, retry {retry_count}/{max_retries}")
+                                await asyncio.sleep(1)  # ??? ? 1? ??
                 
             except Exception as e:
                 logger.error(f"Loop error: {str(e)}")

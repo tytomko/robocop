@@ -21,6 +21,7 @@ services:
     environment:
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       - ROS_DISCOVERY_SERVER=52.79.51.253:11811
+      - TZ=Asia/Seoul
     # WAS ?? ???? ENTRYPOINT? ???? ??? ?
 
   # ---------------------------------------
@@ -32,6 +33,8 @@ services:
     volumes:
       - mongodb_data:/data/db
     network_mode: host
+    environment:
+      - TZ=Asia/Seoul
 
   # ---------------------------------------
   # (C) Redis
@@ -43,7 +46,8 @@ services:
       - redis_data:/data
     command: redis-server --save 60 1
     network_mode: host
-
+    environment:
+      - TZ=Asia/Seoul
   # ---------------------------------------
   # (D) ROS2 Discovery Server
   # ---------------------------------------
@@ -64,15 +68,17 @@ services:
   # (E) ROS Bridge (WebSocket)
   # ---------------------------------------
 
-  rosbridge:
-    build: 
-      context: ./rosbridge
-      dockerfile: Dockerfile
-    container_name: ros2-bridge
-    environment:
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-    network_mode: host
-    restart: unless-stopped
+#  rosbridge:
+#    build: 
+#      context: ./rosbridge
+#      dockerfile: Dockerfile
+#    container_name: ros2-bridge
+#    environment:
+#      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#      - TZ=Asia/Seoul
+#    network_mode: host
+#    restart: unless-stopped
+    
 #  rosbridge:
 #    build: 
 #      context: ./rosbridge

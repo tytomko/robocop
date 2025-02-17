@@ -9,32 +9,50 @@ import time
 app = FastAPI()
 
 class CameraService:
-    def __init__(self, ros_host='127.0.0.1', ros_port=10000):
-        self.client = roslibpy.Ros(host=ros_host, port=ros_port)
+    def __init__(self):
         self.latest_frame = None
-        self.fps = 30  # FPS 제한 추가
+        self.fps = 30
         self.last_frame_time = 0
+        self.jpeg_quality = 80
+        self.frame_size = (640, 480)
         
-        # 이미지 압축 품질 설정
-        self.jpeg_quality = 80  # 품질과 대역폭의 균형
-        self.frame_size = (640, 480)  # 적절한 해상도로 조정
+        # 기본 ROS 클라이언트 설정 (일반 로봇용)
+        self.client = roslibpy.Ros(host='127.0.0.1', port=10000)
+        self.topic = None
         
-        # 카메라 토픽 설정
+        # Isaac 로봇용 별도 클라이언트
+        self.isaac_client = roslibpy.Ros(host='127.0.0.1', port=10001)
+        
+    def set_robot_connection(self, is_isaac=False):
+        """로봇 타입에 따라 적절한 ROS 클라이언트 선택"""
+        if is_isaac:
+            if not self.isaac_client.is_connected:
+                self.isaac_client.run()
+            return self.isaac_client
+        else:
+            if not self.client.is_connected:
+                self.client.run()
+            return self.client
+
+    def set_topic(self, topic_name: str, topic_type: str, is_isaac=False):
+        """토픽 설정 - 로봇 타입에 따라 다른 클라이언트 사용"""
+        client = self.set_robot_connection(is_isaac)
+        
+        # 기존 토픽이 있다면 구독 해제
+        if self.topic:
+            try:
+                self.topic.unsubscribe()
+            except:
+                pass
+        
+        # 새로운 토픽 설정
         self.topic = roslibpy.Topic(
-            self.client,
-            '/Isaacbot/front/img_compressed',
-            'sensor_msgs/CompressedImage'
+            client,
+            topic_name,
+            topic_type
         )
-        
-    def start(self):
-        """ROS 연결 시작 - 에러 처리 추가"""
-        try:
-            self.client.run()
-            self.topic.subscribe(self._on_image_message)
-        except Exception as e:
-            print(f"ROS 연결 실패: {str(e)}")
-            print("카메라 서비스가 ROS 없이 실행됩니다.")
-        
+        self.topic.subscribe(self._on_image_message)
+
     def _on_image_message(self, message):
         """이미지 메시지 수신 처리"""
         try:
@@ -73,11 +91,7 @@ class CameraService:
 # 싱글톤 인스턴스 생성
 camera_service = CameraService()
 
-# 에러 처리와 함께 시작
-try:
-    camera_service.start()
-except Exception as e:
-    print(f"카메라 서비스 시작 실패: {str(e)}")
+# 초기 연결 시도 제거 (실제 요청이 올 때 연결하도록)
 
 # @app.get("/video_feed")
 # async def video_feed():
