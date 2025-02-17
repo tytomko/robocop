@@ -1,6 +1,6 @@
 <template>
   <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg w-full max-w-xl"> <!-- 모달 크기 조정 -->
+    <div class="bg-white p-6 rounded-lg w-full max-w-4xl"> <!-- max-w-[600px]에서 max-w-4xl로 변경 -->
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold">로봇 관리</h3>
         <div class="flex space-x-2">
@@ -9,33 +9,42 @@
         </div>
       </div>
 
-      <!-- 테이블을 감싸는 div에 스크롤 적용 -->
-      <div class="overflow-x-auto max-h-60">
-        <table class="w-full border-collapse border border-gray-200 text-sm text-center">
+      <div class="overflow-x-auto max-h-[240px] rounded-lg border border-gray-200">
+        <table class="min-w-full table-auto">
           <thead>
             <tr class="bg-gray-100">
-              <th class="border border-gray-200 px-2 py-2 w-12">ID</th>
-              <th class="border border-gray-200 px-2 py-2 w-24">이름</th>
-              <th class="border border-gray-200 px-2 py-2 w-32">IP 주소</th>
-              <th class="border border-gray-200 px-2 py-2 w-16">배터리</th>
-              <th class="border border-gray-200 px-2 py-2 w-24">위치</th>
-              <th class="border border-gray-200 px-2 py-2 w-20">상태</th>
-              <th class="border border-gray-200 px-2 py-2 w-20">작업</th>
+              <th class="table-header-cell w-16">ID</th>
+              <th class="table-header-cell w-32">이름</th>
+              <th class="table-header-cell w-40">IP 주소</th>
+              <th class="table-header-cell w-24">배터리</th>
+              <th class="table-header-cell w-32">위치</th>
+              <th class="table-header-cell w-24">상태</th>
+              <th class="table-header-cell w-24">작업</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="robot in robots" :key="robot.seq" class="border border-gray-200">
-              <td class="px-2 py-2 truncate">{{ robot.seq }}</td>
-              <td class="px-2 py-2 truncate">{{ robot.nickname || robot.name }}</td>
-              <td class="px-2 py-2 truncate">{{ robot.ipAddress }}</td>
-              <td class="px-2 py-2 truncate">{{ robot.battery }}%</td>
-              <td class="px-2 py-2 truncate">{{ robot.position }}</td>
-              <td class="px-2 py-2 truncate">
-                <span :class="getStatusClass(robot.status)" class="px-2 py-1 rounded text-white">{{ getStatusLabel(robot.status) }}</span>
+            <tr v-for="robot in robots" :key="robot.seq" class="border-b border-gray-200 hover:bg-gray-50">
+              <td class="table-data-cell">{{ robot.seq }}</td>
+              <td class="table-data-cell">{{ robot.nickname || robot.name }}</td>
+              <td class="table-data-cell">{{ robot.ipAddress }}</td>
+              <td class="table-data-cell">{{ robot.battery }}%</td>
+              <td class="table-data-cell">{{ robot.position }}</td>
+              <td class="table-data-cell">
+                <span :class="['status-badge', getStatusClass(robot.status)]">
+                  {{ getStatusLabel(robot.status) }}
+                </span>
               </td>
-              <td class="px-2 py-2 truncate">
-                <button v-if="robot.status !== 'error'" class="bg-black text-white px-3 py-1 rounded hover:bg-gray-600" @click="handleBreakdown(robot.seq)">고장</button>
-                <button v-else class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" @click="handleActivate(robot.seq)">가동</button>
+              <td class="table-data-cell">
+                <button 
+                  v-if="robot.status !== 'error'" 
+                  class="manage-btn-error" 
+                  @click="handleBreakdown(robot.seq)"
+                >고장</button>
+                <button 
+                  v-else 
+                  class="manage-btn-activate" 
+                  @click="handleActivate(robot.seq)"
+                >가동</button>
               </td>
             </tr>
           </tbody>
@@ -53,7 +62,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'openAddRobotModal']);
 
-// 로컬 함수로 로봇 상태 변경 (고장/가동) -> api 연동 필요
 const handleBreakdown = (robotSeq) => {
   const robot = props.robots.find(r => r.seq === robotSeq);
   if (robot) {
@@ -93,27 +101,4 @@ const getStatusLabel = (status) => {
   };
   return labels[status] || status;
 };
-
 </script>
-
-<style scoped>
-/* 모달 크기 제한 */
-.max-w-xl {
-  max-width: 600px;
-}
-
-/* 스크롤 추가 */
-.overflow-x-auto {
-  overflow-x: auto;
-}
-.max-h-60 {
-  max-height: 240px; /* 최대 높이 설정 (필요하면 조정 가능) */
-}
-
-/* 테이블 한 줄 유지 */
-th, td {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-</style>
