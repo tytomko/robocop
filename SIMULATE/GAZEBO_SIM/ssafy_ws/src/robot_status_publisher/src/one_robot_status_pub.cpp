@@ -130,7 +130,7 @@ public:
             manual_service, std::bind(&RobotStatusPublisher::manual_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         status_timer_ = this->create_wall_timer(
-            100ms, std::bind(&RobotStatusPublisher::publish_status, this));
+            200ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
 
 private:
