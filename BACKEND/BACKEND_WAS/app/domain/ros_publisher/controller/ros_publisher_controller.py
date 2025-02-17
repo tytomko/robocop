@@ -1,8 +1,14 @@
 from fastapi import APIRouter, BackgroundTasks
 from ..models.ros_publisher_models import PublishRequest, NavigateRequest, PatrolRequest
 from ..service.ros_publisher_service import *
+from ..service.ros_bridge_connection import RosBridgeConnection
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# ROS Bridge 연결 인스턴스 생성
+ros_bridge = RosBridgeConnection()
 
 @router.post("/{seq}/publish")
 async def publish_once(seq: str, request: PublishRequest):
@@ -115,6 +121,37 @@ def call_manual_endpoint(seq: str):
     """로봇 매뉴얼 모드 변경 서비스 호출"""
     try:
         response = call_manual_service(seq)
-        return {"status": "success", "mode": "manual", "message": "Manual mode service called successfully", "response": response}
+        return {"status": "success", "message": "Manual mode service called successfully", "response": response}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.post("/{seq}/cmd_vel")
+async def publish_cmd_vel(seq: str, direction: str):
+    """cmd_vel 토픽에 속도 명령 발행"""
+    logger.info(f"Publishing cmd_vel for robot {seq}, direction: {direction}")
+    
+    # Twist 메시지 생성 (ROS 메시지 형식에 맞춤)
+    twist_msg = {
+        'linear': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+        'angular': {'x': 0.0, 'y': 0.0, 'z': 0.0}
+    }
+    
+    # 방향에 따른 속도 설정
+    if direction == 'up':
+        twist_msg['linear']['x'] = 0.2  # 전진
+    elif direction == 'down':
+        twist_msg['linear']['x'] = -0.2  # 후진
+    elif direction == 'left':
+        twist_msg['angular']['z'] = 0.5  # 좌회전
+    elif direction == 'right':
+        twist_msg['angular']['z'] = -0.5  # 우회전
+    
+    try:
+        # cmd_vel 토픽 발행
+        topic = f'/robot_{seq}/cmd_vel'
+        await ros_bridge.publish(topic, 'geometry_msgs/msg/Twist', twist_msg)
+        return {"status": "success", "message": f"Published cmd_vel: {direction}"}
+    except Exception as e:
+        logger.error(f"Failed to publish cmd_vel: {str(e)}")
+        return {"status": "error", "message": str(e)}
+

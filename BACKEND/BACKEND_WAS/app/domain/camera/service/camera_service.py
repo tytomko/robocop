@@ -5,8 +5,11 @@ import cv2
 import base64
 import numpy as np
 import time
+import logging
 
 app = FastAPI()
+
+logger = logging.getLogger(__name__)
 
 class CameraService:
     def __init__(self):
@@ -56,16 +59,43 @@ class CameraService:
     def _on_image_message(self, message):
         """이미지 메시지 수신 처리"""
         try:
-            image_data = base64.b64decode(message['data'])
-            np_arr = np.frombuffer(image_data, np.uint8)
-            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            # 메시지 타입에 따른 처리
+            format_str = message.get('format', '')
             
-            # 프레임 크기 조정
-            frame = cv2.resize(frame, self.frame_size)
-            self.latest_frame = frame
+            if 'compressed' in format_str.lower():  # CompressedImage 타입 (jpeg 압축된 경우)
+                image_data = base64.b64decode(message['data'])
+                np_arr = np.frombuffer(image_data, np.uint8)
+                frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                
+            elif 'rgb8' in format_str.lower() or 'bgr8' in format_str.lower():  # 일반 Image 타입
+                # ROS Image 메시지를 numpy 배열로 변환
+                width = message.get('width', 0)
+                height = message.get('height', 0)
+                
+                # 이미지 데이터를 numpy 배열로 변환
+                np_arr = np.frombuffer(base64.b64decode(message['data']), np.uint8)
+                
+                if 'rgb8' in format_str.lower():
+                    frame = np_arr.reshape(height, width, 3)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                else:  # bgr8
+                    frame = np_arr.reshape(height, width, 3)
+            else:
+                logger.error(f"Unsupported format: {format_str}")
+                return
+            
+            # 프레임이 유효한지 확인
+            if frame is not None and frame.size > 0:
+                # 프레임 크기 조정
+                frame = cv2.resize(frame, self.frame_size)
+                self.latest_frame = frame
+            else:
+                logger.error("Invalid frame received")
             
         except Exception as e:
-            print(f"이미지 처리 에러: {str(e)}")
+            logger.error(f"이미지 처리 에러: {str(e)}")
+            logger.error(f"Message content: {message}")
+            logger.error(f"Format string: {format_str}")
 
     def get_frame(self):
         """현재 프레임 스트리밍"""

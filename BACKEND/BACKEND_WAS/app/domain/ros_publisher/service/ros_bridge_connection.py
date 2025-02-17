@@ -19,7 +19,7 @@ class RosBridgeConnection:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(RosBridgeConnection, cls).__new__(cls)
-            cls._instance._connect()
+            asyncio.create_task(cls._instance._connect())
         return cls._instance
 
     async def _connect(self):
