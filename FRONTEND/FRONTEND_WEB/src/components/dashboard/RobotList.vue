@@ -101,7 +101,11 @@
           <button class="flex-1 py-2 rounded text-white text-sm bg-gray-700 hover:bg-gray-800" @click="returnRobot(robot.seq)">
             복귀 명령
           </button>
-          <button class="flex-1 py-2 rounded text-white text-sm" :class="getEmergencyClass(robot.status)" @click="emergencyStop(robot.seq)">
+          <button 
+            class="flex-1 py-2 rounded text-white text-sm" 
+            :class="getEmergencyClass(robot.status)" 
+            @click="handleStartStop(robot)"
+          >
             {{ robot.status === 'navigating' ? '비상 정지' : '가동 시작' }}
           </button>
         </div>
@@ -124,10 +128,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
+import { useRobotCommandsStore } from '@/stores/robotCommands';
 import { webSocketService } from '@/services/websocket';
 
 const router = useRouter();
 const robotsStore = useRobotsStore();
+const robotCommandsStore = useRobotCommandsStore();
 const hiddenRobots = ref([]);
 // displayRobots에서 웹소켓 데이터가 병합된 로봇 정보를 가져옴
 const robots = computed(() => robotsStore.displayRobots);
@@ -167,20 +173,34 @@ const getOperationTime = (startTime) => {
 const returnRobot = async (robotSeq) => {
   if (!robotSeq) return;
   try {
-    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
-    if (robot) robot.status = 'homing';
+    await robotCommandsStore.homingCommand(robotSeq);
   } catch (err) {
     console.error('로봇 복귀 명령 에러:', err);
   }
 };
 
-const emergencyStop = async (robotSeq) => {
-  if (!robotSeq) return;
-  try {
-    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
-    if (robot) robot.status = robot.status === 'navigating' ? 'emergencyStopped' : 'navigating';
-  } catch (err) {
-    console.error('비상 정지 명령 에러:', err);
+const handleStartStop = async (robot) => {
+  if (robot.status === 'navigating') {
+    // 현재 가동 중이면 비상 정지 실행
+    try {
+      await robotCommandsStore.estopCommand(robot.seq);
+      // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
+      robot.status = 'emergencyStopped';
+    } catch (err) {
+      console.error('비상 정지 명령 에러:', err);
+    }
+  } else {
+    // 현재 가동 중이 아니면 navigateCommand 실행 (기본 목표는 로봇의 현재 위치 또는 [0,0])
+    try {
+      const defaultGoal = { 
+        id: robot.position ? [robot.position.x, robot.position.y] : [0, 0] 
+      };
+      await robotCommandsStore.navigateCommand([defaultGoal], robot.seq);
+      // 가동 시작 후 상태 업데이트
+      robot.status = 'navigating';
+    } catch (err) {
+      console.error('가동 시작 명령 에러:', err);
+    }
   }
 };
 
