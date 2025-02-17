@@ -4,19 +4,20 @@
       <h4 class="text-lg font-bold">로봇 목록</h4>
     </div>
     
-    <!-- 로봇 상태 목록 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- 로봇 상태 목록 - 그리드 수정 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 xl:grid-cols-3 gap-6">
       <div 
         v-for="robot in visibleRobots" 
         :key="robot.seq"
         :class="[
-          'bg-white rounded-lg p-4 shadow transition-all relative',
+          'bg-white rounded-lg p-4 shadow transition-all relative min-h-[250px]',
           {
             'opacity-40': webSocketConnected && !isActiveInWebSocket(robot),
             'hover:shadow-lg': !webSocketConnected || isActiveInWebSocket(robot)
           }
         ]"
       >
+        <!-- 이전 컴포넌트의 나머지 내용은 동일하게 유지 -->
         <!-- X 버튼 -->
         <button 
           class="absolute top-2 right-2 text-gray-500 hover:text-gray-600 z-10" 
@@ -116,9 +117,9 @@
       </div>
       
       <!-- 로봇 관리 버튼 -->
-      <div class="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-6 cursor-pointer" @click="robotsStore.openRobotManagementModal">
+      <div class="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-6 cursor-pointer min-h-[250px]" @click="robotsStore.openRobotManagementModal">
         <div class="text-6xl text-gray-400">+</div>
-        <button class="mt-2 px-4 py-2 bg-gray-300 rounded">로봇 관리</button>
+        <button class="mt-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-colors">로봇 관리</button>
       </div>
     </div>
   </div>

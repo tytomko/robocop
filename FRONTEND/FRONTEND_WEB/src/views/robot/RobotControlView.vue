@@ -206,28 +206,54 @@ async function handleDirectionClick(direction) {
   }
 }
 
-function toggleMode() {
-  mode.value = isAutoMode.value ? 'auto' : 'manual'
-  
-  // 수동 모드로 전환될 때 자동으로 포커스
-  if (mode.value === 'manual') {
-    // nextTick을 사용하여 DOM 업데이트 후 포커스
-    nextTick(() => {
-      controlArea.value?.focus()
-    })
+async function toggleMode() {
+  try {
+    const newMode = isAutoMode.value ? 'resume' : 'manual'
+    const response = await axios.post(
+      `https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/call-service/${newMode}`
+    )
+    
+    if (response.status === 200) {
+      mode.value = isAutoMode.value ? 'auto' : 'manual'
+      
+      // 수동 모드로 전환될 때 자동으로 포커스
+      if (mode.value === 'manual') {
+        nextTick(() => {
+          controlArea.value?.focus()
+        })
+      }
+    } else {
+      // API 요청이 실패하면 토글 상태를 원래대로 되돌림
+      isAutoMode.value = !isAutoMode.value
+      console.error('모드 변경 실패')
+    }
+  } catch (error) {
+    // 에러 발생 시 토글 상태를 원래대로 되돌림
+    isAutoMode.value = !isAutoMode.value
+    console.error('모드 변경 중 에러 발생:', error)
   }
 }
 
 const mapKey = ref(Date.now())
 
-watch(selectedRobotSeq, (newVal, oldVal) => {
+watch(selectedRobotSeq, async (newVal, oldVal) => {
   if (newVal !== oldVal) {
     console.log('Robot changed:', newVal)
-    // 로봇이 변경되면 선택된 노드들을 초기화
     resetSelection()
-    
-    // RobotMap 컴포넌트 재마운트를 위한 키 값 변경
     mapKey.value = Date.now()
+    
+    // 로봇이 선택되면 자동으로 resume 모드로 설정
+    if (newVal) {
+      try {
+        await axios.post(
+          `https://robocopbackendssafy.duckdns.org/api/v1/${newVal}/call-service/resume`
+        )
+        isAutoMode.value = true
+        mode.value = 'auto'
+      } catch (error) {
+        console.error('초기 모드 설정 실패:', error)
+      }
+    }
   }
 })
 
@@ -237,7 +263,6 @@ onMounted(() => {
     selectedRobotSeq.value = String(robotsStore.selectedRobot)
   }
   
-  // 만약 초기 상태가 수동 모드라면 포커스
   if (mode.value === 'manual') {
     controlArea.value?.focus()
   }
