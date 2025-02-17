@@ -4,19 +4,20 @@
       <h4 class="text-lg font-bold">로봇 목록</h4>
     </div>
     
-    <!-- 로봇 상태 목록 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- 로봇 상태 목록 - 그리드 수정 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 xl:grid-cols-3 gap-6">
       <div 
         v-for="robot in visibleRobots" 
         :key="robot.seq"
         :class="[
-          'bg-white rounded-lg p-4 shadow transition-all relative',
+          'bg-white rounded-lg p-4 shadow transition-all relative min-h-[250px]',
           {
             'opacity-40': webSocketConnected && !isActiveInWebSocket(robot),
             'hover:shadow-lg': !webSocketConnected || isActiveInWebSocket(robot)
           }
         ]"
       >
+        <!-- 이전 컴포넌트의 나머지 내용은 동일하게 유지 -->
         <!-- X 버튼 -->
         <button 
           class="absolute top-2 right-2 text-gray-500 hover:text-gray-600 z-10" 
@@ -101,7 +102,11 @@
           <button class="flex-1 py-2 rounded text-white text-sm bg-gray-700 hover:bg-gray-800" @click="returnRobot(robot.seq)">
             복귀 명령
           </button>
-          <button class="flex-1 py-2 rounded text-white text-sm" :class="getEmergencyClass(robot.status)" @click="emergencyStop(robot.seq)">
+          <button 
+            class="flex-1 py-2 rounded text-white text-sm" 
+            :class="getEmergencyClass(robot.status)" 
+            @click="handleStartStop(robot)"
+          >
             {{ robot.status === 'navigating' ? '비상 정지' : '가동 시작' }}
           </button>
         </div>
@@ -112,9 +117,9 @@
       </div>
       
       <!-- 로봇 관리 버튼 -->
-      <div class="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-6 cursor-pointer" @click="robotsStore.openRobotManagementModal">
+      <div class="flex flex-col items-center justify-center bg-gray-100 rounded-lg p-6 cursor-pointer min-h-[250px]" @click="robotsStore.openRobotManagementModal">
         <div class="text-6xl text-gray-400">+</div>
-        <button class="mt-2 px-4 py-2 bg-gray-300 rounded">로봇 관리</button>
+        <button class="mt-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-colors">로봇 관리</button>
       </div>
     </div>
   </div>
@@ -124,10 +129,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
+import { useRobotCommandsStore } from '@/stores/robotCommands';
 import { webSocketService } from '@/services/websocket';
 
 const router = useRouter();
 const robotsStore = useRobotsStore();
+const robotCommandsStore = useRobotCommandsStore();
 const hiddenRobots = ref([]);
 // displayRobots에서 웹소켓 데이터가 병합된 로봇 정보를 가져옴
 const robots = computed(() => robotsStore.displayRobots);
@@ -167,20 +174,34 @@ const getOperationTime = (startTime) => {
 const returnRobot = async (robotSeq) => {
   if (!robotSeq) return;
   try {
-    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
-    if (robot) robot.status = 'homing';
+    await robotCommandsStore.homingCommand(robotSeq);
   } catch (err) {
     console.error('로봇 복귀 명령 에러:', err);
   }
 };
 
-const emergencyStop = async (robotSeq) => {
-  if (!robotSeq) return;
-  try {
-    const robot = robotsStore.registered_robots.find((r) => r.seq === robotSeq);
-    if (robot) robot.status = robot.status === 'navigating' ? 'emergencyStopped' : 'navigating';
-  } catch (err) {
-    console.error('비상 정지 명령 에러:', err);
+const handleStartStop = async (robot) => {
+  if (robot.status === 'navigating') {
+    // 현재 가동 중이면 비상 정지 실행
+    try {
+      await robotCommandsStore.estopCommand(robot.seq);
+      // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
+      robot.status = 'emergencyStopped';
+    } catch (err) {
+      console.error('비상 정지 명령 에러:', err);
+    }
+  } else {
+    // 현재 가동 중이 아니면 navigateCommand 실행 (기본 목표는 로봇의 현재 위치 또는 [0,0])
+    try {
+      const defaultGoal = { 
+        id: robot.position ? [robot.position.x, robot.position.y] : [0, 0] 
+      };
+      await robotCommandsStore.navigateCommand([defaultGoal], robot.seq);
+      // 가동 시작 후 상태 업데이트
+      robot.status = 'navigating';
+    } catch (err) {
+      console.error('가동 시작 명령 에러:', err);
+    }
   }
 };
 

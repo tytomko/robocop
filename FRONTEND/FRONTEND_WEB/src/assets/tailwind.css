@@ -1,3 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* 기본 폰트 설정 */
+  html {
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  /* 전역 타이포그래피 스타일 */
+  h1 {
+    @apply text-2xl lg:text-3xl font-bold;
+  }
+  h2 {
+    @apply text-xl lg:text-2xl font-bold;
+  }
+  h3 {
+    @apply text-lg lg:text-xl font-semibold;
+  }
+  h4 {
+    @apply text-base lg:text-lg font-semibold;
+  }
+
+  /* 스크롤바 숨기기 */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 모바일 최적화 */
+  @media (max-width: 1024px) {
+    html {
+      @apply touch-manipulation text-[14px];
+    }
+  }
+}
+
+@layer components {
+  /* 레이아웃 컴포넌트 */
+   /* Modal 관련 스타일 추가 */
+   .modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-[9999];
+  }
+
+  .modal-container {
+    @apply fixed inset-0 flex items-center justify-center z-[10000];
+  }
+
+  .modal-content {
+    @apply relative bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4;
+  }
+
+   /* 레이아웃 컨테이너 */
+   .layout-container {
+    @apply w-full h-full flex flex-col lg:flex-row relative z-0;
+  }
+
+  .sidebar-container {
+    @apply hidden lg:block bg-white shadow-md transition-all duration-300 ease-in-out relative z-10;
+  }
+
+  .main-content {
+    @apply flex-1 overflow-auto px-4 lg:px-6 py-4 relative z-0;
+  }
+
+  /* 네비게이션 링크 스타일 */
+  .nav-link {
+    @apply text-base font-medium tracking-wide px-4 py-2 rounded-md transition-all duration-200 text-white/90 hover:bg-white/10 hover:text-white;
+  }
+
+  .nav-link-active {
+    @apply bg-white/15 text-white font-semibold;
+  }
+
+  /* 모바일 네비게이션 */
+  .mobile-nav-link {
+    @apply block w-full px-4 py-2 text-sm text-white/90 hover:bg-white/10 hover:text-white transition-colors;
+  }
+
+   /* 반응형 설정 */
+   @media (max-width: 1279px) {
+    .mobile-only {
+      @apply block;
+    }
+    .desktop-only {
+      @apply hidden;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .mobile-only {
+      @apply hidden;
+    }
+    .desktop-only {
+      @apply block;
+    }
+  }
+
+   /* 로봇 카드 스타일 */
+   .robot-card {
+    @apply bg-white rounded-lg shadow-md p-4 flex flex-col;
+  }
+
+  /* 로봇 상태 정보 */
+  .robot-status {
+    @apply flex flex-col gap-2;
+  }
+
+  /* 배터리 상태 바 */
+  .battery-bar {
+    @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .battery-level {
+    @apply h-full bg-green-500 transition-all duration-300;
+  }
+
+  /* 로봇 제어 버튼 그룹 */
+  .control-buttons {
+    @apply grid grid-cols-2 gap-2 mt-4;
+  }
+
+  /* 제어 버튼 스타일 */
+  .control-button {
+    @apply px-4 py-2 rounded-md text-white text-sm font-medium transition-colors;
+  }
+
+  .button-primary {
+    @apply bg-gray-800 hover:bg-gray-700;
+  }
+
+  /* 테이블 반응형 스타일 */
+  .table-container {
+    @apply w-full overflow-x-auto -mx-2 sm:mx-0;
+  }
+
+  .table-cell-common {
+    @apply px-2 py-2 whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+
+  .table-header-cell {
+    @apply table-cell-common border border-gray-200 text-sm lg:text-base;
+  }
+
+  .table-data-cell {
+    @apply table-cell-common text-sm lg:text-base;
+  }
+
+  /* 상태 뱃지 기본 스타일 */
+  .status-badge {
+    @apply px-2 py-1 rounded text-white text-sm lg:text-base;
+  }
+
+  /* 관리 버튼 스타일 */
+  .manage-btn {
+    @apply px-2 lg:px-3 py-1 rounded text-white transition-colors duration-200 text-sm lg:text-base;
+  }
+
+  .manage-btn-error {
+    @apply manage-btn bg-black hover:bg-gray-600;
+  }
+
+  .manage-btn-activate {
+    @apply manage-btn bg-green-500 hover:bg-green-600;
+  }
+
+  /* 반응형 카드 컴포넌트 */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-4 lg:p-6;
+  }
+
+  /* 반응형 그리드 레이아웃 */
+  .grid-layout {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+}
+
+/* 커스텀 미디어 쿼리 유틸리티 */
+@layer utilities {
+  .touch-scroll {
+    @apply touch-pan-y overscroll-contain;
+  }
+  
+  .mobile-safe-area {
+    @apply safe-top safe-bottom;
+  }
+}

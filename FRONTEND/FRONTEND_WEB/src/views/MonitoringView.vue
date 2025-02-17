@@ -5,7 +5,10 @@
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-2">
           <span class="font-semibold">연결 상태:</span>
-          <span :class="['status-badge', webSocketConnected ? 'connected' : 'disconnected']">
+          <span :class="[
+            'px-2 py-1 rounded text-white text-sm',
+            webSocketConnected ? 'bg-green-500' : 'bg-red-500'
+          ]">
             {{ connectionStatus }}
           </span>
         </div>
@@ -47,8 +50,6 @@
       :robots="robots"
       @close="robotsStore.closeRobotManagementModal"
       @openAddRobotModal="robotsStore.openAddRobotModal"
-      @setBreakdown="robotsStore.setBreakdown"
-      @setActive="robotsStore.setActive"
     />
 
     <!-- 로봇 등록 모달 -->
@@ -116,18 +117,3 @@ onUnmounted(() => {
   webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
 })
 </script>
-
-<style scoped>
-.status-badge {
-  @apply px-2 py-1 rounded text-white text-sm;
-}
-
-.connected {
-  background-color: #4CAF50;
-}
-
-.disconnected {
-  background-color: #FF5757;
-}
-
-</style>
