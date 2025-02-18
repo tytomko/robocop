@@ -111,22 +111,20 @@ class RosBridgeConnection:
             logger.info(f"ROS Bridge 연결 시도 중... (Port: {self.PORT})")
             
             # reactor 상태 확인 및 초기화
-            try:
-                from twisted.internet import reactor
-                if reactor.running:
-                    reactor.stop()
-            except:
-                pass
-                
+#            from twisted.internet import reactor
+#            if not reactor.running:
+#                self.client = roslibpy.Ros(host=self.HOST, port=self.PORT)
+#                self.client.run()
+#            else:
+#                self.client = roslibpy.Ros(host=self.HOST, port=self.PORT)
+                #self.client.run(run_event_loop=False)
+#                self.client.run()
+
             self.client = roslibpy.Ros(host=self.HOST, port=self.PORT)
-            connection_timeout = 15  # 타임아웃 증가
-            
-            def on_connection():
-                logger.info("ROS Bridge 서버에 연결되었습니다.")
-                
-            self.client.on_ready(on_connection)
             self.client.run()
-            
+
+
+            connection_timeout = 30
             start_time = time.time()
             while not self.client.is_connected and (time.time() - start_time) < connection_timeout:
                 time.sleep(0.1)

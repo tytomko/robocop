@@ -51,6 +51,9 @@ ISAAC_TOPICS = [
 async def front_video_feed(seq: int):
     try:
         camera_service = await CameraService.get_instance(seq)
+        if camera_service is None:
+            raise HTTPException(status_code=500, detail="카메라 서비스 초기화 실패")
+        
         if seq == 11:
             topic_info = next(
                 (topic for topic in ISAAC_TOPICS 
@@ -73,8 +76,10 @@ async def front_video_feed(seq: int):
             if not robot:
                 raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
             
+            sensor_name = robot.sensorName if robot.sensorName else "ssafy"  # 기본값으로 ssafy 사용
+            
             topic_pattern = CAMERA_TOPICS[0]["name_pattern"]
-            topic_name = topic_pattern.format(direction="front").replace("ssafy", robot.sensorName)
+            topic_name = topic_pattern.format(direction="front").replace("ssafy", sensor_name)
             topic_type = CAMERA_TOPICS[0]["type"]
             
             logger.info(f"일반 로봇 전면 카메라 토픽 설정: {topic_name}, {topic_type}")
@@ -96,7 +101,11 @@ async def front_video_feed(seq: int):
 @router.get("/video_feed/{seq}/rear")
 async def rear_video_feed(seq: int):
     try:
+        # get_instance를 명시적으로 await
         camera_service = await CameraService.get_instance(seq)
+        if camera_service is None:
+            raise HTTPException(status_code=500, detail="카메라 서비스 초기화 실패")
+        
         if seq == 11:
             topic_info = next(
                 (topic for topic in ISAAC_TOPICS 
@@ -119,8 +128,10 @@ async def rear_video_feed(seq: int):
             if not robot:
                 raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
             
+            sensor_name = robot.sensorName if robot.sensorName else "ssafy"  # 기본값으로 ssafy 사용
+            
             topic_pattern = CAMERA_TOPICS[0]["name_pattern"]
-            topic_name = topic_pattern.format(direction="rear")
+            topic_name = topic_pattern.format(direction="rear").replace("ssafy", sensor_name)
             topic_type = CAMERA_TOPICS[0]["type"]
             
             logger.info(f"일반 로봇 후면 카메라 토픽 설정: {topic_name}, {topic_type}")

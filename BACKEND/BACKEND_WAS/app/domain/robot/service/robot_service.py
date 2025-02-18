@@ -81,26 +81,35 @@ class RobotService:
 
     async def broadcast_to_frontend(self, message: dict):
         """프론트엔드 클라이언트들에게 메시지 브로드캐스트"""
-        if not self.frontend_clients:
-            logger.warning("No frontend clients registered")
-            return
-
-        logger.info(f"Broadcasting to {len(self.frontend_clients)} clients")
-        disconnected = set()
+        try:
+            await asyncio.sleep(0.5)
+            if not self.frontend_clients:
+                logger.warning("No frontend clients registered")
+                return
+    
+            logger.info(f"Broadcasting to {len(self.frontend_clients)} clients")
+            disconnected = set()
+            
+            for client in self.frontend_clients:
+                try:
+                    logger.info(f"Sending to client {id(client)}")
+                    await client.send_json(message)
+                except Exception as e:
+                    disconnected.add(client)
+                
+            # 끊어진 클라이언트 제거
+            for client in disconnected:
+                await self.unregister_frontend_client(client)
+                
+        except asyncio.CancelledError:
+            # Task 취소 시 조용히 종료
+            pass
+        except Exception as e:
+            logger.error(f"Broadcasting error: {str(e)}")
+        finally:
+            # 추가적인 정리 작업이 필요한 경우
+            pass
         
-        for client in self.frontend_clients:
-            try:
-                logger.info(f"Sending to client {id(client)}")
-                await client.send_json(message)
-                #logger.info(f"Successfully sent to client {id(client)}, message: {message}")
-            except Exception as e:
-                #logger.error(f"Failed to send to client {id(client)}: {str(e)}")
-                disconnected.add(client)
-        
-        # 끊어진 클라이언트 제거
-        for client in disconnected:
-            await self.unregister_frontend_client(client)
-
     # === 기존 REST API 관련 메서드들 ===
     async def create_robot(self, nickname: str, ip_address: str, image: Optional[UploadFile] = None) -> Robot:
         try:

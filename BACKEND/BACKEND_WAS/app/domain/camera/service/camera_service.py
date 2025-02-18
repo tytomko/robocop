@@ -44,16 +44,28 @@ class CameraService:
 
     async def initialize(self, seq: int) -> None:
         """서비스 인스턴스를 초기화합니다."""
-        self.seq = seq
-        self.client_id = f"camera_service_{seq}"
-        
-        # ROS Bridge 연결 초기화
-        self.ros_bridge = RosBridgeConnection(port=10000)
-        self.isaac_bridge = RosBridgeConnection(port=10001)
-        
-        # 클라이언트 등록
-        await self.ros_bridge.register_client(self.client_id)
-        await self.isaac_bridge.register_client(self.client_id)
+        try:
+            self.seq = seq
+            self.client_id = f"camera_service_{seq}"
+            
+            # ROS Bridge 연결 초기화
+            self.ros_bridge = RosBridgeConnection(port=10000)
+            
+            # Isaac 로봇인 경우에만 isaac_bridge 초기화
+            if seq == 11:
+                self.isaac_bridge = RosBridgeConnection(port=10001)
+                self.isaac_bridge.register_client(self.client_id)
+                logger.info(f"Isaac Bridge 클라이언트 등록 완료 (seq: {seq})")
+            else:
+                self.isaac_bridge = None
+            
+            # 기본 ROS Bridge 클라이언트 등록
+            self.ros_bridge.register_client(self.client_id)
+            logger.info(f"ROS Bridge 클라이언트 등록 완료 (seq: {seq})")
+            
+        except Exception as e:
+            logger.error(f"Camera service initialization failed: {e}")
+            raise
 
     async def cleanup(self) -> None:
         """서비스 인스턴스의 리소스를 정리합니다."""
@@ -65,8 +77,11 @@ class CameraService:
             
             if self.ros_bridge:
                 await self.ros_bridge.unregister_client(self.client_id)
+            
+            # Isaac 로봇인 경우에만 isaac_bridge 정리
             if self.isaac_bridge:
                 await self.isaac_bridge.unregister_client(self.client_id)
+                
         except Exception as e:
             logger.error(f"Cleanup error for camera service {self.seq}: {e}")
 
@@ -170,13 +185,13 @@ class CameraService:
         if frame is not None:
             self.rear_frame = frame
 
-    async def get_front_frame(self):
+    def get_front_frame(self):
         """전면 카메라 프레임 스트림을 생성합니다."""
         while True:
             current_time = time.time()
             
             if current_time - self.last_front_frame_time < 1.0/self.fps:
-                await asyncio.sleep(0.001)  # 비동기 sleep 사용
+                time.sleep(0.001)  # asyncio.sleep 대신 일반 sleep 사용
                 continue
                 
             if self.front_frame is not None:
@@ -191,15 +206,15 @@ class CameraService:
                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                 except Exception as e:
                     logger.error(f"Error in front frame streaming: {e}")
-                    await asyncio.sleep(0.1)
+                    time.sleep(0.1)  # asyncio.sleep 대신 일반 sleep 사용
 
-    async def get_rear_frame(self):
+    def get_rear_frame(self):
         """후면 카메라 프레임 스트림을 생성합니다."""
         while True:
             current_time = time.time()
             
             if current_time - self.last_rear_frame_time < 1.0/self.fps:
-                await asyncio.sleep(0.001)  # 비동기 sleep 사용
+                time.sleep(0.001)  # asyncio.sleep 대신 일반 sleep 사용
                 continue
                 
             if self.rear_frame is not None:
@@ -214,7 +229,7 @@ class CameraService:
                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                 except Exception as e:
                     logger.error(f"Error in rear frame streaming: {e}")
-                    await asyncio.sleep(0.1)
+                    time.sleep(0.1)  # asyncio.sleep 대신 일반 sleep 사용
 
     async def __aenter__(self):
         """비동기 컨텍스트 매니저 진입"""

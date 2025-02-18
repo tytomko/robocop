@@ -42,25 +42,17 @@ class NetworkStatus(str):
 class Waypoint(BaseModel):
     x: float
     y: float
-
 class Robot(BaseModel):
     seq: int
     manufactureName: str
     nickname: str
-    # TODO: 추후 robots 컬렉션 재구성 시 필수 필드로 변경 예정
-    # - sensorName: ROS Bridge에서 수신되는 센서 식별자 (현재는 Optional)
-    # - motion: 로봇의 속도 정보 (현재는 Optional, 기본값으로 Motion 인스턴스 사용)
-    # DB 재구성 시 고려사항:
-    # 1. 모든 필수 필드를 포함한 새로운 데이터 구조
-    # 2. ROS Bridge 데이터 구조와 일치하도록 조정
-    # 3. 기존 데이터 마이그레이션 또는 새로운 등록 프로세스 구현
-    sensorName: Optional[str] = None
+    sensorName: str
     ipAddress: str
     networkStatus: str = NetworkStatus.CONNECTED
     status: str = RobotStatus.WAITING
     networkHealth: float = 100.0
     position: Position
-    motion: Optional[Motion] = Motion()  # 속도 정보 (kph, mps)
+    motion: Motion
     battery: BatteryStatus
     cpuTemp: float = 0.0
     image: Optional[RobotImage] = None

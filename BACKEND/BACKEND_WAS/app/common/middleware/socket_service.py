@@ -9,7 +9,7 @@ from typing import List
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ALLOWED_IP = "192.168.100.143"  # 허용된 클라이언트 IP 주소
+ALLOWED_IP = "121.178.98.113"  # 허용된 클라이언트 IP 주소
 
 person_repository = PersonRepository()
 
