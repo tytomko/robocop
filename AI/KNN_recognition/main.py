@@ -1,4 +1,7 @@
 # AI 통합 코드 통신 위주로
+# 일반
+from enum import Enum
+
 # AI
 import face_recognition
 import cv2
@@ -17,6 +20,38 @@ import socket_network
 import database_update
 import knn_training
 
+# 사운드
+import asyncio
+from pydub import AudioSegment
+from pydub.playback import play
+import simpleaudio as sa
+import os
+import pygame
+
+pygame.init()
+
+pygame.mixer.init()
+sound = pygame.mixer.Sound("sound/init.mp3")
+
+def playSound(file_path,loop=False):
+    global sound
+    sound.stop()
+    pygame.mixer.init()
+    sound = pygame.mixer.Sound(file_path)
+    if loop:
+        sound.play(loops=-1)
+    else:
+        sound.play()
+
+# 이미 체크된 인원은 신원확인 음성 나오지 않게
+checked = {}
+
+# 모드
+class mode(Enum):
+    AWAIT = 0
+    PATROL = 1
+    CHECK = 2
+    ALERT = 3
 
 # 초기화
 ROBOT_NUMBER = 1
@@ -27,15 +62,21 @@ OTHER_COMMAND = ''
 
 # 네트워크 설정
 ROS_IP = "192.168.100.34"
-BACK_IP = "172.30.1.18"
-PORT = 9000
+BACK_IP = "52.79.51.253"
+BACK_PORT = 6000
+ROS_PORT = 6000
 
 # 전역 변수로 소켓 상태를 관리
 client_socket_ros = None  
 client_socket_back = None
 
+# 대기 모드로 초기화
+#curmode = mode.AWAIT
+curmode = mode.PATROL
+
 # 콜백함수
 def handle_message(message, IP, PORT):
+    global curmode
     print(f"📩 [handle_message] 수신된 메시지: {message}")  # 디버깅 추가
 
     try:
@@ -46,7 +87,14 @@ def handle_message(message, IP, PORT):
             if data["response_type"] == "ALL_UPDATE_PERSON":
                 print("📌 [handle_message] database_update 시작")
                 database_update.init(data)
-                #handle_all_update_person(data["people"])
+            elif data["response_type"] == "MODE_INIT":
+                print("로봇 가동")
+                playSound("sound/init.mp3")
+                curmode = mode.PATROL
+            elif data["response_type"] == "MODE_ALERT_STOP":
+                print("경보 해제")
+                playSound("sound/alert_cancel.mp3")
+                curmode = mode.PATROL
             else:
                 print(f"⚠️ [handle_message] 알 수 없는 response_type: {data['response_type']}")
         else:
@@ -58,40 +106,16 @@ def handle_message(message, IP, PORT):
         print(f"❌ [handle_message] 메시지 처리 중 오류 발생: {e}")
 
 
-# def handle_all_update_person(people):
-#     """
-#     ALL_UPDATE_PERSON을 처리하는 함수
-#     """
-#     for person in people:
-#         person_id = person.get("person_id")
-#         update_time = person.get("update_time")
-#         image_urls = person.get("image_urls", [])
-        
-#         print(f"🔄 업데이트된 사용자 ID: {person_id}, 업데이트 시간: {update_time}")
-#         print("📷 이미지 목록:")
-#         for url in image_urls:
-#             print(f"  - {url}")
-        
-#         # 필요한 추가 처리 (예: 이미지 다운로드, 데이터베이스 업데이트 등)
-#         process_person_data(person_id, update_time, image_urls)
-
-
-# def process_person_data(person_id, update_time, image_urls):
-#     """
-#     받은 인물 데이터를 처리하는 함수 (예: DB 업데이트, 파일 저장 등)
-#     """
-#     print(f"📝 {person_id}번 사용자의 데이터를 처리합니다.")
-
 # 콜백 함수 등록
 socket_network.set_callback(handle_message)
 
 # 소켓 연결
-client_socket_back = socket_network.persistent_connect_request(BACK_IP, PORT)
+client_socket_back = socket_network.persistent_connect_request(BACK_IP, BACK_PORT)
 
 if client_socket_back:
-    thread_back = threading.Thread(target=socket_network.receive_messages, args=(client_socket_back, BACK_IP, PORT), daemon=True)
+    print("소켓 수신 준비 완료")
+    thread_back = threading.Thread(target=socket_network.receive_messages, args=(client_socket_back, BACK_IP, BACK_PORT), daemon=True)
     thread_back.start()
-
 
 # AI 모델 로드
 model = YOLO("yolov8n.pt").to("cuda")
@@ -143,16 +167,14 @@ isSafe = False
 
 # 인원이 갑자기 감소하는 경우
 prev_person_count = 0
-
-# 수상함 수치가 임계치 이상이면 수하 시작
-# 수하 성공 또는 인식 성공 후 수상함 수치 초기화
-# 
+# YOLO 환각을 보정하기 위한 count
+disap_count = 0
 
 try:
     while True:
         # 소켓 연결 확인
         if client_socket_back is None:
-            client_socket_back = socket_network.persistent_connect_request(BACK_IP, PORT)
+            client_socket_back = socket_network.persistent_connect_request(BACK_IP, BACK_PORT)
 
         ret, frame = video_capture.read()
         if not ret:
@@ -177,34 +199,43 @@ try:
                         cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # 수하 시작
-        if isCheckStart:
+        if isCheckStart and curmode == mode.PATROL:
             print("수하 시작")
-            socket_network.send_command(client_socket_back,BACK_IP,PORT,"수하 시작")
+            playSound("sound/5walk.mp3")
             check_time = time.time()
             isCheckStart = False
             isCheckNow = True
             isCheckCount = 0
+            curmode = mode.CHECK
         
         if isCheckNow:
+            if curmode == mode.ALERT:
+                isCheckNow = False
+                isCheckCount = 0
             if time.time() - check_time >= 10:
                 isCheckNow = False
                 isFindEnemy = True #나중에 함수로 대체
+                curmode = mode.PATROL # 임시
                 print("신원확인에 실패하였습니다.")
-                socket_network.send_command(client_socket_back,BACK_IP,PORT,"신원확인에 실패하였습니다.")
+                socket_network.send_command(client_socket_back,BACK_IP,BACK_PORT,'{"response_type": "CHECK_FAILED"}')
+                playSound("sound/second_auth.mp3")
             if isCheckCount >= 100:
                 isCheckNow = False
                 isCheckCount = 0
+                curmode = mode.PATROL
                 print(f"신원이 확인되었습니다.{name}")
-                socket_network.send_command(client_socket_back,BACK_IP,PORT,f"신원이 확인되었습니다. {name}")
+                socket_network.send_command(client_socket_back,BACK_IP,BACK_PORT,'{"response_type": "DETECTED_SAFE_PERSON","person_id": 0}')
+                playSound("sound/check_person.mp3")
                 isSafe = True
         
+        # 얼굴 인식
         safe_person_count = 0
         predictions = predict(frame, knn_clf)
 
         # 프레임 상관없이 일정한 시간 맞추기
         current_time = time.time()
         delta_time = current_time - previous_time
-        previous_time = current_time
+        previous_time = current_time       
 
         # 신원 확인 과정
         for name, (top, right, bottom, left), distance in predictions:
@@ -213,7 +244,7 @@ try:
 
             if isCheckNow:
                 if distance <= 0.35:
-                    power = (10 / distance) * delta_time
+                    power = (20 / distance) * delta_time
                     isCheckCount += power
             
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 1)
@@ -221,21 +252,32 @@ try:
         
         # 인증된 사람이 한명이라도 있으면 안전모드
         if safe_person_count > 0:
-            isSafe = True
             cooltime = 5
+            if not isSafe and curmode == mode.PATROL:
+                isSafe = True  
+                print(f"출입 확인: {name}")
+                if name not in checked:
+                    playSound("sound/check_person.mp3")
+                    checked[name] = True
 
         # 인식되지 않은 사람이 있으면 수하 시작
-        if person_count > safe_person_count and not isCheckNow and not isSafe:
+        if person_count > safe_person_count and not isCheckNow and not isSafe and curmode == mode.PATROL:
             print("신원이 확인되지 않은 인원이 있습니다. 수하를 시작합니다.")
-            socket_network.send_command(client_socket_back, BACK_IP, PORT, "신원이 확인되지 않은 인원이 있습니다. 수하를 시작합니다.")
             isCheckStart = True
 
+        
         # 갑자기 화면에서 인식되지 않은 사람이 사라지면 경보
-        if not isSafe and prev_person_count > person_count:
-            print("인가되지 않은 인원이 침입했습니다.")
-            socket_network.send_command(client_socket_back, BACK_IP, PORT,"인가되지 않은 인원이 침입했습니다.")
+        if not isSafe and prev_person_count > person_count and (curmode == mode.PATROL or curmode == mode.CHECK):
+            disap_count += 1 * delta_time
+            if disap_count > 2:
+                print("인가되지 않은 인원이 침입했습니다.")
+                socket_network.send_command(client_socket_back,BACK_IP,BACK_PORT,'{"response_type": "DETECTED_INTRUDER"}')
+                playSound("sound/siren_intruder.mp3",loop=-1)
+                curmode = mode.ALERT
+        else:
+            prev_person_count = person_count
+            disap_count = 0
 
-        prev_person_count = person_count
         # 안전 쿨다운 계산
         if isSafe:
             cooltime += 1 * delta_time
