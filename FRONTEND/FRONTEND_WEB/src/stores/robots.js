@@ -38,14 +38,21 @@ export const useRobotsStore = defineStore('robots', () => {
         seq: robot.seq,
         manufactureName: robot.manufactureName,
         nickname: robot.nickname || '',
+        sensorName: robot.sensorName || '',
         ipAddress: robot.ipAddress || '알 수 없음',
+        networkStatus: robot.networkStatus || 'disconnected',
         status: robot.status || 'waiting',
         battery: robot.battery?.level || 100,
+        isCharging: robot.battery?.isCharging || false,
         networkHealth: robot.networkHealth || 100,
         position: robot.position
-          ? `x: ${robot.position.x}, y: ${robot.position.y}`
+          ? `x: ${robot.position.x}, y: ${robot.position.y}, orientation: ${robot.position.orientation}`
+          : '알 수 없음',
+        motion: robot.motion
+          ? `kph: ${robot.motion.kph}, mps : ${robot.motion.mps}`
           : '알 수 없음',
         cpuTemp: robot.cpuTemp || 0.0,
+        waypoints : robot.waypoints || [], 
         startAt: robot.startAt || '알 수 없음',
         isActive: robot.IsActive || false
       }))
@@ -179,16 +186,17 @@ export const useRobotsStore = defineStore('robots', () => {
     formData.append('nickname', newRobot.value.nickname)
     formData.append('ipAddress', newRobot.value.ipAddress)
 
-    axios.post('https://robocop-backend-app.fly.dev/api/v1/robots', formData, {
+    axios.post('https://robocopbackendssafy.duckdns.org/api/v1/robots/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
       .then((response) => {
         const registeredRobot = response.data.data
         registered_robots.value.push({
           seq: registeredRobot.seq,
-          name: registeredRobot.manufactureName,
+          manufactureName: registeredRobot.manufactureName,
           nickname: registeredRobot.nickname,   // 주의: robot -> registeredRobot
           ipAddress: registeredRobot.ipAddress,
+          sensorName: registeredRobot.sensorName || '',
           status: registeredRobot.status || 'waiting',
           battery: registeredRobot.battery?.level || 100,
           isCharging: registeredRobot.battery?.isCharging || false,
@@ -197,16 +205,16 @@ export const useRobotsStore = defineStore('robots', () => {
           position: registeredRobot.position
             ? `x: ${registeredRobot.position.x}, y: ${registeredRobot.position.y}`
             : '알 수 없음',
+          orientation: registeredRobot.position?.orientation || '알 수 없음',
+          motion: registeredRobot.motion 
+          ? `kph: ${registeredRobot.motion.kph}, mps: ${registeredRobot.motion.mps}`
+          : '알 수 없음',
           cpuTemp: registeredRobot.cpuTemp || 0.0,
+          waypoints : registeredRobot.waypoints || [],
           imageUrl: registeredRobot.image?.url || '',
           startAt: registeredRobot.startAt || '알 수 없음',
           lastActive: registeredRobot.lastActive || '알 수 없음',
-          isActive: registeredRobot.IsActive || false,
-          isDeleted: registeredRobot.IsDeleted || false,
-          deletedAt: registeredRobot.DeletedAt || null,
-          createdAt: registeredRobot.createdAt || null,
-          updatedAt: registeredRobot.updatedAt || null,
-          waypoints: registeredRobot.waypoints || [],
+          isActive: registeredRobot.IsActive || false
         })
 
         closeModal()
