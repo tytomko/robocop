@@ -4,6 +4,38 @@ import pickle
 import numpy as np
 import time
 from ultralytics import YOLO
+from enum import Enum
+
+# 사운드
+import os
+import pygame
+
+pygame.init()
+
+pygame.mixer.init()
+sound = pygame.mixer.Sound("sound/init.mp3")
+
+def playSound(file_path,loop=False):
+    global sound
+    sound.stop()
+    pygame.mixer.init()
+    sound = pygame.mixer.Sound(file_path)
+    if loop:
+        sound.play(loops=-1)
+    else:
+        sound.play()
+
+# 이미 체크된 인원은 신원확인 음성 나오지 않게
+checked = {}
+
+# 모드
+class mode(Enum):
+    AWAIT = 0
+    PATROL = 1
+    CHECK = 2
+    ALERT = 3
+
+curmode = mode.AWAIT
 
 # YOLOv8 모델 로드
 model = YOLO("yolov8n.pt").to("cuda")
@@ -64,17 +96,33 @@ isSafe = False
 
 # 인원이 갑자기 감소하는 경우
 prev_person_count = 0
+# YOLO 환각을 보정하기 위한 count
+disap_count = 0
 
 while True:
     ret, frame = video_capture.read()
     if not ret:
         print("Error: 카메라에서 영상을 읽을 수 없습니다.")
         break
-
+    
     key = cv2.waitKey(1) & 0xFF
+    if key == ord('s') and curmode == mode.AWAIT:
+        print("로봇을 가동합니다")
+        playSound("sound/init.mp3")
+        curmode = mode.PATROL   
+
+    if key == ord('d') and curmode == mode.ALERT:
+        print("경보를 해제합니다")
+        playSound("sound/alert_cancel.mp3")
+        curmode = mode.PATROL 
+        isSafe = True
+        cooltime = 0
+
     if key == ord('a'):
         print("수하를 시작합니다")
+        playSound("sound/5walk.mp3")
         isCheckStart = True     
+     
     
     # YOLO 실행
     results = model(frame, verbose=False)
@@ -95,18 +143,23 @@ while True:
 
 
     if isCheckNow:
+        if curmode == mode.ALERT:
+            isCheckNow = False
+            isCheckCount = 0
         if time.time() - check_time >= 10:
             isCheckNow = False
             isFindEnemy = True #나중에 함수로 대체
+            curmode = mode.PATROL # 임시
             print("신원확인에 실패하였습니다.")
+            playSound("sound/second_auth.mp3")
         if isCheckCount >= 100:
             isCheckNow = False
             isCheckCount = 0
+            curmode = mode.PATROL
             print(f"신원이 확인되었습니다.{name}")
+            playSound("sound/check_person.mp3")
             isSafe = True
         
-        safe_person_count = 0
-        predictions = predict(frame, knn_clf)
     
     # face_recognition
     safe_person_count = 0
@@ -118,19 +171,14 @@ while True:
     previous_time = current_time
 
     # 데이터베이스의 인물 중 여러 명이 교차되어 인식되는 경우에 대해서도 예외처리할 필요가 있음
-    if isCheckStart:
+    if isCheckStart and curmode == mode.PATROL:
         print("수하 시작")
+        playSound("sound/5walk.mp3")
         check_time = time.time()
         isCheckStart = False
         isCheckNow = True
         isCheckCount = 0
-
-    # 수하 프로세스(얼굴이 검출되지 않았을 때 예외처리)
-    if isCheckNow:
-        if time.time() - check_time >= 10:
-            isCheckNow = False
-            isFindEnemy = True #나중에 함수로 대체
-            print("신원확인에 실패하였습니다.")
+        curmode = mode.CHECK
 
     # 신원 확인 과정
     for name, (top, right, bottom, left), distance in predictions:
@@ -139,30 +187,38 @@ while True:
 
         if isCheckNow:
             if distance <= 0.35:
-                power = (10 / distance) * delta_time
+                power = (20 / distance) * delta_time
                 isCheckCount += power
         
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 1)
         cv2.putText(frame, f"{name} ({distance:.2f})", (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.7, (255, 255, 255), 1)
 
         # 인증된 사람이 한명이라도 있으면 안전모드
-        if safe_person_count > 0 and not isSafe:
-            isSafe = True
+        if safe_person_count > 0:
             cooltime = 5
-            print(f"출입 확인: {name}")
+            if not isSafe and curmode == mode.PATROL:
+                isSafe = True  
+                print(f"출입 확인: {name}")
+                if name not in checked:
+                    playSound("sound/check_person.mp3")
+                    checked[name] = True
     
 
     # 인식되지 않은 사람이 있으면 수하 시작
-    if person_count > safe_person_count and not isCheckNow and not isSafe:
+    if person_count > safe_person_count and not isCheckNow and not isSafe and curmode == mode.PATROL:
         print("신원이 확인되지 않은 인원이 있습니다. 수하를 시작합니다.")
         isCheckStart = True
 
     # 갑자기 화면에서 인식되지 않은 사람이 사라지면 경보
-    if not isSafe and prev_person_count > person_count:
-        print("인가되지 않은 인원이 침입했습니다.")
-
-    prev_person_count = person_count
-    
+    if not isSafe and prev_person_count > person_count and (curmode == mode.PATROL or curmode == mode.CHECK):
+        disap_count += 1 * delta_time
+        if disap_count > 2:
+            print("인가되지 않은 인원이 침입했습니다.")
+            playSound("sound/siren_intruder.mp3",loop=True)
+            curmode = mode.ALERT
+    else:
+        prev_person_count = person_count
+        disap_count = 0
 
     # 안전 쿨다운 계산
     if isSafe:
@@ -170,6 +226,7 @@ while True:
         if cooltime > COOLDOWN:
             isSafe = False
             cooltime = 0
+    #print(cooltime)
 
     # FPS 계산
     frame_count += 1
