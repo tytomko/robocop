@@ -52,17 +52,21 @@ const isPaused = ref(false)
 
 function handleNavigate() {
   emits('navigate')
+  alert('이동을 시작합니다.')
 }
 
 function handlePatrol() {
   emits('patrol')
+  alert('순찰을 시작합니다.')
 }
 
 function handlePauseToggle() {
   if (isPaused.value) {
     emits('resume')
+    alert('활동을 재개합니다.')
   } else {
     emits('tempStop')
+    alert('로봇이 일시정지 되었습니다.')
   }
   isPaused.value = !isPaused.value
 }

@@ -186,6 +186,7 @@ const returnRobot = async (robotSeq) => {
   if (!robotSeq) return;
   try {
     await robotCommandsStore.homingCommand(robotSeq);
+    alert('로봇이 복귀합니다.')
   } catch (err) {
     console.error('로봇 복귀 명령 에러:', err);
   }
@@ -198,6 +199,7 @@ const handleStartStop = async (robot) => {
       await robotCommandsStore.tempStopCommand(robot.seq);
       // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
       robot.status = 'emergencyStopped';
+      alert('로봇이 일시정지 되었습니다.')
     } catch (err) {
       console.error('비상 정지 명령 에러:', err);
     }
@@ -207,6 +209,7 @@ const handleStartStop = async (robot) => {
       await robotCommandsStore.resumeCommand(robot.seq);
       // 가동 시작 후 상태 업데이트
       robot.status = 'navigating';
+      alert('활동을 시작합니다.')
     } catch (err) {
       console.error('가동 시작 명령 에러:', err);
     }

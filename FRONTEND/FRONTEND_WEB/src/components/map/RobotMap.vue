@@ -88,6 +88,7 @@ async function handlePatrol() {
 
 async function resetSelection() {
   selectedNodes.value = await robotCommandsStore.resetSelectionCommand(currentRobotSeq.value)
+  alert('로봇 작동을 중지합니다.')
   updateChartSeries()
 }
 
