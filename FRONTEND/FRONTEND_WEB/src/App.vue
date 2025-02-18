@@ -13,9 +13,12 @@
       <div class="flex flex-col flex-1 overflow-auto relative">
         <!-- Navbar -->
         <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-4 lg:px-10 h-[55px] flex items-center justify-between sticky top-0 z-40">
-           <!-- 로고 -->
-          <div class="cursor-pointer" @click="refreshPage">
-            <img src="@/assets/whitelogo.png" alt="로고" class="h-10 lg:h-14" />
+          <!-- 로고 및 경보 시스템 -->
+          <div class="flex items-center">
+            <div class="cursor-pointer" @click="refreshPage">
+              <img src="@/assets/whitelogo.png" alt="로고" class="h-10 lg:h-14" />
+            </div>
+            <AlertSystem /> <!-- AlertSystem 컴포넌트 추가 -->
           </div>
 
           <!-- 데스크탑 네비게이션 -->
@@ -30,11 +33,7 @@
               {{ link.name }}
             </router-link>
             <!-- 데스크탑 알림 - 사이드바 확장 시 -->
-            <AlarmNotification 
-              v-if="!isSidebarCollapsed" 
-              inline 
-              class="ml-4" 
-            />
+            <AlarmNotification inline class="ml-4"  />
           </div>
 
           <!-- 모바일 네비게이션 -->
@@ -80,7 +79,7 @@
       </div>
 
       <!-- Right Sidebar -->
-      <div 
+      <!-- <div 
         v-if="!isLoginPage" 
         :class="[
           sidebarClasses,
@@ -91,16 +90,16 @@
           :isCollapsed="isSidebarCollapsed" 
           @toggle-sidebar="toggleSidebar" 
         />
-      </div>
+      </div> -->
     </div>
 
     <!-- 고정 알림 아이콘 (데스크탑 사이드바 축소 시) -->
-    <AlarmNotification 
+    <!-- <AlarmNotification 
       v-if="!isLoginPage && isSidebarCollapsed" 
       :isCollapsed="true"
       class="hidden lg:block fixed right-2 z-35"
       :class="{'top-[55px]': !isSidebarCollapsed, 'top-[10px]': isSidebarCollapsed}"
-    />
+    /> -->
   </div>
 </template>
 
@@ -108,9 +107,10 @@
 // 스크립트 부분은 이전과 동일하게 유지
 import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
-import MapSidebarSection from "@/components/dashboard/MapSidebarSection.vue";
+// import MapSidebarSection from "@/components/dashboard/MapSidebarSection.vue";
 import AlarmNotification from "@/components/dashboard/AlarmNotification.vue";
 import ListSidebarSection from "./components/dashboard/ListSidebarSection.vue";
+import AlertSystem from "./components/ai/AlertSystem.vue";
 import { webSocketService } from '@/services/websocket';
 import { useRobotsStore } from '@/stores/robots';
 
@@ -133,29 +133,15 @@ const isSidebarCollapsed = ref(storedState ? storedState === "true" : false);
 const storedLeftState = localStorage.getItem("left-sidebar-collapsed");
 const isLeftSidebarCollapsed = ref(storedLeftState ? storedLeftState === "true" : false);
 
-// 사이드바 토글 함수
-const toggleSidebar = () => {
-  if (window.innerWidth >= 1024) {
-    isSidebarCollapsed.value = !isSidebarCollapsed.value;
-    localStorage.setItem("sidebar-collapsed", isSidebarCollapsed.value);
-    setTimeout(() => window.dispatchEvent(new Event("resize")), 350);
-  }
-};
-
 const toggleLeftSidebar = () => {
   if (window.innerWidth >= 1024) {
     isLeftSidebarCollapsed.value = !isLeftSidebarCollapsed.value;
     localStorage.setItem("left-sidebar-collapsed", isLeftSidebarCollapsed.value);
+    // store 상태 업데이트
+    robotsStore.updateSidebarStates(isLeftSidebarCollapsed.value, isSidebarCollapsed.value);
     setTimeout(() => window.dispatchEvent(new Event("resize")), 350);
   }
 };
-
-// 사이드바 클래스
-const sidebarClasses = computed(() => {
-  return isSidebarCollapsed.value
-    ? "w-0"
-    : "w-[400px] bg-white border-l border-gray-300 relative";
-});
 
 // 모바일 메뉴 상태 관리
 const mobileMenuOpen = ref(false);
@@ -194,4 +180,21 @@ onMounted(async () => {
 onUnmounted(() => {
   webSocketService.disconnect();
 });
+
+// 사이드바 토글 함수
+// const toggleSidebar = () => {
+//   if (window.innerWidth >= 1024) {
+//     isSidebarCollapsed.value = !isSidebarCollapsed.value;
+//     localStorage.setItem("sidebar-collapsed", isSidebarCollapsed.value);
+//     // store 상태 업데이트
+//     robotsStore.updateSidebarStates(isLeftSidebarCollapsed.value, isSidebarCollapsed.value);
+//     setTimeout(() => window.dispatchEvent(new Event("resize")), 350);
+//   }
+// };
+// 사이드바 클래스
+// const sidebarClasses = computed(() => {
+//   return isSidebarCollapsed.value
+//     ? "w-0"
+//     : "w-[400px] bg-white border-l border-gray-300 relative";
+// });
 </script>

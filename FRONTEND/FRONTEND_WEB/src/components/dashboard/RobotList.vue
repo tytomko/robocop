@@ -5,7 +5,13 @@
     </div>
     
     <!-- 로봇 상태 목록 - 그리드 수정 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 xl:grid-cols-3 gap-6">
+    <div :class="[
+        'grid gap-6',
+        'grid-cols-1',
+        {'sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4': !robotsStore.leftSidebarCollapsed},
+        {'md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5': robotsStore.leftSidebarCollapsed}
+      ]"
+    >
       <div 
         v-for="robot in visibleRobots" 
         :key="robot.seq"
@@ -144,6 +150,11 @@ const visibleRobots = computed(() =>
 // ui적으로 로봇 숨기기
 const hideRobot = (robotSeq) => hiddenRobots.value.push(robotSeq);
 
+// 사이드바 상태에 따른 그리드 레이아웃 계산
+const bothSidebarsCollapsed = computed(() => 
+  robotsStore.leftSidebarCollapsed
+);
+
 const getBatteryClass = (battery) => {
   return {
     'bg-green-500': battery >= 30,
@@ -175,6 +186,7 @@ const returnRobot = async (robotSeq) => {
   if (!robotSeq) return;
   try {
     await robotCommandsStore.homingCommand(robotSeq);
+    alert('로봇이 복귀합니다.')
   } catch (err) {
     console.error('로봇 복귀 명령 에러:', err);
   }
@@ -184,21 +196,20 @@ const handleStartStop = async (robot) => {
   if (robot.status === 'navigating') {
     // 현재 가동 중이면 비상 정지 실행
     try {
-      await robotCommandsStore.estopCommand(robot.seq);
+      await robotCommandsStore.tempStopCommand(robot.seq);
       // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
       robot.status = 'emergencyStopped';
+      alert('로봇이 일시정지 되었습니다.')
     } catch (err) {
       console.error('비상 정지 명령 에러:', err);
     }
   } else {
     // 현재 가동 중이 아니면 navigateCommand 실행 (기본 목표는 로봇의 현재 위치 또는 [0,0])
     try {
-      const defaultGoal = { 
-        id: robot.position ? [robot.position.x, robot.position.y] : [0, 0] 
-      };
-      await robotCommandsStore.navigateCommand([defaultGoal], robot.seq);
+      await robotCommandsStore.resumeCommand(robot.seq);
       // 가동 시작 후 상태 업데이트
       robot.status = 'navigating';
+      alert('활동을 시작합니다.')
     } catch (err) {
       console.error('가동 시작 명령 에러:', err);
     }
