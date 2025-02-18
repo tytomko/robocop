@@ -21,13 +21,10 @@ export const useRobotsStore = defineStore('robots', () => {
   const POLLING_INTERVAL = 5000
  // localStorage와 연동되는 사이드바 상태
   const storedLeftState = localStorage.getItem("left-sidebar-collapsed");
-  const storedRightState = localStorage.getItem("sidebar-collapsed");
   const leftSidebarCollapsed = ref(storedLeftState === "true");
-  const rightSidebarCollapsed = ref(storedRightState === "true");
   // App.vue의 토글 함수와 연동
-  const updateSidebarStates = (left, right) => {
+  const updateSidebarStates = (left) => {
     leftSidebarCollapsed.value = left;
-    rightSidebarCollapsed.value = right;
   };
 
   // 로봇 리스트 불러오기
@@ -46,8 +43,9 @@ export const useRobotsStore = defineStore('robots', () => {
         isCharging: robot.battery?.isCharging || false,
         networkHealth: robot.networkHealth || 100,
         position: robot.position
-          ? `x: ${robot.position.x}, y: ${robot.position.y}, orientation: ${robot.position.orientation}`
+          ? `x: ${robot.position.x}, y: ${robot.position.y}`
           : '알 수 없음',
+        orientation: robot.position?.orientation || '알 수 없음',
         motion: robot.motion
           ? `kph: ${robot.motion.kph}, mps : ${robot.motion.mps}`
           : '알 수 없음',
@@ -113,15 +111,15 @@ export const useRobotsStore = defineStore('robots', () => {
     switch (topicType) {
       case 'status':
         normalizedData = {
-          manufactureName: robotId,    // robotId(robot_1)를 manufactureName으로 사용
-          seq: data.robot_id,         // status의 robot_id를 DB의 seq와 매칭
-          battery: Number(data.battery || 0),        // /robot_1/status의 battery -> battery
-          network: Number(data.network || 0),        // /robot_1/status의 network -> networkHealth
-          temperature: Number(data.temperature || 0), // /robot_1/status의 temperature -> cpuTemp
-          is_active: Boolean(data.is_active),        // /robot_1/status의 is_active -> isActive
-          status: data.status || 'unknown'           // /robot_1/status의 status -> status
+          manufactureName: robotId,
+          seq: data.robot_id,
+          battery: Number(data.battery || 0),
+          network: Number(data.network || 0),
+          temperature: Number(data.temperature || 0),
+          is_active: Boolean(data.is_active),
+          status: data.status || 'unknown'
         }
-        // manufactureName과 seq로 매칭하여 status 데이터 업데이트
+
         const statusIndex = websocket_robots.value.findIndex(r => 
           r.manufactureName === robotId && r.seq === data.robot_id
         )
@@ -137,16 +135,15 @@ export const useRobotsStore = defineStore('robots', () => {
         break
 
       case 'utm_pose':
-        // utm_pose는 manufactureName(robot_1)으로만 매칭
         const utmIndex = websocket_robots.value.findIndex(r => 
           r.manufactureName === robotId
         )
         if (utmIndex >= 0) {
           websocket_robots.value[utmIndex] = {
             ...websocket_robots.value[utmIndex],
-            position: data.position,      // /robot_1/utm_pose의 position -> position (x,y 좌표)
-            rawPosition: data.rawPosition, // 원본 UTM 좌표 (x,y,z 포함)
-            orientation: data.orientation  // /robot_1/utm_pose의 orientation -> orientation
+            position: data.position,
+            rawPosition: data.rawPosition,
+            orientation: data.orientation
           }
         }
         break
@@ -245,6 +242,8 @@ export const useRobotsStore = defineStore('robots', () => {
     }
   }
 
+  const alerts = ref(false);
+
   return {
     registered_robots,
     showModal,
@@ -259,7 +258,7 @@ export const useRobotsStore = defineStore('robots', () => {
     displayRobots,
     webSocketConnected,
     leftSidebarCollapsed,
-    rightSidebarCollapsed,
+    alerts,
 
     // methods
     updateSidebarStates,
@@ -275,6 +274,6 @@ export const useRobotsStore = defineStore('robots', () => {
     updateRobotWebSocketData,
     setWebSocketConnected,
     startPolling,
-    stopPolling
+    stopPolling,
   }
 })

@@ -18,8 +18,6 @@
     <!-- 리셋 버튼 -->
     <button 
       class="control-btn bg-red-500"
-      :disabled="selectedNodes.length === 0"
-      :class="{ 'bg-gray-300 text-gray-500 cursor-not-allowed': selectedNodes.length === 0 }"
       @click="$emit('reset')"
     >
       <i class="mdi mdi-refresh"></i>
