@@ -1,49 +1,53 @@
 <template>
-  <div class="h-full flex flex-col bg-gray-100">
+  <div class="h-screen overflow-hidden bg-gray-100">
     <!-- 상단 컨트롤 섹션 -->
     <div class="p-4 bg-white shadow-sm">
-      <div class="max-w-screen-xl mx-auto space-y-4">
-        <!-- 로봇 선택 -->
-        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <label class="min-w-[100px] font-medium text-gray-700">로봇 선택</label>
-          <div class="flex-1 space-y-2">
-            <div class="w-full max-h-48 overflow-y-auto border border-gray-300 rounded bg-white text-sm">
-              <div 
-                v-for="robot in robotsStore.registered_robots" 
-                :key="robot.seq"
-                @dblclick="toggleRobotSelection(robot.seq)"
-                :class="[
-                  'p-2 cursor-pointer hover:bg-gray-100',
-                  selectedRobots.includes(robot.seq) ? 'bg-blue-100 hover:bg-blue-200' : ''
-                ]"
-              >
-                {{ robot.nickname || robot.manufactureName }}
+      <div class="max-w-screen-xl mx-auto">
+        <div class="flex justify-between items-start gap-4">
+          <!-- 로봇 선택 (왼쪽) -->
+          <div class="w-3/4">
+            <div class="flex flex-col gap-2">
+              <label class="font-medium text-gray-700">로봇 선택</label>
+              <div class="w-full h-[120px] overflow-y-auto border border-gray-300 rounded bg-white text-sm">
+                <div 
+                  v-for="robot in robotsStore.registered_robots" 
+                  :key="robot.seq"
+                  @dblclick="toggleRobotSelection(robot.seq)"
+                  :class="[
+                    'p-2 cursor-pointer hover:bg-gray-100',
+                    selectedRobots.includes(robot.seq) ? 'bg-blue-100 hover:bg-blue-200' : ''
+                  ]"
+                >
+                  {{ robot.nickname || robot.manufactureName }}
+                </div>
               </div>
             </div>
-            <p class="text-sm text-gray-500">
-              {{ selectedDirection === 'both' ? '최대 2개' : '최대 4개' }}의 로봇을 선택할 수 있습니다. 
-              (현재 {{ selectedRobots.length }}개 선택됨)
-            </p>
           </div>
-        </div>
 
-        <!-- 카메라 방향 선택 -->
-        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <label class="min-w-[100px] font-medium text-gray-700">카메라 방향</label>
-          <select
-            v-model="selectedDirection"
-            class="w-full sm:w-48 p-2 border border-gray-300 rounded bg-white text-sm"
-          >
-            <option value="both">전/후방</option>
-            <option value="front">전방만</option>
-            <option value="rear">후방만</option>
-          </select>
+          <!-- 카메라 방향 선택 (오른쪽) -->
+          <div class="w-1/4">
+            <div class="flex flex-col gap-2">
+              <label class="font-medium text-gray-700">카메라 방향</label>
+              <select
+                v-model="selectedDirection"
+                class="w-full p-2 border border-gray-300 rounded bg-white text-sm"
+              >
+                <option value="both">전/후방</option>
+                <option value="front">전방만</option>
+                <option value="rear">후방만</option>
+              </select>
+              <p class="text-sm text-gray-500">
+                {{ selectedDirection === 'both' ? '1개' : '2개' }}의 로봇을 선택할 수 있습니다. 
+                (현재 {{ selectedRobots.length }}개 선택됨)
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 카메라 화면 영역 -->
-    <div class="flex-1 p-4 min-h-0">
+    <div class="flex-1 p-4">
       <div v-if="selectedRobots.length > 0" 
            :class="['video-container', gridClass]">
         <Cctv
@@ -62,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 
@@ -72,12 +76,12 @@ const selectedDirection = ref('both')
 
 // 최대 선택 가능한 로봇 수 계산
 const maxRobots = computed(() => 
-  selectedDirection.value === 'both' ? 2 : 4
+  selectedDirection.value === 'both' ? 1 : 2
 )
 
 // 선택된 로봇 수가 제한을 초과하는지 감시
 watch([selectedRobots, selectedDirection], ([newRobots, newDirection]) => {
-  const max = newDirection === 'both' ? 2 : 4
+  const max = newDirection === 'both' ? 1 : 2
   if (newRobots.length > max) {
     // 최근 선택된 로봇들만 유지
     selectedRobots.value = newRobots.slice(-max)
@@ -99,8 +103,7 @@ const gridClass = computed(() => {
   const totalCameras = selectedRobots.value.length * camerasPerRobot
   if (totalCameras === 1) return "single"
   if (totalCameras === 2) return "double"
-  if (totalCameras === 3) return "triple"
-  return "quad"
+  return "grid-2x1" // 새로운 그리드 클래스
 })
 
 const cameras = computed(() => {
@@ -117,7 +120,7 @@ const cameras = computed(() => {
 })
 
 const toggleRobotSelection = (robotSeq) => {
-  const maxAllowed = selectedDirection.value === 'both' ? 2 : 4
+  const maxAllowed = selectedDirection.value === 'both' ? 1 : 2
   
   if (selectedRobots.value.includes(robotSeq)) {
     // 이미 선택된 로봇이면 선택 해제
@@ -133,6 +136,12 @@ const toggleRobotSelection = (robotSeq) => {
 
 onMounted(() => {
   robotsStore.loadRobots()
+  // 메인 컨텐츠의 스크롤 방지
+  const mainContent = document.querySelector('.main-content')
+  if (mainContent) {
+    mainContent.style.overflow = 'hidden'
+  }
+  
   const savedRobots = localStorage.getItem('selectedRobots')
   if (savedRobots) {
     const parsedRobots = JSON.parse(savedRobots)
@@ -144,14 +153,21 @@ onMounted(() => {
     selectedRobots.value.push(robotsStore.selectedRobot)
   }
 })
+
+onBeforeUnmount(() => {
+  // 컴포넌트 언마운트 시 스크롤 복구
+  const mainContent = document.querySelector('.main-content')
+  if (mainContent) {
+    mainContent.style.overflow = 'auto'
+  }
+})
 </script>
 
 <style scoped>
-/* 전체 컨테이너 */
 .video-container {
   display: grid;
   width: 100%;
-  height: calc(100vh - 200px); /* 상단 컨트롤 영역 높이를 제외한 나머지 */
+  height: calc(90vh - 200px); /* 상단 컨트롤 영역이 줄어든 만큼 높이 조정 */
   gap: 1rem;
   background: black;
   padding: 1rem;
@@ -166,13 +182,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 빈 공간을 위한 스타일 */
-.video-item.empty {
-  width: 50%;
-  height: 50%;
-  background: black;
-}
-
 /* 그리드 레이아웃 */
 .single {
   grid-template-columns: 1fr;
@@ -182,17 +191,8 @@ onMounted(() => {
   grid-template-columns: repeat(2, 1fr);
 }
 
-.triple {
+.grid-2x1 {
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-}
-
-.triple .video-item:last-child {
-  grid-column: 1 / 2;
-}
-
-.quad {
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: 1fr;
 }
 </style>

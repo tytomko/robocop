@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full p-4 flex flex-col">
-    <div class="mb-4">
+    <div class="mb-1">
       <h3 class="text-lg font-semibold">
         {{ props.cameraType === 'front' ? '전방' : '후방' }} 카메라
       </h3>

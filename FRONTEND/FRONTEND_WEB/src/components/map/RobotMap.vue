@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-screen bg-white">
     <div class="flex-1 relative p-1">
-      <div class="relative w-5/6 h-[600px] min-h-[300px] mx-auto" ref="containerRef">
+      <div class="relative w-5/6 h-[550px] min-h-[300px] mx-auto" ref="containerRef">
         <v-chart
           class="absolute inset-0 w-full h-full"
           :option="chartOption"
