@@ -35,15 +35,15 @@ constexpr int MIN_CLUSTER_SIZE = 15;       // 최소 클러스터 포인트 수
 // X: 0 ~ 5, Y: -2 ~ 2, Z: -0.4 ~ 2 (여기서는 X 최대값 8로 제한)
 // 수정 후 (바닥 제거를 위해 z 최소값을 0.2로 올림):
 const Eigen::Vector4f CROP_MIN(0.0, -1.0, 0.1, 0.0);
-const Eigen::Vector4f CROP_MAX(3.0, 1.0, 1.0, 0.0);
+const Eigen::Vector4f CROP_MAX(1.0, 1.0, 1.0, 0.0);
 
 // 객체 크기 조건 (바운딩 박스 생성 조건, 필요에 따라 조정)
 // (여기서는 y축, z축 조건으로 사용)
 const double object_min_y = 0.5; // 객체의 최소 높이  범위는 위의 Z축 바닥거르기용
-const double object_max_y = 1.0; // 객체의 최대 높이 
+const double object_max_y = 0.7; // 객체의 최대 높이 
 
 const double object_min_x = 0.2; // 객체의 최소 너비 범위는 위의 y축
-const double object_max_x = 1.0; // 객체의 최대 너비 
+const double object_max_x = 0.6; // 객체의 최대 너비 
 
 bool mode_allowed(const std::string &mode)
 {

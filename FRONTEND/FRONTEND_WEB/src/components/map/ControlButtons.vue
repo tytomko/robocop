@@ -73,7 +73,6 @@ function handlePauseToggle() {
 </script>
 
 <style scoped>
-/* 기본 버튼 스타일 */
 .control-btn {
   display: flex;
   align-items: center;
