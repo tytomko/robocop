@@ -8,8 +8,8 @@
     <div :class="[
         'grid gap-6',
         'grid-cols-1',
-        {'md:grid-cols-2 xl:grid-cols-3': !bothSidebarsCollapsed},
-        {'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4': bothSidebarsCollapsed}
+        {'sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4': !robotsStore.leftSidebarCollapsed},
+        {'md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5': robotsStore.leftSidebarCollapsed}
       ]"
     >
       <div 
@@ -152,7 +152,7 @@ const hideRobot = (robotSeq) => hiddenRobots.value.push(robotSeq);
 
 // 사이드바 상태에 따른 그리드 레이아웃 계산
 const bothSidebarsCollapsed = computed(() => 
-  robotsStore.leftSidebarCollapsed && robotsStore.rightSidebarCollapsed
+  robotsStore.leftSidebarCollapsed
 );
 
 const getBatteryClass = (battery) => {

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-screen bg-white">
     <div class="flex-1 relative p-1">
-      <div class="relative w-5/6 h-[550px] min-h-[300px] mx-auto" ref="containerRef">
+      <div class="relative w-full h-[550px] min-h-[300px] mx-auto" ref="containerRef">
         <v-chart
           class="absolute inset-0 w-full h-full"
           :option="chartOption"
@@ -121,7 +121,7 @@ onMounted(() => {
       const { width, height } = entry.contentRect
       // 컨테이너 크기에 맞춰 이미지 크기 조정
       imageWidth.value = width * 0.9  // 여백을 위해 90%만 사용
-      imageHeight.value = height * 0.9
+      imageHeight.value = height * 0.95
       
       if (chartRef.value) {
         chartRef.value.resize()
@@ -186,8 +186,8 @@ const chartOption = computed(() => ({
       top: 'middle',
       style: {
         image: '/images/row-map.png',
-        width: imageWidth.value,
-        height: imageHeight.value
+        width: imageWidth.value * 1.01,
+        height: imageHeight.value * 1.1
       }
     }
   ],
