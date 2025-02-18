@@ -17,7 +17,9 @@ import matplotlib.pyplot as plt
 global_map = 'map/global_map.json'
 # 이전 홈 좌표
 #home_pose = (304412.92687916575, 3892844.1526765698)  # UTM 좌표
-home_pose = (304411.67767234833, 3892844.1732352837)
+#home_pose = (304411.67767234833, 3892844.1732352837)
+# 0218최종홈좌표
+home_pose = (304415.16263063764, 3892841.362195509)  # UTM 좌표
 
 class GlobalPathPlanner(Node):
     def __init__(self):
