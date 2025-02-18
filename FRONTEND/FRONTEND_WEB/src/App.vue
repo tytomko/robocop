@@ -138,6 +138,8 @@ const toggleSidebar = () => {
   if (window.innerWidth >= 1024) {
     isSidebarCollapsed.value = !isSidebarCollapsed.value;
     localStorage.setItem("sidebar-collapsed", isSidebarCollapsed.value);
+    // store 상태 업데이트
+    robotsStore.updateSidebarStates(isLeftSidebarCollapsed.value, isSidebarCollapsed.value);
     setTimeout(() => window.dispatchEvent(new Event("resize")), 350);
   }
 };
@@ -146,6 +148,8 @@ const toggleLeftSidebar = () => {
   if (window.innerWidth >= 1024) {
     isLeftSidebarCollapsed.value = !isLeftSidebarCollapsed.value;
     localStorage.setItem("left-sidebar-collapsed", isLeftSidebarCollapsed.value);
+    // store 상태 업데이트
+    robotsStore.updateSidebarStates(isLeftSidebarCollapsed.value, isSidebarCollapsed.value);
     setTimeout(() => window.dispatchEvent(new Event("resize")), 350);
   }
 };

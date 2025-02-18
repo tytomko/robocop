@@ -5,7 +5,13 @@
     </div>
     
     <!-- 로봇 상태 목록 - 그리드 수정 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 xl:grid-cols-3 gap-6">
+    <div :class="[
+        'grid gap-6',
+        'grid-cols-1',
+        {'md:grid-cols-2 xl:grid-cols-3': !bothSidebarsCollapsed},
+        {'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4': bothSidebarsCollapsed}
+      ]"
+    >
       <div 
         v-for="robot in visibleRobots" 
         :key="robot.seq"
@@ -143,6 +149,11 @@ const visibleRobots = computed(() =>
 );
 // ui적으로 로봇 숨기기
 const hideRobot = (robotSeq) => hiddenRobots.value.push(robotSeq);
+
+// 사이드바 상태에 따른 그리드 레이아웃 계산
+const bothSidebarsCollapsed = computed(() => 
+  robotsStore.leftSidebarCollapsed && robotsStore.rightSidebarCollapsed
+);
 
 const getBatteryClass = (battery) => {
   return {
