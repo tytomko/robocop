@@ -330,6 +330,13 @@ private:
             response->success = true;  // 성공으로 처리 (true)
             response->message = "Robot resumed.";
         }
+        else if (status_message.mode == "manual") { // 메뉴얼 모드에서 resume 하면 waiting 모드로 변경
+            RCLCPP_WARN(this->get_logger(), "[RESUME] Back to watiing mode from manual mode.");
+            status_message.mode = "waiting";
+            status_message.is_active = true;
+            response->success = true;
+            response->message = "resume to waiting mode from manual mode.";
+        }
         else {
             RCLCPP_WARN(this->get_logger(), "[RESUME] Robot is already operational.");
             response->success = false;
