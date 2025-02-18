@@ -281,6 +281,10 @@ install(TARGETS
 sudo apt-get update
 sudo apt-get install libgeographic-dev
 ```
+```bash
+sudo apt-get update
+sudo apt-get install ros-humble-pcl-conversions
+```
 
 ```bash
 sudo pip3 install scikit-learn
