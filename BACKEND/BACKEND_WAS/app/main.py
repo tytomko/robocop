@@ -28,11 +28,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from app.common.middleware.socket_service import start_socket_server
 import threading
-from .domain.robot.service.robot_service import ROS2WebSocketClient, RobotService
+from .domain.robot.service.robot_service import RobotService
 import time
 from datetime import datetime
 import json
 import traceback
+from app.domain.ros_publisher.service.ros_bridge_connection import RosBridgeConnection
+import roslibpy
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +79,7 @@ app.include_router(person_router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(ros_publisher_router, prefix="/api/v1", tags=["ros_publisher"])
 app.include_router(map_router, prefix="/api/v1", tags=["map"])
 
-# ??????T ??T ???? ã??
+# ??????T ??T ???? ???
 base_dir = Path(__file__).resolve().parent.parent
 
 # .env ???? ??? ????
@@ -89,7 +91,7 @@ load_dotenv(env_path)
 #     ros_host=settings.ros2.BRIDGE_HOST,
 #     ros_port=settings.ros2.BRIDGE_PORT
 # )
-ros_bridge_client = ROS2WebSocketClient()
+# ROS2WebSocketClient´Â ´õ ÀÌ»ó »ç¿ëÇÏÁö ¾ÊÀ½
 robot_service = RobotService()
 
 @app.on_event("startup")
@@ -145,18 +147,19 @@ async def startup_event():
         threading.Thread(target=start_socket_server, daemon=True).start()
         logger.info("Socket server started")
 
-        # Attempt ROS2 websocket connection
+        # ROS Bridge ¿¬°á ½Ãµµ (½ÇÆÐÇØµµ ¼­¹ö´Â °è¼Ó µ¿ÀÛ)
         try:
-            await ros_bridge_client.connect()
-            logger.info("ROS2 websocket connection successful")
+            _ = RosBridgeConnection()  # º¯¼ö ÇÒ´ç ¾øÀÌ ÃÊ±âÈ­¸¸
+            logger.info("ROS Bridge connection attempted")
         except Exception as e:
-            logger.warning(f"ROS2 websocket connection failed: {str(e)}")
-            logger.warning("Continuing server operation without ROS2 Bridge")
-        
+            logger.warning(f"ROS Bridge connection failed: {str(e)}")
+            logger.warning("Server will continue running without ROS Bridge")
+
         logger.info("All initialization tasks completed")
     except Exception as e:
         logger.error(f"Error during application startup: {str(e)}")
-        logger.warning("Some services failed to initialize, continuing server operation")
+        logger.error(traceback.format_exc())
+        raise  # DB ¿¬°á ½ÇÆÐ µî Áß¿äÇÑ ¿¡·¯´Â ¼­¹ö ½ÃÀÛÀ» Áß´Ü
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -179,64 +182,205 @@ async def root():
 @app.middleware("http")
 async def websocket_middleware(request, call_next):
     if request.url.path.startswith('/ws'):
-        # WebSocket ??û?? ???? CORS ??? ???
+        # WebSocket ????? ???? CORS ??? ???
         response = await call_next(request)
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     return await call_next(request)
 
-# WebSocket ?? ???? ?????
-#@app.websocket("/ws/test")
-#async def websocket_test(websocket: WebSocket):
-#    try:
-#        await websocket.accept()
-#        logger.info("New websocket client connected")
-#        
-#        await robot_service.register_frontend_client(websocket)
-#        await ros_bridge_client.start_listening()
-#        
-#        # ?? ??
-#        topics = {
-#            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
-#            "/robot_1/status": "robot_custom_interfaces/msg/Status",
-#        }
-#
-#        # ?? ? ?????? ??
-#        while True:
-#            try:
-#                await asyncio.sleep(1)  # ?? ?? ? 1? ??
-#                
-#                for topic_name, msg_type in topics.items():
-#                    retry_count = 0
-#                    max_retries = 3
-#                    
-#                    while retry_count < max_retries:
-#                        # ?? ?? ? ??? ??
-#                        message = await ros_bridge_client.subscribe_to_topic(topic_name, msg_type)
-#                        #logger.info(f"Got message from subscribe_to_topic: {message}")
-#                        
-#                        if message:
-#                            # ???? ??? ???????? ?? ????
-#                            await robot_service.broadcast_to_frontend(message)
-#                            logger.info("Broadcast completed")
-#                            break
-#                        else:
-#                            retry_count += 1
-#                            if retry_count == max_retries:
-#                                logger.warning(f"No message received after {max_retries} attempts for topic: {topic_name}")
-#                            else:
-#                                logger.debug(f"No message to broadcast for topic: {topic_name}, retry {retry_count}/{max_retries}")
-#                                await asyncio.sleep(1)  # ??? ? 1? ??
-                
-#            except Exception as e:
-#                logger.error(f"Loop error: {str(e)}")
-#                logger.error(f"Error traceback: {traceback.format_exc()}")
-#                await asyncio.sleep(1)
-                
-#    except WebSocketDisconnect:
-#        logger.info("Websocket client disconnected")
-#        await robot_service.unregister_frontend_client(websocket)
+@app.websocket("/ws/test")
+async def websocket_test(websocket: WebSocket):
+    ros_bridge = None
+    client_id = f"ws_test_{id(websocket)}"
+    active_topics = {}  # È°¼º ÅäÇÈ ÃßÀûÀ» À§ÇÑ µñ¼Å³Ê¸®
+    
+    try:
+        await websocket.accept()
+        logger.info("New websocket client connected")
+        await robot_service.register_frontend_client(websocket)
+        
+        # ROS Bridge ¿¬°á
+        ros_bridge = RosBridgeConnection()
+        if not ros_bridge.client or not ros_bridge.client.is_connected:
+            await websocket.close(code=1013, reason="ROS Bridge not connected")
+            return
 
+        ros_bridge.register_client(client_id)
+
+        # ÅäÇÈ ¼³Á¤
+        topics = {
+            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
+            "/robot_1/status": "robot_custom_interfaces/msg/Status",
+        }
+        
+        # ÅäÇÈ ±¸µ¶ ¼³Á¤
+        for topic_name, msg_type in topics.items():
+            try:
+                topic = roslibpy.Topic(ros_bridge.client, topic_name, msg_type)
+                
+                def create_callback(topic_name):
+                    def callback(msg):
+                        try:
+                            # ¸Þ½ÃÁö Å¸ÀÔº° Ã³¸®
+                            if topic_name == "/robot_1/utm_pose":
+                                robot_state = {
+                                    "type": "robot_position",
+                                    "data": {
+                                        "position": {
+                                            "x": msg.get("pose", {}).get("position", {}).get("x", 0),
+                                            "y": msg.get("pose", {}).get("position", {}).get("y", 0),
+                                            "z": msg.get("pose", {}).get("position", {}).get("z", 0)
+                                        },
+                                        "orientation": {
+                                            "x": msg.get("pose", {}).get("orientation", {}).get("x", 0),
+                                            "y": msg.get("pose", {}).get("orientation", {}).get("y", 0),
+                                            "z": msg.get("pose", {}).get("orientation", {}).get("z", 0),
+                                            "w": msg.get("pose", {}).get("orientation", {}).get("w", 0)
+                                        }
+                                    },
+                                    "timestamp": datetime.now().isoformat()
+                                }
+                            elif topic_name == "/robot_1/status":
+                                robot_state = {
+                                    "type": "robot_status",
+                                    "data": {
+                                        "battery": msg.get("battery", 0),
+                                        "status": msg.get("status", ""),
+                                        "mode": msg.get("mode", "")
+                                    },
+                                    "timestamp": datetime.now().isoformat()
+                                }
+                            
+                            # ·Î±ë ¹× ¸Þ½ÃÁö Àü¼Û
+                            logger.info(f"Processing message from {topic_name}: {robot_state}")
+                            try:
+                                loop = asyncio.get_running_loop()
+                            except RuntimeError:
+                                loop = asyncio.new_event_loop()
+                                asyncio.set_event_loop(loop)
+                            
+                            loop.create_task(robot_service.broadcast_to_frontend(robot_state))
+
+                        except Exception as e:
+                            logger.error(f"Error processing message from {topic_name}: {str(e)}")
+                    
+                    return callback
+                
+                topic.subscribe(create_callback(topic_name))
+                active_topics[topic_name] = topic
+                logger.info(f"Subscribed to topic: {topic_name}")
+                
+            except Exception as e:
+                logger.error(f"Failed to subscribe to topic {topic_name}: {str(e)}")
+
+        # ¸ÞÀÎ ·çÇÁ
+        while True:
+            try:
+                # À¥¼ÒÄÏ ¸Þ½ÃÁö ¼ö½Å ´ë±â
+                await asyncio.sleep(0.5)
+                data = await websocket.receive_text()
+                logger.info(f"Received message from client: {data}")
+                
+                # Å¬¶óÀÌ¾ðÆ®·ÎºÎÅÍ ¹ÞÀº ¸Þ½ÃÁö Ã³¸® (ÇÊ¿äÇÑ °æ¿ì)
+                try:
+                    message = json.loads(data)
+                    if message.get("type") == "ping":
+                        await websocket.send_json({"type": "pong"})
+                        await asyncio.sleep(0.5)
+                except json.JSONDecodeError:
+                    logger.warning(f"Invalid JSON received: {data}")
+                
+            except WebSocketDisconnect:
+                logger.info("WebSocket disconnected normally")
+                break
+            except Exception as e:
+                logger.error(f"Error in websocket communication: {str(e)}")
+                break
+            
+            await asyncio.sleep(1)
+
+    except Exception as e:
+        logger.error(f"WebSocket connection error: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+    finally:
+        # Á¤¸® ÀÛ¾÷
+        try:
+            # È°¼º ÅäÇÈ ±¸µ¶ ÇØÁ¦
+            for topic_name, topic in active_topics.items():
+                try:
+                    topic.unsubscribe()
+                    logger.info(f"Unsubscribed from topic: {topic_name}")
+                except Exception as e:
+                    logger.error(f"Error unsubscribing from topic {topic_name}: {str(e)}")
+            
+            if ros_bridge:
+                ros_bridge.unregister_client(client_id)
+            await robot_service.unregister_frontend_client(websocket)
+            
+        except Exception as e:
+            logger.error(f"Cleanup error: {str(e)}")
+
+# WebSocket ?? ???? ?????
+
+
+
+
+# ÅäÇÈ °¡¿ë¼º È®ÀÎ API
+@app.get("/api/v1/ros/check-topics", response_model=BaseResponse)
+async def check_ros_topics():
+    try:
+        ros_bridge = RosBridgeConnection()
+        if not ros_bridge.client or not ros_bridge.client.is_connected:
+            return BaseResponse(
+                success=False,
+                message="ROS Bridge not connected",
+                data={"status": "disconnected"}
+            )
+
+        topics = {
+            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
+            "/robot_1/status": "robot_custom_interfaces/msg/Status",
+        }
+        
+        available_topics = []
+        for topic_name, msg_type in topics.items():
+            try:
+                topic = roslibpy.Topic(ros_bridge.client, topic_name, msg_type)
+                message_received = False
+                timeout = time.time() + 3
+                
+                def callback(msg):
+                    nonlocal message_received
+                    message_received = True
+                
+                topic.subscribe(callback)
+                while time.time() < timeout and not message_received:
+                    await asyncio.sleep(0.1)
+                topic.unsubscribe()
+                
+                if message_received:
+                    available_topics.append(topic_name)
+                
+            except Exception as e:
+                logger.warning(f"Topic {topic_name} not available: {str(e)}")
+
+        return BaseResponse(
+            success=True,
+            message="ROS topics checked successfully",
+            data={
+                "status": "connected",
+                "available_topics": available_topics,
+                "can_use_websocket": len(available_topics) > 0  # À¥¼ÒÄÏ »ç¿ë °¡´É ¿©ºÎ
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error checking ROS topics: {str(e)}")
+        return BaseResponse(
+            success=False,
+            message="Error checking ROS topics",
+            data={"error": str(e)}
+        )
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))

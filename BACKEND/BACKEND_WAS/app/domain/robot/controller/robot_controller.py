@@ -8,6 +8,7 @@ from ..models.robot_models import (
 from ....common.models.responses import BaseResponse
 from fastapi import HTTPException
 import logging
+import traceback
 
 router = APIRouter()
 robot_service = RobotService()
@@ -96,7 +97,12 @@ async def get_robots():
             data=robots
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"로봇 목록 조회 중 오류: {str(e)}")
+        logger.error(traceback.format_exc())  # 스택 트레이스 추가
+        raise HTTPException(
+            status_code=500,
+            detail=f"로봇 목록 조회 중 오류가 발생했습니다: {str(e)}"
+        )
 
 @router.get("/{identifier}", response_model=BaseResponse[Robot])
 async def get_robot(

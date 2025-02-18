@@ -1,10 +1,10 @@
 from fastapi import APIRouter, WebSocket, HTTPException
 from fastapi.responses import StreamingResponse
 from ....common.models.responses import BaseResponse
-from ..service.camera_service import camera_service
 from ...robot.service.robot_service import RobotService  # robot 도메인에서 가져오기
 import logging
 import roslibpy
+from ..service.camera_service import CameraService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -50,6 +50,7 @@ ISAAC_TOPICS = [
 @router.get("/video_feed/{seq}/front")
 async def front_video_feed(seq: int):
     try:
+        camera_service = await CameraService.get_instance(seq)
         if seq == 11:
             topic_info = next(
                 (topic for topic in ISAAC_TOPICS 
@@ -61,7 +62,7 @@ async def front_video_feed(seq: int):
                 raise HTTPException(status_code=400, detail="해당하는 카메라 토픽을 찾을 수 없습니다")
             
             logger.info(f"Isaac 로봇 전면 카메라 토픽 설정: {topic_info['name']}, {topic_info['type']}")
-            camera_service.set_front_topic(
+            await camera_service.set_front_topic(
                 topic_info["name"],
                 topic_info["type"],
                 is_isaac=True
@@ -73,11 +74,11 @@ async def front_video_feed(seq: int):
                 raise HTTPException(status_code=404, detail="로봇을 찾을 수 없습니다")
             
             topic_pattern = CAMERA_TOPICS[0]["name_pattern"]
-            topic_name = topic_pattern.format(direction="front")
+            topic_name = topic_pattern.format(direction="front").replace("ssafy", robot.sensorName)
             topic_type = CAMERA_TOPICS[0]["type"]
             
             logger.info(f"일반 로봇 전면 카메라 토픽 설정: {topic_name}, {topic_type}")
-            camera_service.set_front_topic(
+            await camera_service.set_front_topic(
                 topic_name,
                 topic_type,
                 is_isaac=False
@@ -95,6 +96,7 @@ async def front_video_feed(seq: int):
 @router.get("/video_feed/{seq}/rear")
 async def rear_video_feed(seq: int):
     try:
+        camera_service = await CameraService.get_instance(seq)
         if seq == 11:
             topic_info = next(
                 (topic for topic in ISAAC_TOPICS 
@@ -106,7 +108,7 @@ async def rear_video_feed(seq: int):
                 raise HTTPException(status_code=400, detail="해당하는 카메라 토픽을 찾을 수 없습니다")
             
             logger.info(f"Isaac 로봇 후면 카메라 토픽 설정: {topic_info['name']}, {topic_info['type']}")
-            camera_service.set_rear_topic(
+            await camera_service.set_rear_topic(
                 topic_info["name"],
                 topic_info["type"],
                 is_isaac=True
@@ -122,7 +124,7 @@ async def rear_video_feed(seq: int):
             topic_type = CAMERA_TOPICS[0]["type"]
             
             logger.info(f"일반 로봇 후면 카메라 토픽 설정: {topic_name}, {topic_type}")
-            camera_service.set_rear_topic(
+            await camera_service.set_rear_topic(
                 topic_name,
                 topic_type,
                 is_isaac=False

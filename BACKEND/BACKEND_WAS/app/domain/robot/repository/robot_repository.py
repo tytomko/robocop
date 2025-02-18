@@ -5,9 +5,13 @@ from typing import List, Optional, Union
 from ....infrastructure.database.connection import DatabaseConnection
 from ..models.robot_models import Robot, RobotImage, RobotStatus
 from fastapi import HTTPException
+import traceback
+import logging
 
 UPLOAD_DIR = "storage/robots"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+logger = logging.getLogger(__name__)
 
 class RobotRepository:
     def __init__(self):
@@ -264,3 +268,17 @@ class RobotRepository:
                 status_code=500,
                 detail=f"로봇 닉네임 업데이트 실패: {str(e)}"
             )
+
+    async def save_robot_logs(self, logs: list) -> bool:
+        """로봇 로그를 저장합니다."""
+        await self.initialize()
+        try:
+            if logs:
+                result = await self.db.robotlogs.insert_many(logs)
+                logger.info(f"{len(result.inserted_ids)}개 로그 저장 완료")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"로봇 로그 저장 중 오류 발생: {str(e)}")
+            logger.error(traceback.format_exc())
+            return False

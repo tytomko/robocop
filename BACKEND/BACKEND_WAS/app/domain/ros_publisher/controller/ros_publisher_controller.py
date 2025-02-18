@@ -155,3 +155,26 @@ async def publish_cmd_vel(seq: str, direction: str):
         logger.error(f"Failed to publish cmd_vel: {str(e)}")
         return {"status": "error", "message": str(e)}
 
+@router.post("/{seq}/reset")
+def reset_robot(seq: str):
+    """로봇 조작 리셋"""
+    try:
+        # 긴급 정지 서비스 호출
+        estop_response = call_estop_service(seq)
+        logger.info(f"E-stop service response: {estop_response}")
+
+        # 대기 서비스 호출
+        waiting_response = call_waiting_service(seq)
+        logger.info(f"Waiting service response: {waiting_response}")
+
+        return {
+            "status": "success",
+            "message": "Robot reset successfully",
+            "responses": {
+                "estop": estop_response,
+                "waiting": waiting_response
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to reset robot: {str(e)}")
+        return {"status": "error", "message": str(e)}
