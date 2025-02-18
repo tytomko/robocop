@@ -22,14 +22,11 @@
     </spherical_coordinates>
 
     <include>
-      <!-- 0°: (7, 0) -->
       <pose>20 15 0.01 0 0 3.14</pose>
       <uri>model://ssafy_model</uri>
     </include>
 
-
     <include>
-      <!-- 0°: (7, 0) -->
       <pose>-25 5.5 0.01 0 0 0</pose>
       <uri>model://samsung_model</uri>
     </include>
