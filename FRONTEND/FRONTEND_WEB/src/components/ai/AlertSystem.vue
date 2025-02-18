@@ -39,8 +39,9 @@
               취소
             </button>
             <button @click="disableAlert"
-                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
-              확인
+                    :disabled="isLoading"
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed">
+              {{ isLoading ? '처리 중...' : '확인' }}
             </button>
           </div>
         </div>
@@ -52,9 +53,11 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRobotsStore } from '@/stores/robots';
+import axios from 'axios';
 
 const robotsStore = useRobotsStore();
 const showConfirmModal = ref(false);
+const isLoading = ref(false);
 
 // alert 상태 변화 감지하여 navbar 스타일 변경
 watch(() => robotsStore.alerts, (newValue) => {
@@ -76,9 +79,22 @@ const cancelDisableAlert = () => {
 };
 
 // 경보 해제 실행
-const disableAlert = () => {
-  robotsStore.alerts = false;
-  showConfirmModal.value = false;
+const disableAlert = async () => {
+  try {
+    isLoading.value = true;
+    
+    // API 호출
+    await axios.post('https://robocopbackendssafy.duckdns.org/api/v1/alert-off');
+    
+    // 성공하면 로컬 상태 업데이트
+    robotsStore.alerts = false;
+    showConfirmModal.value = false;
+  } catch (error) {
+    console.error('경보 해제 실패:', error);
+    alert('경보 해제에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
