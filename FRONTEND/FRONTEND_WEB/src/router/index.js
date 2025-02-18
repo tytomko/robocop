@@ -7,6 +7,7 @@ import EnrollmentView from '@/views/enrollment/EnrollmentView.vue'
 import RobotControlView from '@/views/robot/RobotControlView.vue'
 import StatisticsView from '@/views/statistics/StatisticsView.vue'
 import ManagementView from '@/views/management/ManagementView.vue'
+import PointCloudView from '@/views/PointCloudView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,6 +58,12 @@ const router = createRouter({
       path: '/statistics',
       name: 'statistics',
       component: StatisticsView,
+      meta: { requiresAuth: true } // 로그인 필요
+    },
+    {
+      path: '/pcv',
+      name: 'pcv',
+      component: PointCloudView,
       meta: { requiresAuth: true } // 로그인 필요
     }
   ]

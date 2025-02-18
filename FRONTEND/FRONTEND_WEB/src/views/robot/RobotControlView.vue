@@ -61,6 +61,7 @@
           @patrol="handlePatrol" 
           @reset="resetSelection" 
           @tempStop="handleTempStop"
+          @resume="handleResume"
         />
 
         <RobotMap 
@@ -76,7 +77,7 @@
         <div class="flex flex-row items-center w-full">
           <Cctv 
             v-if="activeRobot"
-            :robotSeq="activeRobot.seq" 
+            :robotSeq="String(activeRobot.seq)" 
             :cameraType="'front'" 
             class="w-full h-[600px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
           />
@@ -163,6 +164,10 @@ function handleTempStop() {
   robotMap.value?.handleTempStop?.()
 }
 
+function handleResume() {
+  robotMap.value?.handleResume?.()
+}
+
 async function handleKeyDown(event) {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key) && mode.value === 'manual') {
     event.preventDefault()
@@ -170,10 +175,11 @@ async function handleKeyDown(event) {
 
     // 방향키에 따른 엔드포인트 매핑
     const direction = {
-      ArrowUp: 'up',
-      ArrowDown: 'down',
-      ArrowLeft: 'left',
-      ArrowRight: 'right'
+      ArrowUp: 'UP',
+      ArrowDown: 'DOWN',
+      ArrowLeft: 'LEFT',
+      ArrowRight: 'RIGHT',
+      Space: 'SPACE'
     }[event.key]
 
     try {

@@ -195,7 +195,7 @@ const handleStartStop = async (robot) => {
   if (robot.status === 'navigating') {
     // 현재 가동 중이면 비상 정지 실행
     try {
-      await robotCommandsStore.estopCommand(robot.seq);
+      await robotCommandsStore.tempStopCommand(robot.seq);
       // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
       robot.status = 'emergencyStopped';
     } catch (err) {
@@ -204,10 +204,7 @@ const handleStartStop = async (robot) => {
   } else {
     // 현재 가동 중이 아니면 navigateCommand 실행 (기본 목표는 로봇의 현재 위치 또는 [0,0])
     try {
-      const defaultGoal = { 
-        id: robot.position ? [robot.position.x, robot.position.y] : [0, 0] 
-      };
-      await robotCommandsStore.navigateCommand([defaultGoal], robot.seq);
+      await robotCommandsStore.resumeCommand(robot.seq);
       // 가동 시작 후 상태 업데이트
       robot.status = 'navigating';
     } catch (err) {
