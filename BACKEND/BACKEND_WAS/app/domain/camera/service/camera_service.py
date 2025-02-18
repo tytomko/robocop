@@ -9,6 +9,7 @@ import time
 import logging
 import asyncio
 from typing import Optional, Dict
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +192,7 @@ class CameraService:
             current_time = time.time()
             
             if current_time - self.last_front_frame_time < 1.0/self.fps:
-                time.sleep(0.001)  # asyncio.sleep 대신 일반 sleep 사용
+                time.sleep(0.001)
                 continue
                 
             if self.front_frame is not None:
@@ -206,7 +207,7 @@ class CameraService:
                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                 except Exception as e:
                     logger.error(f"Error in front frame streaming: {e}")
-                    time.sleep(0.1)  # asyncio.sleep 대신 일반 sleep 사용
+                    time.sleep(0.1)
 
     def get_rear_frame(self):
         """후면 카메라 프레임 스트림을 생성합니다."""
@@ -214,7 +215,7 @@ class CameraService:
             current_time = time.time()
             
             if current_time - self.last_rear_frame_time < 1.0/self.fps:
-                time.sleep(0.001)  # asyncio.sleep 대신 일반 sleep 사용
+                time.sleep(0.001)
                 continue
                 
             if self.rear_frame is not None:
@@ -229,7 +230,7 @@ class CameraService:
                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                 except Exception as e:
                     logger.error(f"Error in rear frame streaming: {e}")
-                    time.sleep(0.1)  # asyncio.sleep 대신 일반 sleep 사용
+                    time.sleep(0.1)
 
     async def __aenter__(self):
         """비동기 컨텍스트 매니저 진입"""

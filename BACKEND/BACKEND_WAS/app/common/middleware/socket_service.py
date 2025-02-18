@@ -9,7 +9,7 @@ from typing import List
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ALLOWED_IP = "121.178.98.113"  # 허용된 클라이언트 IP 주소
+ALLOWED_IP = ["121.178.98.113", "192.168.100.248", "121.178.98.234"]  # 허용된 클라이언트 IP 주소
 
 person_repository = PersonRepository()
 
@@ -18,7 +18,7 @@ clients = []  # 연결된 클라이언트 소켓 목록
 def handle_client(client_socket, address):
     """클라이언트 연결을 처리합니다."""
     client_ip, _ = address
-    if client_ip != ALLOWED_IP:
+    if client_ip not in ALLOWED_IP:
         logger.info(f"허용되지 않은 클라이언트 IP: {client_ip}. 연결을 종료합니다.")
         client_socket.close()
         return

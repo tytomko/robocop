@@ -103,7 +103,7 @@ class LidarService:
                     
                     if current_time - self.last_process_time >= self.config.update_interval:
                         data = json.loads(message)
-                        
+                        #logger.info(f"Received message: {data}")
                         if data["op"] == "publish":
                             scan_data = data["msg"]
                             points = self._convert_scan_to_points(scan_data)

@@ -5,6 +5,8 @@ from ...robot.service.robot_service import RobotService  # robot 도메인에서
 import logging
 import roslibpy
 from ..service.camera_service import CameraService
+import time
+import asyncio
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -89,10 +91,22 @@ async def front_video_feed(seq: int):
                 is_isaac=False
             )
         
-        return StreamingResponse(
-            camera_service.get_front_frame(),
-            media_type="multipart/x-mixed-replace; boundary=frame"
+        timeout = 3
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if camera_service.front_frame is not None:
+                return StreamingResponse(
+                    camera_service.get_front_frame(),
+                    media_type="multipart/x-mixed-replace; boundary=frame"
+                )
+            await asyncio.sleep(0.1)
+            
+        raise HTTPException(
+            status_code=503, 
+            detail="카메라 스트림을 받을 수 없습니다. 카메라가 연결되어 있는지 확인하세요."
         )
+        
+        
     except Exception as e:
         logger.error(f"전면 카메라 스트리밍 에러: {str(e)}")
         logger.error(f"Request seq: {seq}")
@@ -140,11 +154,22 @@ async def rear_video_feed(seq: int):
                 topic_type,
                 is_isaac=False
             )
-        
-        return StreamingResponse(
-            camera_service.get_rear_frame(),
-            media_type="multipart/x-mixed-replace; boundary=frame"
+            
+        timeout = 3  # 3초 타임아웃
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if camera_service.front_frame is not None:
+                return StreamingResponse(
+                    camera_service.get_rear_frame(),
+                    media_type="multipart/x-mixed-replace; boundary=frame"
+                )
+            await asyncio.sleep(0.1)
+            
+        raise HTTPException(
+            status_code=503, 
+            detail="카메라 스트림을 받을 수 없습니다. 카메라가 연결되어 있는지 확인하세요."
         )
+            
     except Exception as e:
         logger.error(f"후면 카메라 스트리밍 에러: {str(e)}")
         logger.error(f"Request seq: {seq}")

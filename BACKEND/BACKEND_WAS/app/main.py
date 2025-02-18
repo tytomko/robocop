@@ -187,19 +187,23 @@ async def websocket_middleware(request, call_next):
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     return await call_next(request)
-
+    
+    
+    
 @app.websocket("/ws/test")
 async def websocket_test(websocket: WebSocket):
     ros_bridge = None
     client_id = f"ws_test_{id(websocket)}"
-    active_topics = {}  # 활성 토픽 추적을 위한 딕셔너리
+    active_topics = {}
+    message_buffer = {}  # ??? ??? ??
+    last_broadcast_time = {}  # ??? ??? ?????? ??
+    BROADCAST_INTERVAL = 0.5  # ?????? ?? (?)
     
     try:
         await websocket.accept()
         logger.info("New websocket client connected")
         await robot_service.register_frontend_client(websocket)
         
-        # ROS Bridge 연결
         ros_bridge = RosBridgeConnection()
         if not ros_bridge.client or not ros_bridge.client.is_connected:
             await websocket.close(code=1013, reason="ROS Bridge not connected")
@@ -207,60 +211,59 @@ async def websocket_test(websocket: WebSocket):
 
         ros_bridge.register_client(client_id)
 
-        # 토픽 설정
         topics = {
             "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
             "/robot_1/status": "robot_custom_interfaces/msg/Status",
         }
         
-        # 토픽 구독 설정
         for topic_name, msg_type in topics.items():
             try:
                 topic = roslibpy.Topic(ros_bridge.client, topic_name, msg_type)
                 
                 def create_callback(topic_name):
-                    def callback(msg):
+                    def callback(message):
                         try:
-                            # 메시지 타입별 처리
-                            if topic_name == "/robot_1/utm_pose":
-                                robot_state = {
-                                    "type": "robot_position",
-                                    "data": {
-                                        "position": {
-                                            "x": msg.get("pose", {}).get("position", {}).get("x", 0),
-                                            "y": msg.get("pose", {}).get("position", {}).get("y", 0),
-                                            "z": msg.get("pose", {}).get("position", {}).get("z", 0)
+                            current_time = time.time()
+                            last_time = last_broadcast_time.get(topic_name, 0)
+                            
+                            if current_time - last_time >= 0.5:  # 0.5? ???? ??
+                                # ??? ??
+                                if topic_name == "/robot_1/utm_pose":
+                                    robot_state = {
+                                        "type": "robot_position",
+                                        "data": {
+                                            "position": message.get("pose", {}).get("position", {}),
+                                            "orientation": message.get("pose", {}).get("orientation", {})
                                         },
-                                        "orientation": {
-                                            "x": msg.get("pose", {}).get("orientation", {}).get("x", 0),
-                                            "y": msg.get("pose", {}).get("orientation", {}).get("y", 0),
-                                            "z": msg.get("pose", {}).get("orientation", {}).get("z", 0),
-                                            "w": msg.get("pose", {}).get("orientation", {}).get("w", 0)
-                                        }
-                                    },
-                                    "timestamp": datetime.now().isoformat()
-                                }
-                            elif topic_name == "/robot_1/status":
-                                robot_state = {
-                                    "type": "robot_status",
-                                    "data": {
-                                        "battery": msg.get("battery", 0),
-                                        "status": msg.get("status", ""),
-                                        "mode": msg.get("mode", "")
-                                    },
-                                    "timestamp": datetime.now().isoformat()
-                                }
-                            
-                            # 로깅 및 메시지 전송
-                            logger.info(f"Processing message from {topic_name}: {robot_state}")
-                            try:
-                                loop = asyncio.get_running_loop()
-                            except RuntimeError:
-                                loop = asyncio.new_event_loop()
-                                asyncio.set_event_loop(loop)
-                            
-                            loop.create_task(robot_service.broadcast_to_frontend(robot_state))
-
+                                        "timestamp": datetime.now().isoformat()
+                                    }
+                                elif topic_name == "/robot_1/status":
+                                    robot_state = {
+                                        "type": "robot_status",
+                                        "data": {
+                                            "battery": message.get("battery", 0),
+                                            "status": message.get("status", ""),
+                                            "mode": message.get("mode", "")
+                                        },
+                                        "timestamp": datetime.now().isoformat()
+                                    }
+                                
+                                # ??? ?? ???? ? ??? ??
+                                try:
+                                    loop = asyncio.get_event_loop()
+                                except RuntimeError:
+                                    loop = asyncio.new_event_loop()
+                                    asyncio.set_event_loop(loop)
+                                
+                                # ??? ??? ?? ? ??
+                                future = asyncio.run_coroutine_threadsafe(
+                                    robot_service.broadcast_to_frontend(robot_state), 
+                                    loop
+                                )
+                                
+                                # ??? ?????? ?? ????
+                                last_broadcast_time[topic_name] = current_time
+                                
                         except Exception as e:
                             logger.error(f"Error processing message from {topic_name}: {str(e)}")
                     
@@ -273,52 +276,34 @@ async def websocket_test(websocket: WebSocket):
             except Exception as e:
                 logger.error(f"Failed to subscribe to topic {topic_name}: {str(e)}")
 
-        # 메인 루프
         while True:
             try:
-                # 웹소켓 메시지 수신 대기
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)  # ?? ?? ?? ??
                 data = await websocket.receive_text()
-                logger.info(f"Received message from client: {data}")
                 
-                # 클라이언트로부터 받은 메시지 처리 (필요한 경우)
                 try:
                     message = json.loads(data)
                     if message.get("type") == "ping":
                         await websocket.send_json({"type": "pong"})
-                        await asyncio.sleep(0.5)
                 except json.JSONDecodeError:
                     logger.warning(f"Invalid JSON received: {data}")
                 
             except WebSocketDisconnect:
-                logger.info("WebSocket disconnected normally")
                 break
             except Exception as e:
                 logger.error(f"Error in websocket communication: {str(e)}")
                 break
-            
-            await asyncio.sleep(1)
 
     except Exception as e:
         logger.error(f"WebSocket connection error: {str(e)}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
     finally:
-        # 정리 작업
-        try:
-            # 활성 토픽 구독 해제
-            for topic_name, topic in active_topics.items():
-                try:
-                    topic.unsubscribe()
-                    logger.info(f"Unsubscribed from topic: {topic_name}")
-                except Exception as e:
-                    logger.error(f"Error unsubscribing from topic {topic_name}: {str(e)}")
-            
-            if ros_bridge:
-                ros_bridge.unregister_client(client_id)
-            await robot_service.unregister_frontend_client(websocket)
-            
-        except Exception as e:
-            logger.error(f"Cleanup error: {str(e)}")
+        # ?? ??
+        for topic in active_topics.values():
+            topic.unsubscribe()
+        if ros_bridge:
+            ros_bridge.unregister_client(client_id)
+        await robot_service.unregister_frontend_client(websocket)
+        
 
 # WebSocket ?? ???? ?????
 

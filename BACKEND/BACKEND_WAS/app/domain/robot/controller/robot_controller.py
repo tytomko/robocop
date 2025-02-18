@@ -58,7 +58,7 @@ class RobotWebSocketManager:
 robot_service = RobotService()
 ws_manager = RobotWebSocketManager()  # 클래스 이름 변경
 
-@router.post("", response_model=BaseResponse[Robot])
+@router.post("/", response_model=BaseResponse[Robot])
 async def create_robot(
     nickname: str = Form(..., description="로봇 별칭 (사용자 지정)"),  # 사용자가 입력하는 이름
     ipAddress: str = Form(...),
