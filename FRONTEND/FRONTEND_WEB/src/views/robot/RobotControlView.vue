@@ -84,7 +84,7 @@
 
           <div class="flex flex-col items-center ml-5 space-y-2">
             <button 
-              @click="handleDirectionClick('up')"
+              @click="handleDirectionClick('ArrowUp')"
               :class="[
                 'w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-200 shadow-md',
                 activeArrows.has('ArrowUp') 
@@ -96,12 +96,8 @@
             </button>
             <div class="flex space-x-2">
               <button 
-                v-for="(direction, arrow) in {
-                    left: 'ArrowLeft',
-                    down: 'ArrowDown',
-                    right: 'ArrowRight'
-                  }"
-                :key="arrow"
+                v-for="direction in ['ArrowLeft', 'ArrowDown', 'ArrowRight']"
+                :key="direction"
                 @click="handleDirectionClick(direction)"
                 :class="[
                   'w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-200 shadow-md',
@@ -113,6 +109,17 @@
                 {{ direction === 'ArrowLeft' ? '←' : direction === 'ArrowDown' ? '↓' : '→' }}
               </button>
             </div>
+            <button 
+              @click="handleDirectionClick(' ')"
+              :class="[
+                'w-44 h-10 rounded-lg border-2 flex items-center justify-center text-sm transition-all duration-200 shadow-md mt-2',
+                activeArrows.has(' ') 
+                  ? 'bg-blue-700 text-white border-blue-700 shadow-blue-300'
+                  : 'border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white'
+              ]"
+            >
+              Spacebar
+            </button>
           </div>
         </div>
       </div>
@@ -121,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
@@ -135,7 +142,7 @@ const robotMap = ref(null)
 const activeArrows = ref(new Set())
 const isAutoMode = ref(true)
 const mode = ref('auto')
-const controlArea = ref(null)  // 컨트롤 영역에 대한 ref 추가
+const controlArea = ref(null)
 
 const activeRobot = computed(() => {
   return robotsStore.registered_robots.find(robot => 
@@ -156,8 +163,8 @@ function handlePatrol() {
 }
 
 function resetSelection() {
-  robotMap.value?.resetSelection()  // RobotMap의 resetSelection 호출
-  selectedNodes.value = []           // 부모의 선택 노드도 초기화
+  robotMap.value?.resetSelection()
+  selectedNodes.value = []
 }
 
 function handleTempStop() {
@@ -169,7 +176,7 @@ function handleResume() {
 }
 
 async function handleKeyDown(event) {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key) && mode.value === 'manual') {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key) && mode.value === 'manual') {
     event.preventDefault()
     activeArrows.value.add(event.key)
 
@@ -179,7 +186,7 @@ async function handleKeyDown(event) {
       ArrowDown: 'DOWN',
       ArrowLeft: 'LEFT',
       ArrowRight: 'RIGHT',
-      Space: 'SPACE'
+      ' ': 'SPACE'
     }[event.key]
 
     try {
@@ -192,22 +199,40 @@ async function handleKeyDown(event) {
 }
 
 async function handleKeyUp(event) {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
     activeArrows.value.delete(event.key)
-    // 키를 떼었을 때는 별도의 정지 명령이 필요 없을 수 있음
-    // 백엔드에서 자동으로 처리하는 것으로 보임
   }
 }
 
 // 버튼 클릭 핸들러 추가
-async function handleDirectionClick(direction) {
+async function handleDirectionClick(key) {
   if (mode.value === 'manual') {
     try {
-      console.log(`Sending ${direction} command to robot ${selectedRobotSeq.value}`)  // 요청 로그
-      const response = await axios.post(`https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/cmd_vel?direction=${direction}`)
-      console.log('Response:', response.data)  // 응답 로그
+      // 키 입력에 따른 direction 매핑
+      const directionMap = {
+        'ArrowUp': 'UP',
+        'ArrowDown': 'DOWN',
+        'ArrowLeft': 'LEFT',
+        'ArrowRight': 'RIGHT',
+        ' ': 'SPACE'
+      }
+      
+      const direction = directionMap[key]
+      activeArrows.value.add(key)  // UI 상태 업데이트
+
+      console.log(`Sending ${direction} command to robot ${selectedRobotSeq.value}`)
+      const response = await axios.post(
+        `https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/cmd_vel?direction=${direction}`
+      )
+      console.log('Response:', response.data)
+
+      // 버튼 클릭의 경우 짧은 시간 후 상태 해제
+      setTimeout(() => {
+        activeArrows.value.delete(key)
+      }, 200)
     } catch (error) {
       console.error('로봇 제어 실패:', error)
+      activeArrows.value.delete(key)  // 에러 시 상태 해제
     }
   }
 }
@@ -269,8 +294,18 @@ onMounted(() => {
     selectedRobotSeq.value = String(robotsStore.selectedRobot)
   }
   
-  if (mode.value === 'manual') {
-    controlArea.value?.focus()
+  // main-content 요소의 overflow 설정 변경
+  const mainContent = document.querySelector('.main-content')
+  if (mainContent) {
+    mainContent.style.overflow = 'hidden'
+  }
+})
+
+onBeforeUnmount(() => {
+  // 컴포넌트 언마운트 시 원래 상태로 복구
+  const mainContent = document.querySelector('.main-content')
+  if (mainContent) {
+    mainContent.style.overflow = 'auto'
   }
 })
 </script>
