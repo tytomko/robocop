@@ -19,7 +19,16 @@ export const useRobotsStore = defineStore('robots', () => {
   const webSocketConnected = ref(false)
   let pollingInterval = null
   const POLLING_INTERVAL = 5000
-
+ // localStorage와 연동되는 사이드바 상태
+  const storedLeftState = localStorage.getItem("left-sidebar-collapsed");
+  const storedRightState = localStorage.getItem("sidebar-collapsed");
+  const leftSidebarCollapsed = ref(storedLeftState === "true");
+  const rightSidebarCollapsed = ref(storedRightState === "true");
+  // App.vue의 토글 함수와 연동
+  const updateSidebarStates = (left, right) => {
+    leftSidebarCollapsed.value = left;
+    rightSidebarCollapsed.value = right;
+  };
 
   // 로봇 리스트 불러오기
   const loadRobots = async () => {
@@ -241,8 +250,11 @@ export const useRobotsStore = defineStore('robots', () => {
     websocket_robots,
     displayRobots,
     webSocketConnected,
+    leftSidebarCollapsed,
+    rightSidebarCollapsed,
 
     // methods
+    updateSidebarStates,
     openNicknameModal,
     closeNicknameModal,
     openRobotManagementModal,
