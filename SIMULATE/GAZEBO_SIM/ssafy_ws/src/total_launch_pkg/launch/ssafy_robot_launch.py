@@ -100,7 +100,7 @@ def generate_launch_description():
         robot_status_node,
         global_path_planner_node,
         robot_patrol_node,
-        robot_vision_node,
+        #robot_vision_node,
         middle_teleop_node,
         ai_process_node,
         robot_speed_node
