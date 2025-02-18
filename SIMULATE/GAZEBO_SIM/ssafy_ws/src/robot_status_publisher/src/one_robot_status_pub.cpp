@@ -350,6 +350,7 @@ private:
                                 std::shared_ptr<robot_custom_interfaces::srv::Homing::Response> response)
     {
         (void) request;
+        
         if (status_message.mode != "waiting") {
             RCLCPP_WARN(this->get_logger(), "[HOMING] Cannot switch to homing mode because robot is not in waiting mode.");
             response->success = false;

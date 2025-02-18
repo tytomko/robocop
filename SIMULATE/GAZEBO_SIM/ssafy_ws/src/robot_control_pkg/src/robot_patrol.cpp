@@ -33,7 +33,8 @@ const double POSITION_TOLERANCE       = 0.1;  // 목표점 도달 허용 오차 
 const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 const double heading_threshold_       = M_PI / 3;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
-const double SKIP_THRESHOLD = 0.6;
+//30cm이내의 점은 스킵
+const double SKIP_THRESHOLD = 0.5;
 // 로그 출력 여부
 const bool log_print = false;  // 로그 출력 여부
 
