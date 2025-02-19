@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -14,7 +13,17 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: '/login' // 서버 시작시 브라우저 자동 실행
+    open: '/login',
+    proxy: {
+      '/sse': {
+        target: 'https://robocopbackendssafy.duckdns.org',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          'Accept': 'text/event-stream'
+        }
+      }
+    }
   },
   build: {
     outDir: 'dist',
