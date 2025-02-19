@@ -87,11 +87,6 @@ const robotsStore = useRobotsStore()
 const selectedRobots = ref([])
 const selectedDirection = ref('both')
 
-// 최대 선택 가능한 로봇 수 계산
-const maxRobots = computed(() => 
-  selectedDirection.value === 'both' ? 1 : 2
-)
-
 // 선택된 로봇 수가 제한을 초과하는지 감시
 watch([selectedRobots, selectedDirection], ([newRobots, newDirection]) => {
   const max = newDirection === 'both' ? 1 : 2
@@ -138,9 +133,15 @@ const toggleRobotSelection = (robotSeq) => {
   if (selectedRobots.value.includes(robotSeq)) {
     // 이미 선택된 로봇이면 선택 해제
     selectedRobots.value = selectedRobots.value.filter(seq => seq !== robotSeq)
-  } else if (selectedRobots.value.length < maxAllowed) {
-    // 선택되지 않은 로봇이고 최대 선택 개수를 넘지 않으면 선택 추가
-    selectedRobots.value.push(robotSeq)
+  } else {
+    // 선택되지 않은 로봇인 경우
+    if (selectedRobots.value.length >= maxAllowed) {
+      // 최대 선택 개수에 도달한 경우, 가장 오래된 선택을 제거하고 새로운 선택 추가
+      selectedRobots.value = [...selectedRobots.value.slice(1), robotSeq]
+    } else {
+      // 최대 선택 개수에 도달하지 않은 경우, 새로운 선택 추가
+      selectedRobots.value.push(robotSeq)
+    }
   }
   
   // localStorage 업데이트
