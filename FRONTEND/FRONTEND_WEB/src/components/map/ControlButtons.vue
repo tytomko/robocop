@@ -59,7 +59,7 @@ const isPaused = ref(false)
 function handleNavigate() {
   emits('navigate')
   toast.info('이동을 시작합니다.', {
-    position: "top-right",
+    position: "bottom-center",
     timeout: 3000,
     closeOnClick: true,
     pauseOnHover: true,
@@ -70,7 +70,7 @@ function handleNavigate() {
 function handlePatrol() {
   emits('patrol')
   toast.success('순찰을 시작합니다.', {
-    position: "top-right",
+    position: "bottom-center",
     timeout: 3000,
     closeOnClick: true,
     pauseOnHover: true,
@@ -81,7 +81,7 @@ function handlePatrol() {
 function handleReset() {
   emits('reset')
   toast.warning('로봇 작동을 중지합니다.', {
-    position: "top-right",
+    position: "bottom-center",
     timeout: 3000,
     closeOnClick: true,
     pauseOnHover: true,
@@ -93,7 +93,7 @@ function handlePauseToggle() {
   if (isPaused.value) {
     emits('resume')
     toast.success('활동을 재개합니다.', {
-      position: "top-right",
+      position: "bottom-center",
       timeout: 3000,
       closeOnClick: true,
       pauseOnHover: true,
@@ -102,7 +102,7 @@ function handlePauseToggle() {
   } else {
     emits('tempStop')
     toast.info('로봇이 일시정지 되었습니다.', {
-      position: "top-right",
+      position: "bottom-center",
       timeout: 3000,
       closeOnClick: true,
       pauseOnHover: true,
