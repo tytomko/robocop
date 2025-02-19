@@ -54,7 +54,12 @@
 
     <!-- 탭 콘텐츠 -->
     <div class="mt-4">
-      <RobotMap v-if="activeTab === 'robotMap'" />
+      <!-- RobotMap 탭 -->
+      <div v-if="activeTab === 'robotMap'" class="bg-white rounded-lg shadow-md p-5 font-sans">
+       <RobotMap :showSelectedNodes="false" />
+      </div>
+      
+      <!-- 다른 탭들 -->
       <RobotList v-if="activeTab === 'robotList'" />
       <StatisticsView v-if="activeTab === 'statistics'" />
     </div>
