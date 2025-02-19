@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-screen bg-white">
+  <div class="flex flex-col bg-white">
     <div class="flex-1 relative p-1">
-      <div class="relative w-full h-[550px] min-h-[300px] mx-auto" ref="containerRef">
+      <div class="relative w-full h-[450px] min-h-[20px] mx-auto" ref="containerRef">
         <v-chart
           class="absolute inset-0 w-full h-full"
           :option="chartOption"
@@ -14,6 +14,7 @@
       <SelectedNodes 
         v-if="props.showSelectedNodes" 
         :selectedNodes="selectedNodesInfo" 
+        @remove-node="handleNodeRemove"
       />
 
       <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90">
@@ -88,7 +89,6 @@ async function handlePatrol() {
 
 async function resetSelection() {
   selectedNodes.value = await robotCommandsStore.resetSelectionCommand(currentRobotSeq.value)
-  alert('로봇 작동을 중지합니다.')
   updateChartSeries()
 }
 
@@ -113,7 +113,7 @@ const loading = ref(true)
 const mapData = ref({ nodes: [], links: [] })
 const selectedNodes = ref([])
 const imageWidth = ref(800)
-const imageHeight = ref(500)
+const imageHeight = ref(500)  // 이미지 높이 조정
 
 // resize observer 설정
 onMounted(() => {
@@ -122,7 +122,7 @@ onMounted(() => {
       const { width, height } = entry.contentRect
       // 컨테이너 크기에 맞춰 이미지 크기 조정
       imageWidth.value = width * 0.9  // 여백을 위해 90%만 사용
-      imageHeight.value = height * 0.95
+      imageHeight.value = height * 0.95  // 높이를 80%로 조정
       
       if (chartRef.value) {
         chartRef.value.resize()
@@ -152,7 +152,7 @@ function updateChartSeries() {
           data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
           symbolSize: (value) =>
             selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-              ? 15
+              ? 20
               : 8,
           itemStyle: {
             color: (params) => {
@@ -161,6 +161,20 @@ function updateChartSeries() {
                 sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
               ) ? '#ff4081' : '#007bff'
             }
+          },
+          label: {
+            show: true,
+            formatter: (params) => {
+              const node = mapData.value.nodes[params.dataIndex]
+              const index = selectedNodes.value.findIndex(sel => 
+                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+              )
+              return index !== -1 ? (index + 1).toString() : ''
+            },
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 'bold',
+            position: 'inside'
           }
         }
       ]
@@ -240,7 +254,7 @@ const chartOption = computed(() => ({
       symbolSize: (value) => {
         return selectedNodes.value.some(selected => 
           selected.id[0] === value[0] && selected.id[1] === value[1]
-        ) ? 15 : 8
+        ) ? 20 : 8  // 선택된 노드의 크기를 더 크게
       },
       itemStyle: {
         color: (params) => {
@@ -249,6 +263,20 @@ const chartOption = computed(() => ({
             selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
           ) ? '#ff4081' : '#007bff'
         }
+      },
+      label: {
+        show: true,
+        formatter: (params) => {
+          const node = mapData.value.nodes[params.dataIndex]
+          const index = selectedNodes.value.findIndex(selected => 
+            selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+          )
+          return index !== -1 ? (index + 1).toString() : ''
+        },
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+        position: 'inside'
       },
       emphasis: {
         scale: 1.5,
@@ -332,6 +360,42 @@ watch(selectedNodes, (newVal) => {
     })
   }
 })
+
+// 노드 제거 핸들러 추가
+const handleNodeRemove = ({ node }) => {
+  const index = selectedNodes.value.findIndex(n => 
+    n.id[0].toFixed(2) === node.x && n.id[1].toFixed(2) === node.y
+  );
+  
+  if (index !== -1) {
+    // 기존 배열을 직접 수정하는 대신 새 배열 생성
+    selectedNodes.value = selectedNodes.value.filter((_, i) => i !== index);
+    
+    // chartOption을 직접 업데이트
+    if (chartRef.value) {
+      const option = chartRef.value.getOption();
+      option.series[1].data = mapData.value.nodes.map(node => [node.id[0], node.id[1]]);
+      
+      chartRef.value.setOption({
+        series: [
+          option.series[0],
+          {
+            ...option.series[1],
+            symbolSize: (value) => {
+              return selectedNodes.value.some(sel => 
+                sel.id[0] === value[0] && sel.id[1] === value[1]
+              ) ? 20 : 8;
+            }
+          }
+        ]
+      }, {
+        replaceMerge: ['series']
+      });
+    }
+    
+    emit('selectedNodesChange', selectedNodes.value);
+  }
+};
 
 watch(() => props.robot, (newRobot) => {
   if (newRobot) {

@@ -68,7 +68,8 @@
           v-if="activeRobot"
           :key="mapKey"
           ref="robotMap" 
-          :robot="activeRobot" 
+          :robot="activeRobot"
+          :isManualMode="mode === 'manual'"
           @selectedNodesChange="onSelectedNodesChange" 
         />
       </div>
@@ -79,7 +80,7 @@
             v-if="activeRobot"
             :robotSeq="String(activeRobot.seq)" 
             :cameraType="'front'" 
-            class="w-full h-[600px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
+            class="w-full h-[530px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
           />
 
           <div class="flex flex-col items-center ml-5 space-y-2">
@@ -270,7 +271,7 @@ const mapKey = ref(Date.now())
 watch(selectedRobotSeq, async (newVal, oldVal) => {
   if (newVal !== oldVal) {
     console.log('Robot changed:', newVal)
-    resetSelection()
+    selectedNodes.value = []
     mapKey.value = Date.now()
     
     // 로봇이 선택되면 자동으로 resume 모드로 설정

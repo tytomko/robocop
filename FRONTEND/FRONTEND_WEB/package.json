@@ -20,6 +20,7 @@
     "vue-chart-3": "^3.1.8",
     "vue-echarts": "^6.6.8",
     "vue-router": "^4.5.0",
+    "vue-toastification": "^2.0.0-rc.5",
     "websocket": "^1.0.34"
   },
   "devDependencies": {

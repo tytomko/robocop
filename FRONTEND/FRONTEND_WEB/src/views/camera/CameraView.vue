@@ -12,13 +12,26 @@
                 <div 
                   v-for="robot in robotsStore.registered_robots" 
                   :key="robot.seq"
-                  @dblclick="toggleRobotSelection(robot.seq)"
+                  @click="toggleRobotSelection(robot.seq)"
                   :class="[
-                    'p-2 cursor-pointer hover:bg-gray-100',
+                    'p-2 cursor-pointer hover:bg-gray-100 flex items-center',
                     selectedRobots.includes(robot.seq) ? 'bg-blue-100 hover:bg-blue-200' : ''
                   ]"
                 >
-                  {{ robot.nickname || robot.manufactureName }}
+                  <span>{{ robot.nickname || robot.manufactureName }}</span>
+                  <svg
+                    v-if="selectedRobots.includes(robot.seq)"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 text-blue-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -74,11 +87,6 @@ const robotsStore = useRobotsStore()
 const selectedRobots = ref([])
 const selectedDirection = ref('both')
 
-// 최대 선택 가능한 로봇 수 계산
-const maxRobots = computed(() => 
-  selectedDirection.value === 'both' ? 1 : 2
-)
-
 // 선택된 로봇 수가 제한을 초과하는지 감시
 watch([selectedRobots, selectedDirection], ([newRobots, newDirection]) => {
   const max = newDirection === 'both' ? 1 : 2
@@ -125,9 +133,15 @@ const toggleRobotSelection = (robotSeq) => {
   if (selectedRobots.value.includes(robotSeq)) {
     // 이미 선택된 로봇이면 선택 해제
     selectedRobots.value = selectedRobots.value.filter(seq => seq !== robotSeq)
-  } else if (selectedRobots.value.length < maxAllowed) {
-    // 선택되지 않은 로봇이고 최대 선택 개수를 넘지 않으면 선택 추가
-    selectedRobots.value.push(robotSeq)
+  } else {
+    // 선택되지 않은 로봇인 경우
+    if (selectedRobots.value.length >= maxAllowed) {
+      // 최대 선택 개수에 도달한 경우, 가장 오래된 선택을 제거하고 새로운 선택 추가
+      selectedRobots.value = [...selectedRobots.value.slice(1), robotSeq]
+    } else {
+      // 최대 선택 개수에 도달하지 않은 경우, 새로운 선택 추가
+      selectedRobots.value.push(robotSeq)
+    }
   }
   
   // localStorage 업데이트
