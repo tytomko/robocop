@@ -271,7 +271,7 @@ const mapKey = ref(Date.now())
 watch(selectedRobotSeq, async (newVal, oldVal) => {
   if (newVal !== oldVal) {
     console.log('Robot changed:', newVal)
-    resetSelection()
+    selectedNodes.value = []
     mapKey.value = Date.now()
     
     // 로봇이 선택되면 자동으로 resume 모드로 설정
