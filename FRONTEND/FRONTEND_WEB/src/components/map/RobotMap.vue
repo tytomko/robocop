@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-screen bg-white">
+  <div class="flex flex-col bg-white">
     <div class="flex-1 relative p-1">
-      <div class="relative w-full h-[550px] min-h-[300px] mx-auto" ref="containerRef">
+      <div class="relative w-full h-[450px] min-h-[250px] mx-auto" ref="containerRef">
         <v-chart
           class="absolute inset-0 w-full h-full"
           :option="chartOption"
@@ -113,7 +113,7 @@ const loading = ref(true)
 const mapData = ref({ nodes: [], links: [] })
 const selectedNodes = ref([])
 const imageWidth = ref(800)
-const imageHeight = ref(500)
+const imageHeight = ref(500)  // 이미지 높이 조정
 
 // resize observer 설정
 onMounted(() => {
@@ -122,7 +122,7 @@ onMounted(() => {
       const { width, height } = entry.contentRect
       // 컨테이너 크기에 맞춰 이미지 크기 조정
       imageWidth.value = width * 0.9  // 여백을 위해 90%만 사용
-      imageHeight.value = height * 0.95
+      imageHeight.value = height * 0.95  // 높이를 80%로 조정
       
       if (chartRef.value) {
         chartRef.value.resize()

@@ -68,7 +68,8 @@
           v-if="activeRobot"
           :key="mapKey"
           ref="robotMap" 
-          :robot="activeRobot" 
+          :robot="activeRobot"
+          :isManualMode="mode === 'manual'"
           @selectedNodesChange="onSelectedNodesChange" 
         />
       </div>
