@@ -109,7 +109,7 @@ while True:
     if key == ord('s') and curmode == mode.AWAIT:
         print("로봇을 가동합니다")
         playSound("sound/init.mp3")
-        curmode = mode.PATROL   
+        curmode = mode.PATROL
 
     if key == ord('d') and curmode == mode.ALERT:
         print("경보를 해제합니다")

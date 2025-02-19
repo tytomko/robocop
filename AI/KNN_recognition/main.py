@@ -64,15 +64,15 @@ OTHER_COMMAND = ''
 ROS_IP = "192.168.100.34"
 BACK_IP = "52.79.51.253"
 BACK_PORT = 6000
-ROS_PORT = 6000
+ROS_PORT = 5000
 
 # 전역 변수로 소켓 상태를 관리
 client_socket_ros = None  
 client_socket_back = None
 
 # 대기 모드로 초기화
-#curmode = mode.AWAIT
-curmode = mode.PATROL
+curmode = mode.AWAIT
+#curmode = mode.PATROL
 
 # 콜백함수
 def handle_message(message, IP, PORT):
@@ -84,14 +84,14 @@ def handle_message(message, IP, PORT):
         print(f"📩 [handle_message] JSON 데이터: {data}")  # JSON 파싱 성공 확인
 
         if "response_type" in data:
-            if data["response_type"] == "ALL_UPDATE_PERSON":
+            if data["response_type"] == "ALL_UPDATE_PERSON" and curmode == mode.AWAIT:
                 print("📌 [handle_message] database_update 시작")
                 database_update.init(data)
-            elif data["response_type"] == "MODE_INIT":
+            elif data["response_type"] == "MODE_INIT" and curmode == mode.AWAIT:
                 print("로봇 가동")
                 playSound("sound/init.mp3")
                 curmode = mode.PATROL
-            elif data["response_type"] == "MODE_ALERT_STOP":
+            elif data["response_type"] == "MODE_ALERT_STOP" and curmode == mode.ALERT:
                 print("경보 해제")
                 playSound("sound/alert_cancel.mp3")
                 curmode = mode.PATROL
@@ -111,6 +111,7 @@ socket_network.set_callback(handle_message)
 
 # 소켓 연결
 client_socket_back = socket_network.persistent_connect_request(BACK_IP, BACK_PORT)
+client_socket_ros = socket_network.persistent_connect_request(ROS_IP, ROS_PORT)
 
 if client_socket_back:
     print("소켓 수신 준비 완료")
@@ -175,6 +176,8 @@ try:
         # 소켓 연결 확인
         if client_socket_back is None:
             client_socket_back = socket_network.persistent_connect_request(BACK_IP, BACK_PORT)
+        if client_socket_ros is None:
+            client_socket_ros = socket_network.persistent_connect_request(ROS_IP, ROS_PORT)
 
         ret, frame = video_capture.read()
         if not ret:
@@ -202,6 +205,7 @@ try:
         if isCheckStart and curmode == mode.PATROL:
             print("수하 시작")
             playSound("sound/5walk.mp3")
+            socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_STOP)
             check_time = time.time()
             isCheckStart = False
             isCheckNow = True
@@ -218,6 +222,7 @@ try:
                 curmode = mode.PATROL # 임시
                 print("신원확인에 실패하였습니다.")
                 socket_network.send_command(client_socket_back,BACK_IP,BACK_PORT,'{"response_type": "CHECK_FAILED"}')
+                socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_RESUME)
                 playSound("sound/second_auth.mp3")
             if isCheckCount >= 100:
                 isCheckNow = False
@@ -225,6 +230,7 @@ try:
                 curmode = mode.PATROL
                 print(f"신원이 확인되었습니다.{name}")
                 socket_network.send_command(client_socket_back,BACK_IP,BACK_PORT,'{"response_type": "DETECTED_SAFE_PERSON","person_id": 0}')
+                socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_RESUME)
                 playSound("sound/check_person.mp3")
                 isSafe = True
         
@@ -272,6 +278,7 @@ try:
             if disap_count > 2:
                 print("인가되지 않은 인원이 침입했습니다.")
                 socket_network.send_command(client_socket_back,BACK_IP,BACK_PORT,'{"response_type": "DETECTED_INTRUDER"}')
+                socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_DISAPPEAR)
                 playSound("sound/siren_intruder.mp3",loop=-1)
                 curmode = mode.ALERT
         else:
