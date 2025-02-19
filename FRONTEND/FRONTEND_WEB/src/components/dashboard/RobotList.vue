@@ -189,7 +189,7 @@ const returnRobot = async (robotSeq) => {
   try {
     await robotCommandsStore.homingCommand(robotSeq);
     toast.info('로봇이 복귀합니다.', {
-    position: "top-right",
+    position: "bottom-center",
     timeout: 3000,
     closeOnClick: true,
     pauseOnHover: true,
@@ -208,7 +208,7 @@ const handleStartStop = async (robot) => {
       // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
       robot.status = 'emergencyStopped';
       toast.info('로봇이 일시정지 되었습니다.', {
-        position: "top-right",
+        position: "bottom-center",
         timeout: 3000,
         closeOnClick: true,
         pauseOnHover: true,
@@ -224,7 +224,7 @@ const handleStartStop = async (robot) => {
       // 가동 시작 후 상태 업데이트
       robot.status = 'navigating';
       toast.info('활동을 시작합니다.', {
-        position: "top-right",
+        position: "bottom-center",
         timeout: 3000,
         closeOnClick: true,
         pauseOnHover: true,

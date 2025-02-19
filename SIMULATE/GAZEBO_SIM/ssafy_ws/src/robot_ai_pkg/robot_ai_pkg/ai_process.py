@@ -133,13 +133,14 @@ class RobotAI(Node):
             self.get_logger().info(f"Published unknown command to ai_info: {command}")
 
     def call_service_with_cancellation(self, client, command):
-        """
-        서비스가 준비될 때까지 최대 5회 대기 후 호출하며, 응답의 success 필드가 True여야 성공으로 간주합니다.
-        응답 실패 또는 타임아웃 시 최대 5회까지 재시도하며, 각 재시도 사이 1초씩 대기합니다.
-        대기 중 또는 호출 후 최신 명령이 변경되면 진행 중인 호출은 취소합니다.
-        """
         max_call_attempts = 5
         for call_attempt in range(1, max_call_attempts + 1):
+            # 각 시도 시작 시 현재 명령이 여전히 동일한지 확인
+            with self.command_lock:
+                if self.current_command != command:
+                    self.get_logger().info("Command updated before attempt. Exiting service call loop.")
+                    return
+
             # 서비스 준비 대기 (최대 5회, 각 시도 1초씩)
             max_wait_attempts = 5
             wait_attempt = 0
@@ -153,7 +154,7 @@ class RobotAI(Node):
                     self.get_logger().info(f"Attempt {wait_attempt} waiting for service {client.srv_name}...")
                     with self.command_lock:
                         if self.current_command != command:
-                            self.get_logger().info("Command updated. Cancelling this service call attempt.")
+                            self.get_logger().info("Command updated during waiting. Cancelling this service call attempt.")
                             return
             if not service_ready:
                 warning_msg = f"Service {client.srv_name} not available after waiting attempts."
@@ -206,6 +207,7 @@ class RobotAI(Node):
         final_warn = String()
         final_warn.data = final_msg
         self.ai_info_pub.publish(final_warn)
+
 
     def shutdown(self):
         # 노드 종료 시 소켓을 명시적으로 닫아 소켓 반환을 수행합니다.

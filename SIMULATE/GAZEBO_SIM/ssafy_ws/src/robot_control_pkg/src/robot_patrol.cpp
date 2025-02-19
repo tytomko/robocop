@@ -23,7 +23,7 @@
 
 // ─── 파라미터들 ─────────────────────────────────────────────────────────────
 const double LOOKAHEAD_DISTANCE       = 1.0;  // Lookahead 거리 (m)
-const double MAX_LINEAR_SPEED         = 3.0;  // 최대 선속도 (m/s)
+const double MAX_LINEAR_SPEED         = 3.0;  // 최대 선속도 (m/s) 3이상 거리가 벌어질때 최댓값
 const double MAX_ANGULAR_SPEED        = 1.3;  // 최대 각속도 (rad/s)
 const double ACCEL_STEP               = 0.3;  // 선속도 가속도 계수
 const double ANGLE_STEP               = 0.3;  // 각속도 가속도 계수
@@ -33,7 +33,13 @@ const double POSITION_TOLERANCE       = 0.1;  // 목표점 도달 허용 오차 
 const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 const double heading_threshold_       = M_PI / 3;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
-const double SKIP_THRESHOLD = 0.6;
+//30cm이내의 점은 스킵
+const double SKIP_THRESHOLD = 0.3;
+
+//스무딩계수
+// 높으면 새로 바뀐 속도의 영향력이커진다. -> 더 민감하ㅏ게 반응함
+// 낮으면 속도변화가 완만해짐
+const double ALPHA = 0.2;  // 선속도 스무딩 계수
 // 로그 출력 여부
 const bool log_print = false;  // 로그 출력 여부
 
@@ -135,6 +141,8 @@ private:
     PatrolState before_patrol_state_;  // 추가: 일시정지 전 patrol 상태 저장
 
     bool global_path_received_ = false; // 글로벌 경로 수신 여부
+
+    double previous_target_speed; // 이전에 계산된 target_speed 저장용
     // ─────────────────────────────────────────────────────────────────────
     // 상태, 콜백, 경로 관리, 제어 함수들
     // ─────────────────────────────────────────────────────────────────────
@@ -249,7 +257,12 @@ private:
         current_position_.x = msg->pose.position.x;
         current_position_.y = msg->pose.position.y;
         current_position_.z = msg->pose.position.z;
-        follow_path();  // 위치 갱신될 때마다 경로 추종 시도
+        
+        // 현재 모드가 homing, navigate, patrol일 때만 경로 추종 수행
+        if (current_mode_ == "homing" || current_mode_ == "navigate" || current_mode_ == "patrol") {
+            follow_path();
+        }
+
     }
 
     void heading_callback(const std_msgs::msg::Float32::SharedPtr msg) {
@@ -315,10 +328,15 @@ private:
         }
 
         // 선속도 제어
-        double target_speed = std::min(distance, MAX_LINEAR_SPEED);
-        linear_vel_ += ACCEL_STEP * (target_speed - linear_vel_);
+        // 새로 계산된 속도
+        double computed_speed = std::min(distance, MAX_LINEAR_SPEED);
+        // α (0 < α < 1)은 스무딩 계수, 예: 0.1 ~ 0.3 정도
+        double target_speed_ = ALPHA * computed_speed + (1 - ALPHA) * previous_target_speed;
+        // 이후 target_speed_와 현재 선속도의 차이를 기반으로 가속 제어
+        linear_vel_ += ACCEL_STEP * (target_speed_ - linear_vel_);
         linear_vel_ = std::clamp(linear_vel_, 0.0, MAX_LINEAR_SPEED);
         linear_vel_ *= FRICTION_FACTOR_LINEAR;
+        previous_target_speed = target_speed_;
 
         if (std::fabs(angle_error) > heading_threshold_) {
             linear_vel_ = 0.0;
@@ -367,11 +385,7 @@ private:
     // 6) 상태(mode)에 따른 로봇 행동
     // -------------------------------
     void follow_path() {
-        // ── Emergency Stop ───────────────────────────────────────────────
-        if (current_mode_ == "emergency stop") {
-            stop_robot();
-            return;
-        }
+
 
         // ── homing, navigate ───────────────────────────────────────────
         if (current_mode_ == "homing" || current_mode_ == "navigate") {
@@ -405,7 +419,6 @@ private:
         if (current_mode_ == "patrol") {
             if (patrol_state_ == PatrolState::APPROACH) {
                 if (approach_path_queue_.empty()) {
-                    stop_robot();
                     if (!path_queue_.empty()) {
                         RCLCPP_INFO(this->get_logger(), "Approach path가 비어 있음 → Global path가 존재하므로 PATROL_FORWARD 전환.");
                         approach_end_point_ = current_position_;

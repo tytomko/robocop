@@ -35,7 +35,7 @@ def persistent_connect_request(IP, PORT):
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect((IP, PORT))
         print(f"Connected to {IP}:{PORT}")
-        client_socket.sendall("연결 성공".encode('utf-8'))
+        #client_socket.sendall("연결 성공".encode('utf-8'))
         return client_socket  # 연결 성공 시 소켓 반환
 
     except Exception as e:
@@ -95,50 +95,53 @@ def persistent_connect_receive(client_socket, IP, PORT):
             client_socket = None  # 연결 실패 시 다시 None으로 설정
             time.sleep(2)  # 2초 후 재시도
 
-
 def receive_messages(client_socket, IP, PORT, buffer_size=1024):
     """서버에서 JSON 데이터를 계속 수신하며 끊어진 데이터도 합쳐서 처리"""
-    global callback_function  # 전역 콜백 함수 사용
-
-    buffer = b""  # 수신 데이터 저장용 버퍼
+    global callback_function  
+    buffer = b""  
 
     while True:
         if client_socket is None:
             print("🔴 No active connection. Reconnecting...")
-            client_socket = persistent_connect_receive(client_socket, IP, PORT)
+            client_socket = persistent_connect_request(IP, PORT)
 
         try:
+            #print("📡 [수신 대기 중] 데이터를 기다리고 있습니다...")
             chunk = client_socket.recv(buffer_size)
+            
             if not chunk:
-                print("🔴 Connection closed by server. Reconnecting...")
+                print("🔴 서버에서 빈 패킷을 보냈거나 연결이 닫힘. 다시 연결 시도...")
                 client_socket.close()
                 client_socket = None
-                time.sleep(1)
                 continue
 
-            buffer += chunk  # 받은 데이터 누적
+            print(f"📩 [데이터 수신] 크기: {len(chunk)} bytes")
+            buffer += chunk  
 
-            while True:
+            while b"}" in buffer:
+                index = buffer.index(b"}") + 1
+                json_data = buffer[:index]
+                buffer = buffer[index:]
+
+                # 🛠 **빈 데이터 예외 처리**
+                if not json_data.strip():
+                    print("⚠️ [경고] 빈 JSON 데이터가 수신됨, 무시")
+                    continue
+
                 try:
-                    # JSON 파싱을 시도하여 완전한 데이터가 들어왔는지 확인
-                    parsed_data = json.loads(buffer.decode("utf-8"))
-                    print("✅ Received JSON:", parsed_data)
+                    parsed_data = json.loads(json_data.decode("utf-8"))
+                    print(f"✅ [JSON 수신 완료] {parsed_data}")
 
-                    # ✅ **콜백 함수 호출 (메시지를 처리하는 핵심 부분)**
                     if callback_function:
                         callback_function(json.dumps(parsed_data), IP, PORT)
                     else:
-                        print("⚠️ 콜백 함수가 설정되지 않았습니다.")
+                        print("⚠️ [경고] 콜백 함수가 설정되지 않았습니다.")
 
-                    # JSON을 성공적으로 파싱했으므로, 버퍼를 초기화하고 반환
-                    buffer = b""
-                    break
                 except json.JSONDecodeError:
-                    # JSON이 아직 완전하지 않으면 더 받기
-                    break  
+                    print(f"❌ [JSON 파싱 오류] 데이터가 손상되었거나 불완전합니다: {json_data}")
+                    continue  # 다음 데이터 패킷을 기다림
 
         except (socket.timeout, ConnectionResetError, OSError) as e:
-            print(f"🔴 Error receiving data: {e}")
+            print(f"🔴 수신 오류 발생: {e}, 다시 연결 중...")
             client_socket.close()
             client_socket = None
-            time.sleep(1)  # 재연결 전에 잠시 대기
