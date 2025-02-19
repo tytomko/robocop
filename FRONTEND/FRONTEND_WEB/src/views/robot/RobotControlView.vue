@@ -80,7 +80,7 @@
             v-if="activeRobot"
             :robotSeq="String(activeRobot.seq)" 
             :cameraType="'front'" 
-            class="w-full h-[600px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
+            class="w-full h-[530px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
           />
 
           <div class="flex flex-col items-center ml-5 space-y-2">
