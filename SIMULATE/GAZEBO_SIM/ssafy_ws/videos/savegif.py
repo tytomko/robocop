@@ -11,9 +11,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVE_PATH = os.path.join(SCRIPT_DIR, 'fastvideo')
 
 ### 수정할곳
-VIDEO_PATH = os.path.join(SCRIPT_DIR, 'gazebomulti.mp4')
-OUTPUT_FILENAME = 'gazebomulti'             # 저장할 파일명 (확장자 제외)
-SPEED_FACTOR = 7.0                          # 몇 배속 (예: 2.0이면 2배속)
+VIDEO_PATH = os.path.join(SCRIPT_DIR, 'realreal.mp4')
+OUTPUT_FILENAME = 'realreal'             # 저장할 파일명 (확장자 제외)
+SPEED_FACTOR = 5.0                          # 몇 배속 (예: 2.0이면 2배속)
 
 # setuptools(및 pkg_resources) 임포트 (설치되어 있지 않으면 설치)
 try:

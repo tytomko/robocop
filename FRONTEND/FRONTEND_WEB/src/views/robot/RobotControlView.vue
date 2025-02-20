@@ -61,13 +61,15 @@
           @patrol="handlePatrol" 
           @reset="resetSelection" 
           @tempStop="handleTempStop"
+          @resume="handleResume"
         />
 
         <RobotMap 
           v-if="activeRobot"
           :key="mapKey"
           ref="robotMap" 
-          :robot="activeRobot" 
+          :robot="activeRobot"
+          :isManualMode="mode === 'manual'"
           @selectedNodesChange="onSelectedNodesChange" 
         />
       </div>
@@ -76,14 +78,14 @@
         <div class="flex flex-row items-center w-full">
           <Cctv 
             v-if="activeRobot"
-            :robotSeq="activeRobot.seq" 
+            :robotSeq="String(activeRobot.seq)" 
             :cameraType="'front'" 
-            class="w-full h-[600px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
+            class="w-full h-[530px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
           />
 
           <div class="flex flex-col items-center ml-5 space-y-2">
             <button 
-              @click="handleDirectionClick('up')"
+              @click="handleDirectionClick('ArrowUp')"
               :class="[
                 'w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-200 shadow-md',
                 activeArrows.has('ArrowUp') 
@@ -95,12 +97,8 @@
             </button>
             <div class="flex space-x-2">
               <button 
-                v-for="(direction, arrow) in {
-                    left: 'ArrowLeft',
-                    down: 'ArrowDown',
-                    right: 'ArrowRight'
-                  }"
-                :key="arrow"
+                v-for="direction in ['ArrowLeft', 'ArrowDown', 'ArrowRight']"
+                :key="direction"
                 @click="handleDirectionClick(direction)"
                 :class="[
                   'w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl transition-all duration-200 shadow-md',
@@ -112,6 +110,17 @@
                 {{ direction === 'ArrowLeft' ? '←' : direction === 'ArrowDown' ? '↓' : '→' }}
               </button>
             </div>
+            <button 
+              @click="handleDirectionClick(' ')"
+              :class="[
+                'w-44 h-10 rounded-lg border-2 flex items-center justify-center text-sm transition-all duration-200 shadow-md mt-2',
+                activeArrows.has(' ') 
+                  ? 'bg-blue-700 text-white border-blue-700 shadow-blue-300'
+                  : 'border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white'
+              ]"
+            >
+              Spacebar
+            </button>
           </div>
         </div>
       </div>
@@ -120,7 +129,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRobotsStore } from '@/stores/robots'
 import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
@@ -134,7 +143,7 @@ const robotMap = ref(null)
 const activeArrows = ref(new Set())
 const isAutoMode = ref(true)
 const mode = ref('auto')
-const controlArea = ref(null)  // 컨트롤 영역에 대한 ref 추가
+const controlArea = ref(null)
 
 const activeRobot = computed(() => {
   return robotsStore.registered_robots.find(robot => 
@@ -155,25 +164,30 @@ function handlePatrol() {
 }
 
 function resetSelection() {
-  robotMap.value?.resetSelection()  // RobotMap의 resetSelection 호출
-  selectedNodes.value = []           // 부모의 선택 노드도 초기화
+  robotMap.value?.resetSelection()
+  selectedNodes.value = []
 }
 
 function handleTempStop() {
   robotMap.value?.handleTempStop?.()
 }
 
+function handleResume() {
+  robotMap.value?.handleResume?.()
+}
+
 async function handleKeyDown(event) {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key) && mode.value === 'manual') {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key) && mode.value === 'manual') {
     event.preventDefault()
     activeArrows.value.add(event.key)
 
     // 방향키에 따른 엔드포인트 매핑
     const direction = {
-      ArrowUp: 'up',
-      ArrowDown: 'down',
-      ArrowLeft: 'left',
-      ArrowRight: 'right'
+      ArrowUp: 'UP',
+      ArrowDown: 'DOWN',
+      ArrowLeft: 'LEFT',
+      ArrowRight: 'RIGHT',
+      ' ': 'SPACE'
     }[event.key]
 
     try {
@@ -186,48 +200,92 @@ async function handleKeyDown(event) {
 }
 
 async function handleKeyUp(event) {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
     activeArrows.value.delete(event.key)
-    // 키를 떼었을 때는 별도의 정지 명령이 필요 없을 수 있음
-    // 백엔드에서 자동으로 처리하는 것으로 보임
   }
 }
 
 // 버튼 클릭 핸들러 추가
-async function handleDirectionClick(direction) {
+async function handleDirectionClick(key) {
   if (mode.value === 'manual') {
     try {
-      console.log(`Sending ${direction} command to robot ${selectedRobotSeq.value}`)  // 요청 로그
-      const response = await axios.post(`https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/cmd_vel?direction=${direction}`)
-      console.log('Response:', response.data)  // 응답 로그
+      // 키 입력에 따른 direction 매핑
+      const directionMap = {
+        'ArrowUp': 'UP',
+        'ArrowDown': 'DOWN',
+        'ArrowLeft': 'LEFT',
+        'ArrowRight': 'RIGHT',
+        ' ': 'SPACE'
+      }
+      
+      const direction = directionMap[key]
+      activeArrows.value.add(key)  // UI 상태 업데이트
+
+      console.log(`Sending ${direction} command to robot ${selectedRobotSeq.value}`)
+      const response = await axios.post(
+        `https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/cmd_vel?direction=${direction}`
+      )
+      console.log('Response:', response.data)
+
+      // 버튼 클릭의 경우 짧은 시간 후 상태 해제
+      setTimeout(() => {
+        activeArrows.value.delete(key)
+      }, 200)
     } catch (error) {
       console.error('로봇 제어 실패:', error)
+      activeArrows.value.delete(key)  // 에러 시 상태 해제
     }
   }
 }
 
-function toggleMode() {
-  mode.value = isAutoMode.value ? 'auto' : 'manual'
-  
-  // 수동 모드로 전환될 때 자동으로 포커스
-  if (mode.value === 'manual') {
-    // nextTick을 사용하여 DOM 업데이트 후 포커스
-    nextTick(() => {
-      controlArea.value?.focus()
-    })
+async function toggleMode() {
+  try {
+    const newMode = isAutoMode.value ? 'resume' : 'manual'
+    const response = await axios.post(
+      `https://robocopbackendssafy.duckdns.org/api/v1/${selectedRobotSeq.value}/call-service/${newMode}`
+    )
+    
+    if (response.status === 200) {
+      mode.value = isAutoMode.value ? 'auto' : 'manual'
+      
+      // 수동 모드로 전환될 때 자동으로 포커스
+      if (mode.value === 'manual') {
+        nextTick(() => {
+          controlArea.value?.focus()
+        })
+      }
+    } else {
+      // API 요청이 실패하면 토글 상태를 원래대로 되돌림
+      isAutoMode.value = !isAutoMode.value
+      console.error('모드 변경 실패')
+    }
+  } catch (error) {
+    // 에러 발생 시 토글 상태를 원래대로 되돌림
+    isAutoMode.value = !isAutoMode.value
+    console.error('모드 변경 중 에러 발생:', error)
   }
 }
 
 const mapKey = ref(Date.now())
 
-watch(selectedRobotSeq, (newVal, oldVal) => {
+watch(selectedRobotSeq, async (newVal, oldVal) => {
   if (newVal !== oldVal) {
     console.log('Robot changed:', newVal)
-    // 로봇이 변경되면 선택된 노드들을 초기화
-    resetSelection()
-    
-    // RobotMap 컴포넌트 재마운트를 위한 키 값 변경
+    selectedNodes.value = []
     mapKey.value = Date.now()
+    
+    // 로봇이 선택되면 자동으로 resume 모드로 설정
+    if (newVal) {
+      try {
+        await axios.post(
+          `https://robocopbackendssafy.duckdns.org/api/v1/${newVal}/call-service/resume`
+        )
+        isAutoMode.value = true
+        mode.value = 'auto'
+      } catch (error) {
+        console.error('초기 모드 설정 실패:', error)
+      }
+    }
   }
 })
 
@@ -237,9 +295,18 @@ onMounted(() => {
     selectedRobotSeq.value = String(robotsStore.selectedRobot)
   }
   
-  // 만약 초기 상태가 수동 모드라면 포커스
-  if (mode.value === 'manual') {
-    controlArea.value?.focus()
+  // main-content 요소의 overflow 설정 변경
+  const mainContent = document.querySelector('.main-content')
+  if (mainContent) {
+    mainContent.style.overflow = 'hidden'
+  }
+})
+
+onBeforeUnmount(() => {
+  // 컴포넌트 언마운트 시 원래 상태로 복구
+  const mainContent = document.querySelector('.main-content')
+  if (mainContent) {
+    mainContent.style.overflow = 'auto'
   }
 })
 </script>

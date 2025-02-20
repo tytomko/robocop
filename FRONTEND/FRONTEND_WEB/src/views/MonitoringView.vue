@@ -5,7 +5,10 @@
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-2">
           <span class="font-semibold">연결 상태:</span>
-          <span :class="['status-badge', webSocketConnected ? 'connected' : 'disconnected']">
+          <span :class="[
+            'px-2 py-1 rounded text-white text-sm',
+            webSocketConnected ? 'bg-green-500' : 'bg-red-500'
+          ]">
             {{ connectionStatus }}
           </span>
         </div>
@@ -14,6 +17,20 @@
         </div>
       </div>
     </div>
+
+    <div class="container mx-auto px-4">
+    <!-- 기존 MonitoringView 내용 -->
+
+    <!-- 테스트용 버튼 -->
+    <div class="fixed bottom-4 right-4">
+      <button 
+        @click="triggerAlert"
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow-lg"
+      >
+        테스트 경보 발생
+      </button>
+    </div>
+  </div>
 
     <div class="border-b pb-2 mb-4">
       <h2 class="text-2xl font-bold text-gray-800">실시간 모니터링</h2>
@@ -37,6 +54,12 @@
 
     <!-- 탭 콘텐츠 -->
     <div class="mt-4">
+      <!-- RobotMap 탭 -->
+      <div v-if="activeTab === 'robotMap'" class="bg-white rounded-lg shadow-md p-5 font-sans">
+       <RobotMap :showSelectedNodes="false" />
+      </div>
+      
+      <!-- 다른 탭들 -->
       <RobotList v-if="activeTab === 'robotList'" />
       <StatisticsView v-if="activeTab === 'statistics'" />
     </div>
@@ -47,8 +70,6 @@
       :robots="robots"
       @close="robotsStore.closeRobotManagementModal"
       @openAddRobotModal="robotsStore.openAddRobotModal"
-      @setBreakdown="robotsStore.setBreakdown"
-      @setActive="robotsStore.setActive"
     />
 
     <!-- 로봇 등록 모달 -->
@@ -68,6 +89,7 @@ import { useRobotsStore } from '@/stores/robots';
 import RobotList from '@/components/dashboard/RobotList.vue';
 import RobotManagement from '@/components/dashboard/RobotManagement.vue';
 import RobotRegistration from '@/components/dashboard/RobotRegistration.vue';
+import RobotMap from '@/components/map/RobotMap.vue';
 import StatisticsView from '@/views/statistics/StatisticsView.vue';
 
 // 모니터링 컴포넌트 순서 관리
@@ -79,8 +101,9 @@ const connectionStatus = computed(() =>
 )
 
 // 탭 관리
-const activeTab = ref('robotList') // 기본값: 로봇 목록 탭
+const activeTab = ref('robotMap') // 기본값: 로봇 목록 탭
 const tabs = ref([
+  { name: 'robotMap', label: '실시간 로봇 위치' },
   { name: 'robotList', label: '로봇 목록' },
   { name: 'statistics', label: '통계' }
 ])
@@ -106,6 +129,11 @@ const handleWebSocketMessage = (message) => {
   }
 }
 
+// 단순화된 테스트 함수
+const triggerAlert = () => {
+  robotsStore.alerts = true;
+};
+
 onMounted(() => {
   // 핸들러만 등록
   webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
@@ -116,18 +144,3 @@ onUnmounted(() => {
   webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
 })
 </script>
-
-<style scoped>
-.status-badge {
-  @apply px-2 py-1 rounded text-white text-sm;
-}
-
-.connected {
-  background-color: #4CAF50;
-}
-
-.disconnected {
-  background-color: #FF5757;
-}
-
-</style>

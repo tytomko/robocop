@@ -19,7 +19,13 @@ export const useRobotsStore = defineStore('robots', () => {
   const webSocketConnected = ref(false)
   let pollingInterval = null
   const POLLING_INTERVAL = 5000
-
+ // localStorage와 연동되는 사이드바 상태
+  const storedLeftState = localStorage.getItem("left-sidebar-collapsed");
+  const leftSidebarCollapsed = ref(storedLeftState === "true");
+  // App.vue의 토글 함수와 연동
+  const updateSidebarStates = (left) => {
+    leftSidebarCollapsed.value = left;
+  };
 
   // 로봇 리스트 불러오기
   const loadRobots = async () => {
@@ -29,14 +35,22 @@ export const useRobotsStore = defineStore('robots', () => {
         seq: robot.seq,
         manufactureName: robot.manufactureName,
         nickname: robot.nickname || '',
+        sensorName: robot.sensorName || '',
         ipAddress: robot.ipAddress || '알 수 없음',
+        networkStatus: robot.networkStatus || 'disconnected',
         status: robot.status || 'waiting',
         battery: robot.battery?.level || 100,
+        isCharging: robot.battery?.isCharging || false,
         networkHealth: robot.networkHealth || 100,
         position: robot.position
           ? `x: ${robot.position.x}, y: ${robot.position.y}`
           : '알 수 없음',
+        orientation: robot.position?.orientation || '알 수 없음',
+        motion: robot.motion
+          ? `kph: ${robot.motion.kph}, mps : ${robot.motion.mps}`
+          : '알 수 없음',
         cpuTemp: robot.cpuTemp || 0.0,
+        waypoints : robot.waypoints || [], 
         startAt: robot.startAt || '알 수 없음',
         isActive: robot.IsActive || false
       }))
@@ -97,15 +111,15 @@ export const useRobotsStore = defineStore('robots', () => {
     switch (topicType) {
       case 'status':
         normalizedData = {
-          manufactureName: robotId,    // robotId(robot_1)를 manufactureName으로 사용
-          seq: data.robot_id,         // status의 robot_id를 DB의 seq와 매칭
-          battery: Number(data.battery || 0),        // /robot_1/status의 battery -> battery
-          network: Number(data.network || 0),        // /robot_1/status의 network -> networkHealth
-          temperature: Number(data.temperature || 0), // /robot_1/status의 temperature -> cpuTemp
-          is_active: Boolean(data.is_active),        // /robot_1/status의 is_active -> isActive
-          status: data.status || 'unknown'           // /robot_1/status의 status -> status
+          manufactureName: robotId,
+          seq: data.robot_id,
+          battery: Number(data.battery || 0),
+          network: Number(data.network || 0),
+          temperature: Number(data.temperature || 0),
+          is_active: Boolean(data.is_active),
+          status: data.status || 'unknown'
         }
-        // manufactureName과 seq로 매칭하여 status 데이터 업데이트
+
         const statusIndex = websocket_robots.value.findIndex(r => 
           r.manufactureName === robotId && r.seq === data.robot_id
         )
@@ -121,16 +135,15 @@ export const useRobotsStore = defineStore('robots', () => {
         break
 
       case 'utm_pose':
-        // utm_pose는 manufactureName(robot_1)으로만 매칭
         const utmIndex = websocket_robots.value.findIndex(r => 
           r.manufactureName === robotId
         )
         if (utmIndex >= 0) {
           websocket_robots.value[utmIndex] = {
             ...websocket_robots.value[utmIndex],
-            position: data.position,      // /robot_1/utm_pose의 position -> position (x,y 좌표)
-            rawPosition: data.rawPosition, // 원본 UTM 좌표 (x,y,z 포함)
-            orientation: data.orientation  // /robot_1/utm_pose의 orientation -> orientation
+            position: data.position,
+            rawPosition: data.rawPosition,
+            orientation: data.orientation
           }
         }
         break
@@ -170,16 +183,17 @@ export const useRobotsStore = defineStore('robots', () => {
     formData.append('nickname', newRobot.value.nickname)
     formData.append('ipAddress', newRobot.value.ipAddress)
 
-    axios.post('https://robocop-backend-app.fly.dev/api/v1/robots', formData, {
+    axios.post('https://robocopbackendssafy.duckdns.org/api/v1/robots/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
       .then((response) => {
         const registeredRobot = response.data.data
         registered_robots.value.push({
           seq: registeredRobot.seq,
-          name: registeredRobot.manufactureName,
+          manufactureName: registeredRobot.manufactureName,
           nickname: registeredRobot.nickname,   // 주의: robot -> registeredRobot
           ipAddress: registeredRobot.ipAddress,
+          sensorName: registeredRobot.sensorName || '',
           status: registeredRobot.status || 'waiting',
           battery: registeredRobot.battery?.level || 100,
           isCharging: registeredRobot.battery?.isCharging || false,
@@ -188,16 +202,16 @@ export const useRobotsStore = defineStore('robots', () => {
           position: registeredRobot.position
             ? `x: ${registeredRobot.position.x}, y: ${registeredRobot.position.y}`
             : '알 수 없음',
+          orientation: registeredRobot.position?.orientation || '알 수 없음',
+          motion: registeredRobot.motion 
+          ? `kph: ${registeredRobot.motion.kph}, mps: ${registeredRobot.motion.mps}`
+          : '알 수 없음',
           cpuTemp: registeredRobot.cpuTemp || 0.0,
+          waypoints : registeredRobot.waypoints || [],
           imageUrl: registeredRobot.image?.url || '',
           startAt: registeredRobot.startAt || '알 수 없음',
           lastActive: registeredRobot.lastActive || '알 수 없음',
-          isActive: registeredRobot.IsActive || false,
-          isDeleted: registeredRobot.IsDeleted || false,
-          deletedAt: registeredRobot.DeletedAt || null,
-          createdAt: registeredRobot.createdAt || null,
-          updatedAt: registeredRobot.updatedAt || null,
-          waypoints: registeredRobot.waypoints || [],
+          isActive: registeredRobot.IsActive || false
         })
 
         closeModal()
@@ -228,16 +242,7 @@ export const useRobotsStore = defineStore('robots', () => {
     }
   }
 
-  // api 연동 필요
-  const setBreakdown = (robotSeq) => {
-    const robot = registered_robots.value.find(r => r.seq === robotSeq)
-    if (robot) robot.status = 'error'
-  }
-
-  const setActive = (robotSeq) => {
-    const robot = registered_robots.value.find(r => r.seq === robotSeq)
-    if (robot) robot.status = 'navigating'
-  }
+  const alerts = ref(false);
 
   return {
     registered_robots,
@@ -252,8 +257,11 @@ export const useRobotsStore = defineStore('robots', () => {
     websocket_robots,
     displayRobots,
     webSocketConnected,
+    leftSidebarCollapsed,
+    alerts,
 
     // methods
+    updateSidebarStates,
     openNicknameModal,
     closeNicknameModal,
     openRobotManagementModal,
@@ -263,11 +271,9 @@ export const useRobotsStore = defineStore('robots', () => {
     handleRobotSelection,
     closeModal,
     handleAddRobot,
-    setBreakdown,
-    setActive,
     updateRobotWebSocketData,
     setWebSocketConnected,
     startPolling,
-    stopPolling
+    stopPolling,
   }
 })

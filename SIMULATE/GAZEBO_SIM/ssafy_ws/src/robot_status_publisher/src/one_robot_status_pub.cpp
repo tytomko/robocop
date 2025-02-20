@@ -130,7 +130,7 @@ public:
             manual_service, std::bind(&RobotStatusPublisher::manual_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         status_timer_ = this->create_wall_timer(
-            100ms, std::bind(&RobotStatusPublisher::publish_status, this));
+            200ms, std::bind(&RobotStatusPublisher::publish_status, this));
     }
 
 private:
@@ -330,6 +330,13 @@ private:
             response->success = true;  // 성공으로 처리 (true)
             response->message = "Robot resumed.";
         }
+        else if (status_message.mode == "manual") { // 메뉴얼 모드에서 resume 하면 waiting 모드로 변경
+            RCLCPP_WARN(this->get_logger(), "[RESUME] Back to watiing mode from manual mode.");
+            status_message.mode = "waiting";
+            status_message.is_active = true;
+            response->success = true;
+            response->message = "resume to waiting mode from manual mode.";
+        }
         else {
             RCLCPP_WARN(this->get_logger(), "[RESUME] Robot is already operational.");
             response->success = false;
@@ -343,6 +350,7 @@ private:
                                 std::shared_ptr<robot_custom_interfaces::srv::Homing::Response> response)
     {
         (void) request;
+        
         if (status_message.mode != "waiting") {
             RCLCPP_WARN(this->get_logger(), "[HOMING] Cannot switch to homing mode because robot is not in waiting mode.");
             response->success = false;
