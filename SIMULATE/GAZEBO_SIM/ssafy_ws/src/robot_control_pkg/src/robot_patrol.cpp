@@ -34,7 +34,7 @@ const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 const double heading_threshold_       = M_PI / 3;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
 //30cm이내의 점은 스킵
-const double SKIP_THRESHOLD = 0.3;
+const double SKIP_THRESHOLD = 0.35;
 
 //스무딩계수
 // 높으면 새로 바뀐 속도의 영향력이커진다. -> 더 민감하ㅏ게 반응함
@@ -342,6 +342,7 @@ private:
         // 선속도 제어
         // 새로 계산된 속도
         double computed_speed = std::min(distance, MAX_LINEAR_SPEED);
+        computed_speed = std::max(computed_speed, 0.3);//최소속도 0.6m/s
         // α (0 < α < 1)은 스무딩 계수, 예: 0.1 ~ 0.3 정도
         double target_speed_ = ALPHA * computed_speed + (1 - ALPHA) * previous_target_speed;
         // 이후 target_speed_와 현재 선속도의 차이를 기반으로 가속 제어
@@ -419,7 +420,7 @@ private:
                 RCLCPP_INFO(this->get_logger(),
                     "경로에 도달했습니다. Waiting service 호출하여 대기모드로 전환.");
                 callTempStop();  // temp stop service 호출
-                stop_robot();
+                //stop_robot();
                 callWaitingService();
                 return;
             }
@@ -543,7 +544,7 @@ private:
 
     // 로봇 정지
     void stop_robot() {
-
+        //RCLCPP_INFO(this->get_logger(), "stop_robot() 호출 \n");
         geometry_msgs::msg::Twist stop_msg;
         stop_msg.linear.x  = 0.0;
         stop_msg.angular.z = 0.0;
