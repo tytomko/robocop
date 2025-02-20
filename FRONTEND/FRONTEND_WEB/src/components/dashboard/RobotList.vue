@@ -261,7 +261,7 @@ const setupPositionSSE = (seq) => {
   const eventSource = new EventSource(url);
   
   let lastUpdate = 0;
-  const updateInterval = 1000;
+  const updateInterval = 5000;
 
   eventSource.onmessage = (event) => {
     const now = Date.now();
