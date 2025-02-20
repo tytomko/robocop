@@ -36,23 +36,6 @@
             <div>
               <h3 class="text-lg font-semibold">{{ robot.nickname || robot.name }}</h3>
               <p class="text-sm text-gray-500">{{ robot.manufactureName }}</p>
-              <!-- 로봇 상태 표시 -->
-              <div class="mt-1">
-                <span :class="[
-                  'px-2 py-1 text-xs rounded-full',
-                  {
-                    'bg-gray-200 text-gray-700': robot.status === 'waiting',
-                    'bg-blue-200 text-blue-700': robot.status === 'patrol',
-                    'bg-yellow-200 text-yellow-700': robot.status === 'temp stop',
-                    'bg-red-200 text-red-700': robot.status === 'emergency stop',
-                    'bg-purple-200 text-purple-700': robot.status === 'manual',
-                    'bg-green-200 text-green-700': robot.status === 'navigating',
-                    'bg-blue-200 text-blue-700': robot.status === 'homing'
-                  }
-                ]">
-                  {{ getStatusLabel(robot.status) }}
-                </span>
-              </div>
             </div>
             
             <!-- 와이파이 아이콘 -->
