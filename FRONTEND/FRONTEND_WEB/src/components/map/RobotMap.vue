@@ -120,23 +120,29 @@ const chartOption = computed(() => {
   const robotSeries = []
   
   // 모든 로봇 위치 표시
-  robotPositions.value.forEach((position, robotSeq) => {
-    // position이 존재하고 x, y값이 모두 있는 경우에만 처리
-    if (position && position.x != null && position.y != null) {
-      const isSelectedRobot = !props.isMonitoringMode && robotSeq === currentRobotSeq.value;
-      
-      robotSeries.push({
-        type: 'scatter',
-        data: [[position.x, position.y]],
-        symbolSize: 15,
-        itemStyle: {
-          color: isSelectedRobot ? '#ff0000' : robotColors[robotSeq % Object.keys(robotColors).length]
-        },
-        symbol: 'circle',
-        zlevel: 3
-      });
-    }
-  });
+  if (robotPositions.value) {
+    robotPositions.value.forEach((position, robotSeq) => {
+      // position이 존재하고 x, y값이 모두 있는 경우에만 처리
+      if (position && 
+          position.x != null && 
+          position.y != null &&
+          !isNaN(position.x) && 
+          !isNaN(position.y)) {
+        const isSelectedRobot = !props.isMonitoringMode && robotSeq === currentRobotSeq.value;
+        
+        robotSeries.push({
+          type: 'scatter',
+          data: [[position.x, position.y]],
+          symbolSize: 15,
+          itemStyle: {
+            color: isSelectedRobot ? '#ff0000' : robotColors[robotSeq % Object.keys(robotColors).length]
+          },
+          symbol: 'circle',
+          zlevel: 3
+        });
+      }
+    });
+  }
 
   return {
     animation: false,
@@ -167,26 +173,40 @@ const chartOption = computed(() => {
       trigger: 'item',
       confine: true,
       enterable: false,
+      axisPointer: {
+        type: 'none'
+      },
       formatter: function(params) {
-        if (!params.data) return '';
+        // null check for params and data
+        if (!params || !params.data) return '';
         
-        // 로봇 시리즈인 경우
-        if (params.seriesIndex < robotSeries.length) {
-          const robotSeq = Array.from(robotPositions.value.keys())[params.seriesIndex];
-          const robot = robotsStore.robots.find(r => r.seq === robotSeq);
-          return robot ? `로봇: ${robot.nickname || robot.manufactureName || robotSeq}` : '';
-        }
-        
-        // 노드 시리즈인 경우 - monitoring mode가 아닐 때만 좌표 표시
-        if (!props.isMonitoringMode && params.componentSubType === 'scatter' && Array.isArray(params.data)) {
-          try {
-            return `좌표: (${Number(params.data[0]).toFixed(2)}, ${Number(params.data[1]).toFixed(2)})`;
-          } catch (e) {
-            return '';
+        try {
+          // 로봇 시리즈인 경우
+          if (params.seriesIndex < robotSeries.length && robotPositions.value) {
+            const robotSeqArray = Array.from(robotPositions.value.keys());
+            if (!robotSeqArray || robotSeqArray.length === 0) return '';
+            
+            const robotSeq = robotSeqArray[params.seriesIndex];
+            if (!robotSeq) return '';
+            
+            const robot = robotsStore.robots.find(r => r.seq === robotSeq);
+            return robot ? `로봇: ${robot.nickname || robot.manufactureName || robotSeq}` : '';
           }
+          
+          // 노드 시리즈인 경우 - monitoring mode가 아닐 때만 좌표 표시
+          if (!props.isMonitoringMode && params.componentSubType === 'scatter' && Array.isArray(params.data)) {
+            const x = Number(params.data[0]);
+            const y = Number(params.data[1]);
+            
+            if (isNaN(x) || isNaN(y)) return '';
+            return `좌표: (${x.toFixed(2)}, ${y.toFixed(2)})`;
+          }
+          
+          return '';
+        } catch (error) {
+          console.error('Tooltip formatter error:', error);
+          return '';
         }
-        
-        return '';
       }
     },
     xAxis: {
@@ -210,7 +230,7 @@ const chartOption = computed(() => {
       {
         type: 'lines',
         coordinateSystem: 'cartesian2d',
-        data: mapData.value.links.map(link => ({
+        data: (mapData.value.links || []).map(link => ({
           coords: [
             [link.source[0], link.source[1]],
             [link.target[0], link.target[1]]
@@ -225,16 +245,16 @@ const chartOption = computed(() => {
       },
       {
         type: 'scatter',
-        data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+        data: (mapData.value.nodes || []).map(node => [node.id[0], node.id[1]]),
         symbolSize: (value) => {
-          return selectedNodes.value.some(selected => 
+          return selectedNodes.value?.some(selected => 
             selected.id[0] === value[0] && selected.id[1] === value[1]
           ) ? 20 : 8
         },
         itemStyle: {
           color: (params) => {
             const node = mapData.value.nodes[params.dataIndex]
-            return selectedNodes.value.some(selected => 
+            return selectedNodes.value?.some(selected => 
               selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
             ) ? '#ff4081' : '#007bff'
           }
@@ -243,7 +263,7 @@ const chartOption = computed(() => {
           show: true,
           formatter: (params) => {
             const node = mapData.value.nodes[params.dataIndex]
-            const index = selectedNodes.value.findIndex(selected => 
+            const index = selectedNodes.value?.findIndex(selected => 
               selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
             )
             return index !== -1 ? (index + 1).toString() : ''
@@ -382,46 +402,58 @@ function updateChartSeries() {
 // SSE 설정
 function setupSSE() {
   // 기존 연결들 정리
-  robotPositions.value.clear() // 기존 위치 정보도 초기화
-  eventSources.forEach(source => source.close())
-  eventSources.clear()
+  if (robotPositions.value) {
+    robotPositions.value.clear() // 기존 위치 정보도 초기화
+  }
+  if (eventSources) {
+    eventSources.forEach(source => source.close())
+    eventSources.clear()
+  }
   
   // seq가 1과 2인 로봇에 대해서만 SSE 설정
   const newEventSources = new Map()
   
-  robotsStore.robots
-    .filter(robot => robot.seq === 1 || robot.seq === 2)
-    .forEach(robot => {
-      console.log(`Setting up SSE for robot ${robot.seq}`) // 디버깅용
-      const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
-      const eventSource = new EventSource(url)
-      
-      let lastUpdate = 0
-      const updateInterval = 500
+  const activeRobots = robotsStore.robots
+    .filter(robot => (robot.seq === 1 || robot.seq === 2) && robot?.IsActive === true);
+  
+  activeRobots.forEach(robot => {
+    console.log(`Setting up SSE for robot ${robot.seq}`) // 디버깅용
+    const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
+    const eventSource = new EventSource(url)
+    
+    let lastUpdate = 0
+    const updateInterval = 300
 
-      eventSource.onmessage = (event) => {
+    eventSource.onmessage = (event) => {
+      try {
         const now = Date.now()
         if (now - lastUpdate < updateInterval) return
 
         const data = JSON.parse(event.data)
         if (data && data.position && 
-              typeof data.position.x === 'number' && 
-              typeof data.position.y === 'number') {
-            robotPositions.value.set(robot.seq, {
-              x: data.position.x,
-              y: data.position.y
-            })}
-        lastUpdate = now
+            typeof data.position.x === 'number' && 
+            typeof data.position.y === 'number' &&
+            !isNaN(data.position.x) && 
+            !isNaN(data.position.y)) {
+          robotPositions.value.set(robot.seq, {
+            x: data.position.x,
+            y: data.position.y
+          })
+          lastUpdate = now
+        }
+      } catch (error) {
+        console.error(`SSE message parsing error (로봇 ${robot.seq}):`, error)
       }
+    }
 
-      eventSource.onerror = (error) => {
-        console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
-        eventSource.close()
-        robotPositions.value.delete(robot.seq) // 에러 시 위치 정보도 삭제
-      }
+    eventSource.onerror = (error) => {
+      console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
+      eventSource.close()
+      robotPositions.value.delete(robot.seq) // 에러 시 위치 정보도 삭제
+    }
 
-      newEventSources.set(robot.seq, eventSource)
-    })
+    newEventSources.set(robot.seq, eventSource)
+  })
 
   return newEventSources
 }
