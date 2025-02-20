@@ -18,7 +18,7 @@ class CameraService:
 
     @classmethod
     async def get_instance(cls, seq: int) -> 'CameraService':
-        """지정된 seq에 대한 CameraService 인스턴스를 반환합니다."""
+        """??? seq? ?? CameraService ????? ?????."""
         if seq not in cls._instances:
             instance = cls()
             await instance.initialize(seq)
@@ -26,7 +26,7 @@ class CameraService:
         return cls._instances[seq]
 
     def __init__(self):
-        """CameraService 인스턴스를 초기화합니다."""
+        """CameraService ????? ??????."""
         self.seq: Optional[int] = None
         self.front_frame: Optional[np.ndarray] = None
         self.rear_frame: Optional[np.ndarray] = None
@@ -44,32 +44,32 @@ class CameraService:
         self.rear_topic: Optional[roslibpy.Topic] = None
 
     async def initialize(self, seq: int) -> None:
-        """서비스 인스턴스를 초기화합니다."""
+        """??? ????? ??????."""
         try:
             self.seq = seq
             self.client_id = f"camera_service_{seq}"
             
-            # ROS Bridge 연결 초기화
+            # ROS Bridge ?? ???
             self.ros_bridge = RosBridgeConnection(port=10000)
             
-            # Isaac 로봇인 경우에만 isaac_bridge 초기화
+            # Isaac ??? ???? isaac_bridge ???
             if seq == 11:
                 self.isaac_bridge = RosBridgeConnection(port=10001)
                 self.isaac_bridge.register_client(self.client_id)
-                logger.info(f"Isaac Bridge 클라이언트 등록 완료 (seq: {seq})")
+                logger.info(f"Isaac Bridge ????? ?? ?? (seq: {seq})")
             else:
                 self.isaac_bridge = None
             
-            # 기본 ROS Bridge 클라이언트 등록
+            # ?? ROS Bridge ????? ??
             self.ros_bridge.register_client(self.client_id)
-            logger.info(f"ROS Bridge 클라이언트 등록 완료 (seq: {seq})")
+            logger.info(f"ROS Bridge ????? ?? ?? (seq: {seq})")
             
         except Exception as e:
             logger.error(f"Camera service initialization failed: {e}")
             raise
 
     async def cleanup(self) -> None:
-        """서비스 인스턴스의 리소스를 정리합니다."""
+        """??? ????? ???? ?????."""
         try:
             if self.front_topic:
                 self.front_topic.unsubscribe()
@@ -79,7 +79,7 @@ class CameraService:
             if self.ros_bridge:
                 await self.ros_bridge.unregister_client(self.client_id)
             
-            # Isaac 로봇인 경우에만 isaac_bridge 정리
+            # Isaac ??? ???? isaac_bridge ??
             if self.isaac_bridge:
                 await self.isaac_bridge.unregister_client(self.client_id)
                 
@@ -88,20 +88,20 @@ class CameraService:
 
     @classmethod
     async def remove_instance(cls, seq: int) -> None:
-        """인스턴스를 제거하고 리소스를 정리합니다."""
+        """????? ???? ???? ?????."""
         if seq in cls._instances:
             instance = cls._instances[seq]
             await instance.cleanup()
             del cls._instances[seq]
 
     def set_robot_connection(self, is_isaac: bool = False) -> roslibpy.Ros:
-        """연결할 ROS Bridge 인스턴스를 반환합니다."""
+        """??? ROS Bridge ????? ?????."""
         if is_isaac:
             return self.isaac_bridge.client
         return self.ros_bridge.client
 
     async def set_front_topic(self, topic_name: str, topic_type: str, is_isaac: bool = False) -> None:
-        """전면 카메라 토픽을 설정합니다."""
+        """?? ??? ??? ?????."""
         try:
             client = self.set_robot_connection(is_isaac)
             
@@ -122,7 +122,7 @@ class CameraService:
             raise
 
     async def set_rear_topic(self, topic_name: str, topic_type: str, is_isaac: bool = False) -> None:
-        """후면 카메라 토픽을 설정합니다."""
+        """?? ??? ??? ?????."""
         try:
             client = self.set_robot_connection(is_isaac)
             
@@ -143,7 +143,7 @@ class CameraService:
             raise
 
     def _process_image_message(self, message: dict) -> Optional[np.ndarray]:
-        """이미지 메시지를 처리하여 프레임으로 변환합니다."""
+        """??? ???? ???? ????? ?????."""
         try:
             format_str = message.get('format', '')
             
@@ -171,23 +171,23 @@ class CameraService:
             return None
             
         except Exception as e:
-            logger.error(f"이미지 처리 에러: {str(e)}")
+            logger.error(f"??? ?? ??: {str(e)}")
             return None
 
     def _on_front_image_message(self, message: dict) -> None:
-        """전면 카메라 이미지 메시지를 처리합니다."""
+        """?? ??? ??? ???? ?????."""
         frame = self._process_image_message(message)
         if frame is not None:
             self.front_frame = frame
 
     def _on_rear_image_message(self, message: dict) -> None:
-        """후면 카메라 이미지 메시지를 처리합니다."""
+        """?? ??? ??? ???? ?????."""
         frame = self._process_image_message(message)
         if frame is not None:
             self.rear_frame = frame
 
     def get_front_frame(self):
-        """전면 카메라 프레임 스트림을 생성합니다."""
+        """?? ??? ??? ???? ?????."""
         while True:
             current_time = time.time()
             
@@ -210,7 +210,7 @@ class CameraService:
                     time.sleep(0.1)
 
     def get_rear_frame(self):
-        """후면 카메라 프레임 스트림을 생성합니다."""
+        """?? ??? ??? ???? ?????."""
         while True:
             current_time = time.time()
             
@@ -233,9 +233,9 @@ class CameraService:
                     time.sleep(0.1)
 
     async def __aenter__(self):
-        """비동기 컨텍스트 매니저 진입"""
+        """??? ???? ??? ??"""
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """비동기 컨텍스트 매니저 종료"""
+        """??? ???? ??? ??"""
         await self.cleanup()

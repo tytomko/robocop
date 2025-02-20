@@ -282,3 +282,4 @@ class RobotRepository:
             logger.error(f"로봇 로그 저장 중 오류 발생: {str(e)}")
             logger.error(traceback.format_exc())
             return False
+            

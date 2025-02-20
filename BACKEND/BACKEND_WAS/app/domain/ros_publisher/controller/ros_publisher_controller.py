@@ -2,12 +2,31 @@ from fastapi import APIRouter
 from ..models.ros_publisher_models import PublishRequest, NavigateRequest, PatrolRequest
 from ..service.ros_publisher_service import RosPublisherService
 import logging
+from app.common.middleware.socket_service import broadcast_to_clients, send_people_images
+import json
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # ROS Publisher 서비스 인스턴스 생성
 ros_publisher = RosPublisherService()
+
+@router.post("/{seq}/start")
+async def start_robot(seq: str):
+    """로봇 가동 시작"""
+    try:
+        response = ros_publisher.call_resume_service(seq)
+        logger.info(f"Resume service response: {response}")
+
+        # send_people_images 함수 호출
+        logger.info("Calling send_people_images function")
+        await send_people_images()
+        logger.info("Sent people images to clients")
+
+        return {"status": "success", "message": "Robot start service called successfully", "response": response}
+    except Exception as e:
+        logger.error(f"Failed to start robot: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @router.post("/{seq}/cmd_vel")
 async def publish_cmd_vel(seq: str, direction: str):
@@ -28,6 +47,12 @@ async def publish_cmd_vel(seq: str, direction: str):
 def call_homing_endpoint(seq: str):
     """로봇 호밍 서비스 호출"""
     try:
+        estop_response = ros_publisher.call_estop_service(seq)
+        logger.info(f"E-stop service response: {estop_response}")
+
+        waiting_response = ros_publisher.call_waiting_service(seq)
+        logger.info(f"Waiting service response: {waiting_response}")
+
         response = ros_publisher.call_homing_service(seq)
         return {"status": "success", "mode": "homing", "message": "Homing service called successfully", "response": response}
     except Exception as e:
@@ -98,6 +123,12 @@ def call_waiting_endpoint(seq: str):
 def call_manual_endpoint(seq: str):
     """로봇 매뉴얼 모드 변경 서비스 호출"""
     try:
+        estop_response = ros_publisher.call_estop_service(seq)
+        logger.info(f"E-stop service response: {estop_response}")
+
+        waiting_response = ros_publisher.call_waiting_service(seq)
+        logger.info(f"Waiting service response: {waiting_response}")
+        
         response = ros_publisher.call_manual_service(seq)
         return {"status": "success", "message": "Manual mode service called successfully", "response": response}
     except Exception as e:
@@ -123,4 +154,32 @@ def reset_robot(seq: str):
         }
     except Exception as e:
         logger.error(f"Failed to reset robot: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@router.post("/alert-off")
+async def alert_off():
+    """경보 해제"""
+    try:
+        message = {
+            "response_type": "MODE_ALERT_STOP"
+        }
+        await broadcast_to_clients(json.dumps(message))
+        logger.info(f"Alert off message sent")
+        return {"status": "success", "message": "Alert off message sent successfully"}
+    except Exception as e:
+        logger.error(f"Failed to send alert off message: {str(e)}")
+        return {"status": "error", "message": str(e)}
+        
+@router.post("/ai-init")
+async def ai_init():
+    """AI 초기화"""
+    try:
+        message = {
+            "response_type": "MODE_INIT"
+        }
+        await broadcast_to_clients(json.dumps(message))
+        logger.info(f"AI init message sent")
+        return {"status": "success", "message": "AI init message sent successfully"}
+    except Exception as e:
+        logger.error(f"Failed to send ai init message: {str(e)}")
         return {"status": "error", "message": str(e)}

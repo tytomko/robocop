@@ -81,7 +81,11 @@ async def front_video_feed(seq: int):
             sensor_name = robot.sensorName if robot.sensorName else "ssafy"  # 기본값으로 ssafy 사용
             
             topic_pattern = CAMERA_TOPICS[0]["name_pattern"]
-            topic_name = topic_pattern.format(direction="front").replace("ssafy", sensor_name)
+            topic_name = str
+            if seq == 1:
+                topic_name = topic_pattern.format(direction="front").replace("ssafy", "ssafy")
+            if seq == 2:
+                topic_name = topic_pattern.format(direction="front").replace("ssafy", "samsung")
             topic_type = CAMERA_TOPICS[0]["type"]
             
             logger.info(f"일반 로봇 전면 카메라 토픽 설정: {topic_name}, {topic_type}")
@@ -145,7 +149,11 @@ async def rear_video_feed(seq: int):
             sensor_name = robot.sensorName if robot.sensorName else "ssafy"  # 기본값으로 ssafy 사용
             
             topic_pattern = CAMERA_TOPICS[0]["name_pattern"]
-            topic_name = topic_pattern.format(direction="rear").replace("ssafy", sensor_name)
+            topic_name = str
+            if seq == 1:
+                topic_name = topic_pattern.format(direction="rear").replace("ssafy", "ssafy")
+            if seq == 2:
+                topic_name = topic_pattern.format(direction="rear").replace("ssafy", "samsung")
             topic_type = CAMERA_TOPICS[0]["type"]
             
             logger.info(f"일반 로봇 후면 카메라 토픽 설정: {topic_name}, {topic_type}")

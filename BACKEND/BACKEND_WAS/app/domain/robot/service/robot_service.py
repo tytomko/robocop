@@ -19,22 +19,32 @@ import websockets
 import traceback
 from ...ros_publisher.service.ros_bridge_connection import RosBridgeConnection
 import math  # radian -> degree 변환을 위해 추가
+import time
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
 class RobotService:
+    _instances: Dict[int, "RobotService"] = {}
+    
+    @classmethod
+    async def get_instance(cls, seq: int) -> "RobotService":
+        if seq not in cls._instances:
+            instance = cls()
+            # 추가 초기화 작업이 필요하면 여기에 작성하세요.
+            cls._instances[seq] = instance
+        return cls._instances[seq]
+
     """로봇 관련 비즈니스 로직과 프론트엔드 통신을 담당하는 서비스"""
     def __init__(self):
         self.repository = RobotRepository()
-        # self.ros2_client = ROS2WebSocketClient()  # 기존 코드 주석 처리
         self.ros_bridge = RosBridgeConnection()  # 싱글톤 인스턴스 사용
         self.media_server_url = settings.storage.MEDIA_SERVER_URL
         self.upload_api_url = settings.storage.UPLOAD_API_URL
         
         # 웹소켓 클라이언트 관리 (프론트엔드)
         self.frontend_clients = set()
-
+ 
         self.topics = {}  # 구독 중인 토픽 관리를 위해 추가
         
         # Redis 연결
@@ -43,9 +53,12 @@ class RobotService:
             port=settings.REDIS_PORT,
             decode_responses=True
         )
-
-        self.message_buffer = {}  # 로봇별 메시지 버퍼
+ 
+        self.message_buffer = {}  # 로봇별 메시지 버퍼ㅣㅐ
         self.last_robot_states = {}  # 로봇별 마지막 상태 저장
+        
+        # 새로운 down_utm 메시지를 저장할 변수 추가
+        self.last_down_utm = None
 
     # === 프론트엔드 WebSocket 관리 ===
     async def register_frontend_client(self, websocket: WebSocket):
@@ -648,133 +661,42 @@ class RobotService:
         except Exception as e:
             logger.error(f"로봇 모션 업데이트 중 오류: {str(e)}")
 
-
-# 기존 ROS2WebSocketClient 클래스는 주석 처리하되 남겨둡니다
-"""
-class ROS2WebSocketClient:
-    def __init__(self, ros_host='127.0.0.1', ros_port=10000):
-        self.client = roslibpy.Ros(host=ros_host, port=ros_port)
-        self.connected = False
-        self.receiving = False
-        self.subscriptions = {}
-        self.topics = {}
-        self.latest_messages = {}
-
-    def process_message_by_topic(self, topic_name: str, message: dict):
-        """"""
+    async def subscribe_down_utm(self, seq: int) -> None:
+        """
+        /robot_{seq}/down_utm 토픽(메시지 타입: geometry_msgs/msg/PoseStamped)을 구독합니다.
+        """
+        topic_name = f"/robot_{seq}/down_utm"
+        msg_type = "geometry_msgs/msg/PoseStamped"
         try:
-            if topic_name == "/robot_1/status":
-                return {
-                    "type": "ros_topic",
-                    "topic": topic_name,
-                    "data": {
-                        "robot_id": message.get("id"),
-                        "robot_name": message.get("name"),
-                        "status": message.get("mode"),
-                        "battery": round(message.get("battery", 0), 2),
-                        "temperature": round(message.get("temperatures", 0), 2),
-                        "network": round(message.get("network", 0), 2),
-                        "start_time": message.get("starttime"),
-                        "is_active": message.get("is_active", False)
-                    }
-                }
-            elif topic_name == "/robot_1/utm_pose":
-                position = message.get("pose", {}).get("position", {})
-                orientation = message.get("pose", {}).get("orientation", {})
-                return {
-                    "type": "ros_topic",
-                    "topic": topic_name,
-                    "data": {
-                        "position": {
-                            "x": round(position.get("x", 0), 4),
-                            "y": round(position.get("y", 0), 4),
-                            "z": round(position.get("z", 0), 4)
-                        },
-                        "orientation": {
-                            "x": orientation.get("x", 0),
-                            "y": orientation.get("y", 0),
-                            "z": orientation.get("z", 0),
-                            "w": orientation.get("w", 1)
-                        },
-                        "timestamp": {
-                            "sec": message.get("header", {}).get("stamp", {}).get("sec", 0),
-                            "nanosec": message.get("header", {}).get("stamp", {}).get("nanosec", 0)
-                        }
-                    }
-                }
-            else:
-                logger.warning(f"Unknown topic: {topic_name}")
-                return None
+            # ROS Bridge 연결이 되어 있지 않다면 재연결 시도
+            if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+                self.ros_bridge.ensure_connected()
+            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type)
+            topic.subscribe(self._on_down_utm_message)
+            self.topics[topic_name] = topic
+            logger.info(f"Subscribed to {topic_name} with type {msg_type}")
         except Exception as e:
-            logger.error(f"Error processing message for topic {topic_name}: {str(e)}")
-            logger.error(f"Error traceback: {traceback.format_exc()}")
-            return None
-
-    async def connect(self):
-        """"""
-        try:
-            if not self.client.is_connected:
-                self.client.connect()
-                self.connected = True
-                logger.info("ROS2 Bridge 연결 성공")
-        except Exception as e:
-            logger.error(f"ROS2 Bridge 연결 실패: {str(e)}")
-            self.connected = False
+            logger.error(f"Failed to subscribe to {topic_name}: {str(e)}")
             raise
 
-    async def subscribe_to_topic(self, topic_name: str, msg_type: str):
-        """"""
+    def _on_down_utm_message(self, message: dict) -> None:
+        """
+        /robot_{seq}/down_utm 토픽에서 수신한 메시지를 처리합니다.
+        """
         try:
-            # 아직 구독하지 않은 경우에만 구독 설정
-            if topic_name not in self.topics:
-                topic = roslibpy.Topic(
-                    self.client,
-                    topic_name,
-                    msg_type
-                )
-
-                def callback(message):
-                    #logger.info(f"Raw message from {topic_name}: {message}")
-                    # 토픽별 메시지 가공
-                    processed_message = self.process_message_by_topic(topic_name, message)
-                    self.latest_messages[topic_name] = processed_message
-                    #logger.info(f"Processed message: {processed_message}")
-
-                topic.subscribe(callback)
-                self.topics[topic_name] = topic
-                self.subscriptions[topic_name] = msg_type
-                logger.info(f"토픽 구독 성공: {topic_name} ({msg_type})")
-
-            # 구독 여부와 관계없이 현재 메시지 반환
-            current_message = self.latest_messages.get(topic_name)
-            #logger.info(f"Returning message for {topic_name}: {current_message}")
-            return current_message
-
+            #logger.info(f"Received down_utm message: {message}")
+            header = message.get("header", {})
+            pose = message.get("pose", {})
+            position = pose.get("position", {})
+            orientation = pose.get("orientation", {})
+            down_utm_data = {
+                "header": header,
+                "position": position,
+                "orientation": orientation
+            }
+            # 마지막으로 수신한 메시지를 저장합니다.
+            self.last_down_utm = down_utm_data
+            #logger.info(f"Updated last_down_utm: {down_utm_data}")
         except Exception as e:
-            logger.error(f"토픽 구독 실패 {topic_name}: {str(e)}")
-            logger.error(f"Error traceback: {traceback.format_exc()}")
-            return None
-
-    async def start_listening(self):
-        """"""
-        if self.receiving:
-            return
-            
-        self.receiving = True
-        if not self.connected:
-            await self.connect()
-
-    async def stop_listening(self):
-        """"""
-        self.receiving = False
-        for topic in self.topics.values():
-            topic.unsubscribe()
-        self.client.disconnect()
-        self.connected = False
-
-
-    def is_connected(self) -> bool:
-        """"""
-        return self.connected and self.client.is_connected
-"""
+            logger.error(f"Error processing down_utm message: {str(e)}")
 

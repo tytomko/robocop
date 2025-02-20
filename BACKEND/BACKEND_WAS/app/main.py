@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .domain.auth.controller.auth_controller import router as auth_router, create_admin_user
 from .domain.robot.controller.robot_controller import router as robot_router
@@ -35,6 +35,8 @@ import json
 import traceback
 from app.domain.ros_publisher.service.ros_bridge_connection import RosBridgeConnection
 import roslibpy
+from twisted.internet import reactor
+from fastapi.responses import StreamingResponse
 
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,7 @@ app = FastAPI(
 origins = [
     "https://robocopbackendssafy.duckdns.org/",
     "http://52.79.51.253",
+    "http://localhost:3000",
 ]
 
 # CORS ???? ??
@@ -61,6 +64,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["content-type", "content-length"],
 )
 # ?a? ?????? ???
 app.add_middleware(RequestLoggingMiddleware)
@@ -137,11 +141,11 @@ async def startup_event():
         await create_admin_user()
         
         # Start lidar service
-        try:
-            asyncio.create_task(start_lidar_subscriber())
-            logger.info("Lidar service started")
-        except Exception as e:
-            logger.warning(f"Failed to start lidar service: {str(e)}")
+        # try:
+        #     asyncio.create_task(start_lidar_subscriber())
+        #     logger.info("Lidar service started")
+        # except Exception as e:
+        #     logger.warning(f"Failed to start lidar service: {str(e)}")
         
         # Start socket server
         threading.Thread(target=start_socket_server, daemon=True).start()
@@ -189,124 +193,9 @@ async def websocket_middleware(request, call_next):
     return await call_next(request)
     
     
-    
-@app.websocket("/ws/test")
-async def websocket_test(websocket: WebSocket):
-    ros_bridge = None
-    client_id = f"ws_test_{id(websocket)}"
-    active_topics = {}
-    message_buffer = {}  # ??? ??? ??
-    last_broadcast_time = {}  # ??? ??? ?????? ??
-    BROADCAST_INTERVAL = 0.5  # ?????? ?? (?)
-    
-    try:
-        await websocket.accept()
-        logger.info("New websocket client connected")
-        await robot_service.register_frontend_client(websocket)
-        
-        ros_bridge = RosBridgeConnection()
-        if not ros_bridge.client or not ros_bridge.client.is_connected:
-            await websocket.close(code=1013, reason="ROS Bridge not connected")
-            return
-
-        ros_bridge.register_client(client_id)
-
-        topics = {
-            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
-            "/robot_1/status": "robot_custom_interfaces/msg/Status",
-        }
-        
-        for topic_name, msg_type in topics.items():
-            try:
-                topic = roslibpy.Topic(ros_bridge.client, topic_name, msg_type)
-                
-                def create_callback(topic_name):
-                    def callback(message):
-                        try:
-                            current_time = time.time()
-                            last_time = last_broadcast_time.get(topic_name, 0)
-                            
-                            if current_time - last_time >= 0.5:  # 0.5? ???? ??
-                                # ??? ??
-                                if topic_name == "/robot_1/utm_pose":
-                                    robot_state = {
-                                        "type": "robot_position",
-                                        "data": {
-                                            "position": message.get("pose", {}).get("position", {}),
-                                            "orientation": message.get("pose", {}).get("orientation", {})
-                                        },
-                                        "timestamp": datetime.now().isoformat()
-                                    }
-                                elif topic_name == "/robot_1/status":
-                                    robot_state = {
-                                        "type": "robot_status",
-                                        "data": {
-                                            "battery": message.get("battery", 0),
-                                            "status": message.get("status", ""),
-                                            "mode": message.get("mode", "")
-                                        },
-                                        "timestamp": datetime.now().isoformat()
-                                    }
-                                
-                                # ??? ?? ???? ? ??? ??
-                                try:
-                                    loop = asyncio.get_event_loop()
-                                except RuntimeError:
-                                    loop = asyncio.new_event_loop()
-                                    asyncio.set_event_loop(loop)
-                                
-                                # ??? ??? ?? ? ??
-                                future = asyncio.run_coroutine_threadsafe(
-                                    robot_service.broadcast_to_frontend(robot_state), 
-                                    loop
-                                )
-                                
-                                # ??? ?????? ?? ????
-                                last_broadcast_time[topic_name] = current_time
-                                
-                        except Exception as e:
-                            logger.error(f"Error processing message from {topic_name}: {str(e)}")
-                    
-                    return callback
-                
-                topic.subscribe(create_callback(topic_name))
-                active_topics[topic_name] = topic
-                logger.info(f"Subscribed to topic: {topic_name}")
-                
-            except Exception as e:
-                logger.error(f"Failed to subscribe to topic {topic_name}: {str(e)}")
-
-        while True:
-            try:
-                await asyncio.sleep(1)  # ?? ?? ?? ??
-                data = await websocket.receive_text()
-                
-                try:
-                    message = json.loads(data)
-                    if message.get("type") == "ping":
-                        await websocket.send_json({"type": "pong"})
-                except json.JSONDecodeError:
-                    logger.warning(f"Invalid JSON received: {data}")
-                
-            except WebSocketDisconnect:
-                break
-            except Exception as e:
-                logger.error(f"Error in websocket communication: {str(e)}")
-                break
-
-    except Exception as e:
-        logger.error(f"WebSocket connection error: {str(e)}")
-    finally:
-        # ?? ??
-        for topic in active_topics.values():
-            topic.unsubscribe()
-        if ros_bridge:
-            ros_bridge.unregister_client(client_id)
-        await robot_service.unregister_frontend_client(websocket)
-        
 
 # WebSocket ?? ???? ?????
-
+# WebSocket ?? ???? ?????
 
 
 
@@ -367,6 +256,30 @@ async def check_ros_topics():
             data={"error": str(e)}
         )
 
+
+
+#@app.get("/sse")
+#async def sse(request: Request):
+    #async def event_generator():
+    #    while True:
+    #        # ??? SSE ???? ??? ??
+    #        yield f"data: {json.dumps({'alert': True})}\n\n"
+    #        await asyncio.sleep(1)
+    
+    #response = StreamingResponse(
+    #    event_generator(), 
+    #    media_type="text/event-stream"
+    #)
+    
+    #response.headers.update({
+    #    "Cache-Control": "no-cache",
+    #    "Connection": "keep-alive",
+    #    "Content-Type": "text/event-stream",
+    #    "X-Accel-Buffering": "no"  # NGINX ??? ????
+    #})
+    
+    #return response
+    
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port, reload=False) 

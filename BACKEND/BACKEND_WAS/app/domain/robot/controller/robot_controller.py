@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Body, status, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Path, Query, Depends, UploadFile, File, Form, Body, status, WebSocket, WebSocketDisconnect, Request
 from typing import List, Optional, Dict, Set
 from ..service.robot_service import RobotService
 from ..models.robot_models import (
@@ -7,8 +7,12 @@ from ..models.robot_models import (
 
 from ....common.models.responses import BaseResponse
 from fastapi import HTTPException
-import logging
+import logging 
 import traceback
+import time
+import asyncio
+from fastapi.responses import StreamingResponse
+import json
 
 router = APIRouter()
 robot_service = RobotService()
@@ -268,3 +272,40 @@ async def robot_monitoring(
         logger.error(f"WebSocket 에러 발생: robot_id={robot_id}, error={str(e)}")
         if not websocket.client_state.disconnected:
             await websocket.close()
+            
+@router.get("/sse/{seq}/down-utm", tags=["robots"])
+async def get_robot_down_utm(seq: int, request: Request):
+    """
+    SSE 형식으로 /robot_{seq}/down_utm 토픽 메시지를 전송합니다.
+    매 1초마다 position 필드의 x, y 값만 추출하여 전송합니다.
+    메시지 예시:
+    {
+      "seq": <seq>,
+      "position": {"x": <x>, "y": <y>}
+    }
+    """
+    try:
+        # RobotService 인스턴스를 가져옵니다.
+        robot_service = await RobotService.get_instance(seq)
+        # 토픽 구독 설정 (구독 시 콜백에서 last_down_utm 변수가 갱신됩니다)
+        await robot_service.subscribe_down_utm(seq)
+        
+        async def event_generator():
+            while True:
+                if await request.is_disconnected():
+                    break
+                message_data = robot_service.last_down_utm
+                if message_data:
+                    pos = message_data.get("position", {})
+                    x = pos.get("x")
+                    y = pos.get("y")
+                    payload = {"seq": seq, "position": {"x": x, "y": y}}
+                else:
+                    payload = {"seq": seq, "position": None}
+                yield f"data: {json.dumps(payload)}\n\n"
+                await asyncio.sleep(0.2)
+        
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except Exception as e:
+        logger.error(f"다운 UTm SSE 에러: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 
