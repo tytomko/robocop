@@ -274,7 +274,7 @@ private:
     {
         (void) request;
         status_message.mode = "emergency stop";
-        status_message.is_active = false;
+        status_message.is_active = true;
         publisher_status_->publish(status_message);
         
         response->success = true;
