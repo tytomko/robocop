@@ -78,8 +78,8 @@
       <div v-else-if="mode === 'manual'" class="flex justify-between items-start">
         <div class="flex flex-row items-center w-full">
           <Cctv 
-            v-if="activeRobot"
-            :robotSeq="String(activeRobot.seq)" 
+            v-if="selectedRobot"
+            :robotSeq="String(selectedRobot.seq)" 
             :cameraType="'front'" 
             class="w-full h-[530px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
           />

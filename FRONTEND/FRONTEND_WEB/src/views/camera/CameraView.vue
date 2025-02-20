@@ -10,29 +10,29 @@
               <label class="font-medium text-gray-700">로봇 선택</label>
               <div class="w-full h-[120px] overflow-y-auto border border-gray-300 rounded bg-white text-sm">
                 <div 
-                  v-for="robot in robotsStore.robots" 
-                  :key="robot.seq"
-                  @click="toggleRobotSelection(robot.seq)"
-                  :class="[
-                    'p-2 cursor-pointer hover:bg-gray-100 flex items-center',
-                    selectedRobots.includes(robot.seq) ? 'bg-blue-100 hover:bg-blue-200' : ''
-                  ]"
-                >
-                  <span>{{ robot.nickname || robot.manufactureName }}</span>
-                  <svg
-                    v-if="selectedRobots.includes(robot.seq)"
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-600"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+                  v-for="robot in activeRobots" 
+                    :key="robot.seq"
+                    @click="toggleRobotSelection(robot.seq)"
+                    :class="[
+                      'p-2 cursor-pointer hover:bg-gray-100 flex items-center',
+                      selectedRobots.includes(robot.seq) ? 'bg-blue-100 hover:bg-blue-200' : ''
+                    ]"
                   >
-                    <path
-                      fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </div>
+                    <span>{{ robot.nickname || robot.manufactureName }}</span>
+                    <svg
+                      v-if="selectedRobots.includes(robot.seq)"
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5 text-blue-600"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
               </div>
             </div>
           </div>
@@ -86,6 +86,9 @@ import Cctv from '@/components/camera/Cctv.vue'
 const robotsStore = useRobotsStore()
 const selectedRobots = ref([])
 const selectedDirection = ref('both')
+const activeRobots = computed(() => {
+  return robotsStore.robots.filter(robot => robot.IsActive === true)
+})
 
 // 선택된 로봇 수가 제한을 초과하는지 감시
 watch([selectedRobots, selectedDirection], ([newRobots, newDirection]) => {
@@ -160,10 +163,14 @@ onMounted(() => {
   if (savedRobots) {
     const parsedRobots = JSON.parse(savedRobots)
     selectedRobots.value = Array.isArray(parsedRobots)
-      ? parsedRobots.filter(seq => robotsStore.robots.some(robot => robot.seq === seq))
+      ? parsedRobots.filter(seq => robotsStore.robots.some(robot => robot.seq === seq && robot.IsActive === true))
       : []
   }
-  if (robotsStore.selectedRobot && !selectedRobots.value.includes(robotsStore.selectedRobot)) {
+  if (robotsStore.selectedRobot && 
+      !selectedRobots.value.includes(robotsStore.selectedRobot) &&
+      robotsStore.robots.some(robot => 
+        robot.seq === robotsStore.selectedRobot && robot.IsActive === true
+      )) {
     selectedRobots.value.push(robotsStore.selectedRobot)
   }
 })
