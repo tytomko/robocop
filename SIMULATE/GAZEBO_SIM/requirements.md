@@ -25,7 +25,9 @@
    - Velodyne 관련 라이브러리
 
 6. **Eigen3**  
-   - (용도 미확인)
+   - ...
+7. **pcl**
+   - Polint cloud 관련 라이브러리
 
 ---
 
@@ -60,7 +62,9 @@
     │   ├── robot_vision_pkg
     │   │   └── velodyne_detection.cpp
     │   ├── robot_ai_pkg
-    │   │   └── ai_process.cpp   
+    │   │   └── ai_process.cpp
+    │   ├── gps_hz_pkg
+    │   │   └── gps.py   
     │   ├── total_launch_pkg
     │   │   └── launch
     │   │       └── ssafy_robot_launch.py
@@ -142,14 +146,32 @@
 
 ---
 
-## 4. 실행 명령어
-
-### 4.1. 가제보 실행
+## 4. 모델 경로 설정
 ```bash
-ros2 launch turtlebot3_gazebo tb3_imu_lidar_gps_burger.launch.py
+export ROS_DOMAIN_ID=30
+export TURTLEBOT3_MODEL=burger
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models/
+```
+위 내용에서 경로를 자신의 위치로 맞춰서 `~/.bashrc`에 추가하세요. 아래 예시
+
+### 예시
+```bash
+echo 'export ROS_DOMAIN_ID=30' >> ~/.bashrc
+echo 'export TURTLEBOT3_MODEL=burger' >> ~/.bashrc
+echo 'export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/ubuntu/S12P11C101/SIMULATE/GAZEBO_SIM/ssafy_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models/' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-### 4.2. 런치 파일 실행 (로봇별)
+## 5. 실행 명령어
+
+### 5.1. 가제보 실행
+
+모델불러오는데 오래걸림.
+```bash
+ros2 launch turtlebot3_gazebo ssafy_office.launch.py 
+```
+
+### 5.2. 런치 파일 실행 (로봇별)
 ```bash
 ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=ssafy robot_number:=1
 ```
@@ -163,12 +185,12 @@ ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=charging robot_nu
 ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=champ robot_number:=4
 ```
 
-### 4.3. 키보드 입력 (메뉴얼 모드 변경 후)
+### 5.3. 키보드 입력 (메뉴얼 모드 변경 후)
 ```bash
 ros2 run robot_control_pkg key_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
 ```
 
-### 4.4. 서비스 호출 명령어
+### 5.4. 서비스 호출 명령어
 
 - **호밍 서비스**
   ```bash
@@ -203,7 +225,7 @@ ros2 run robot_control_pkg key_publisher --ros-args -p robot_name:=ssafy -p robo
   ros2 service call /robot_1/manual robot_custom_interfaces/srv/Manual
   ```
 
-### 4.5. 여러 대의 로봇 동시 주행 예시
+### 5.5. 여러 대의 로봇 동시 주행 예시
 
 - **예시 1:**
   ```bash
@@ -220,9 +242,9 @@ ros2 run robot_control_pkg key_publisher --ros-args -p robot_name:=ssafy -p robo
 
 ---
 
-## 5. 커스텀 메시지 사용 및 필수 설치 항목
+## 6. 커스텀 메시지 사용 및 필수 설치 항목
 
-### 5.1. 커스텀 메시지 사용
+### 6.1. 커스텀 메시지 사용
 
 GAZEBO_SIM 프로젝트 내 `ssafy_ws` 폴더 안에 위치한 `robot_custom_interfaces` 패키지에서 커스텀 메시지를 정의합니다.
 
@@ -250,41 +272,29 @@ GAZEBO_SIM 프로젝트 내 `ssafy_ws` 폴더 안에 위치한 `robot_custom_int
   <depend>robot_custom_interfaces</depend>
   ```
 
-### 5.2. 필수 설치 항목
+### 6.2. 필수 설치 항목
 프로젝트 실행을 위해 다음 명령어들을 사용하여 필수 라이브러리 및 패키지를 설치합니다.
 
+ssafy_ws/ 디렉토리에서 아래명령어 수행
 ```bash
-sudo apt-get update
-sudo apt-get install libgeographic-dev
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
 ```
-```bash
-sudo apt-get update
-sudo apt-get install ros-humble-pcl-conversions
-```
+
 ```bash
 sudo pip3 install scikit-learn
 sudo pip3 install networkx
-pip install "numpy<1.25.0"
+sudo pip3 install catkin_pkg
+sudo pip3 install "numpy<1.25.0"
 ```
+
 ```bash
 sudo apt-get update
+sudo apt-get install mrpt-apps
 sudo apt-get install libeigen3-dev
-```
-```bash
-sudo apt-get update
 sudo apt-get install ros-humble-geographic-msgs
+sudo apt-get install libgeographic-dev
+sudo apt-get install libpcl-dev
+sudo apt-get install ros-hubmle-pcl-conversions
+sudo apt-get install ros-hubmle-pcl-ros
 ```
-
----
-
-## 문서 및 코드 수정 내역 요약
-
-- **문서 구조 재정리:**  
-  각 항목(개요, 사전 설치 라이브러리, 파일 구조, 노드 설명, 실행 명령어, 커스텀 메시지 사용 및 설치 항목)을 명확하게 구분하여 구성하였습니다.
-
-- **코드 블록 정리:**  
-  CMakeLists.txt, package.xml, Bash 명령어 등의 코드 블록을 별도 섹션으로 나누고 전체 코드를 제공하였습니다.
-
-- **세부 설명 보완:**  
-  각 노드와 실행 명령어의 역할을 보다 명확하게 설명하여, 문서 이해도를 높였습니다.
-
