@@ -270,24 +270,24 @@ const mapKey = ref(Date.now())
 
 watch(selectedRobotSeq, async (newVal, oldVal) => {
   if (newVal !== oldVal) {
-    console.log('Robot changed:', newVal)
-    selectedNodes.value = []
-    mapKey.value = Date.now()
+    console.log('Robot changed:', newVal);
+    selectedNodes.value = [];
     
-    // 로봇이 선택되면 자동으로 resume 모드로 설정
-    if (newVal) {
+    // 로봇 선택이 유효한 경우에만 처리
+    if (newVal && activeRobot.value) {
+      mapKey.value = Date.now();
       try {
         await axios.post(
           `https://robocopbackendssafy.duckdns.org/api/v1/${newVal}/call-service/resume`
-        )
-        isAutoMode.value = true
-        mode.value = 'auto'
+        );
+        isAutoMode.value = true;
+        mode.value = 'auto';
       } catch (error) {
-        console.error('초기 모드 설정 실패:', error)
+        console.error('초기 모드 설정 실패:', error);
       }
     }
   }
-})
+});
 
 onMounted(() => {
   robotsStore.loadRobots()

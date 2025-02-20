@@ -1,6 +1,14 @@
 <template>
   <div ref="container" class="w-full h-[400px] bg-black rounded-lg">
     <!-- Three.js 렌더링 컨테이너 -->
+    <!-- 숨겨진 버튼 - 개발자 도구에서만 보임 -->
+    <button
+      class="absolute opacity-0 cursor-default"
+      style="top: -9999px; left: -9999px;"
+      @click="connectToLidarSSE"
+    >
+      라이다 실시간 데이터 연결
+    </button>
   </div>
 </template>
 
@@ -24,6 +32,7 @@ let scene, camera, renderer, controls;
 let pointCloud;
 let eventSource = null;
 let isSSEFailed = false;
+let isLiveDataEnabled = false;  // 실시간 데이터 활성화 상태
 
 // Three.js 초기화
 const initThree = () => {
@@ -120,28 +129,27 @@ const loadStaticPCD = () => {
   );
 };
 
-// SSE 연결 설정
-const connectToLidarSSE = (robotSeq) => {
-  if (eventSource) {
-    eventSource.close();
-  }
-
-  eventSource = new EventSource(`https://robocopbackendssafy.duckdns.org/api/v1/lidar/sse/${robotSeq}`);
+// SSE 연결 함수를 별도로 분리
+const connectToLidarSSE = () => {
+  if (isLiveDataEnabled) return;  // 이미 연결된 경우 중복 연결 방지
+  
+  isLiveDataEnabled = true;
+  eventSource = new EventSource(
+    `https://robocopbackendssafy.duckdns.org/api/v1/lidar/sse/${props.robotSeq}`
+  );
+  
   eventSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.pcd) {
       updatePointCloud(data.pcd);
-      // 부모 컴포넌트에 데이터 전달
       emit('lidar-update', data.pcd.points, data.timestamp);
     }
   };
-
+  
   eventSource.onerror = (error) => {
     console.error('라이다 SSE 연결 에러:', error);
-    eventSource.close();
     if (!isSSEFailed) {
       isSSEFailed = true;
-      console.log('SSE 연결 실패, 정적 PCD 파일 로드 시도');
       loadStaticPCD();
     }
   };
@@ -166,17 +174,18 @@ const handleResize = () => {
   renderer.setSize(width, height);
 };
 
-// 컴포넌트 마운트 시 초기화
+// 컴포넌트 마운트 시
 onMounted(() => {
   initThree();
-  connectToLidarSSE(props.robotSeq);
+  loadStaticPCD();  // 정적 PCD 파일만 로드
   window.addEventListener('resize', handleResize);
 });
 
-// 컴포넌트 언마운트 시 정리
+// 컴포넌트 언마운트 시
 onUnmounted(() => {
   if (eventSource) {
     eventSource.close();
+    isLiveDataEnabled = false;  // 상태 초기화
   }
   window.removeEventListener('resize', handleResize);
   if (renderer) {
@@ -188,10 +197,10 @@ onUnmounted(() => {
   isSSEFailed = false;
 });
 
-// robotSeq가 변경될 때 SSE 재연결
+// robotSeq가 변경될 때
 watch(() => props.robotSeq, (newSeq) => {
   isSSEFailed = false;
-  connectToLidarSSE(newSeq);
+  loadStaticPCD();  // 정적 PCD 파일만 로드
 });
 </script>
 

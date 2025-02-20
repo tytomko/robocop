@@ -185,10 +185,6 @@ export const useRobotsStore = defineStore('robots', () => {
     }
   }
 
-  const alerts = ref(false);
-
-  // robots.js에 추가할 메소드
-
 const updateRobotPosition = (seq, position) => {
   const robotIndex = robots.value.findIndex(r => r.seq === seq);
   if (robotIndex !== -1) {
@@ -199,6 +195,13 @@ const updateRobotPosition = (seq, position) => {
         y: position.y,
       }
     };
+  }
+}
+
+const updateRobotStatus = (seq, statusData) => {
+  const robot = robots.value.find(r => r.seq === seq);
+  if (robot) {
+    Object.assign(robot, statusData);
   }
 }
 
@@ -214,7 +217,6 @@ const updateRobotPosition = (seq, position) => {
     robotNicknames,
     displayRobots,
     leftSidebarCollapsed,
-    alerts,
 
     // methods
     updateRobotPosition,
@@ -230,5 +232,6 @@ const updateRobotPosition = (seq, position) => {
     handleAddRobot,
     startPolling,
     stopPolling,
+    updateRobotStatus
   }
 })

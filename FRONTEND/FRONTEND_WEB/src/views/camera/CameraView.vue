@@ -66,7 +66,7 @@
         <Cctv
           v-for="camera in cameras"
           :key="`${camera.robotSeq}-${camera.type}`"
-          :robotSeq="camera.robotSeq"
+          :robotSeq="String(camera.robotSeq)"
           :cameraType="camera.type"
           class="video-item"
         />

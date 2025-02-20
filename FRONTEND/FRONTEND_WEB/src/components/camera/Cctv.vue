@@ -35,7 +35,7 @@ import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
   robotSeq: {
-    type: String,
+    type: [String, Number],
     required: true
   },
   cameraType: {

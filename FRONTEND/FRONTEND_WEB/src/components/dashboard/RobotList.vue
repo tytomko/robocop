@@ -23,7 +23,6 @@
           }
         ]"
       >
-        <!-- 이전 컴포넌트의 나머지 내용은 동일하게 유지 -->
         <!-- X 버튼 -->
         <button 
           class="absolute top-2 right-2 text-gray-500 hover:text-gray-600 z-10" 
@@ -81,6 +80,12 @@
               <div class="h-full" :class="getBatteryClass(robot.battery.level)" :style="{ width: robot.battery.level + '%' }"></div>
               <span class="absolute inset-0 flex justify-center items-center text-xs text-white font-semibold">{{ robot.battery.level }}%</span>
             </div>
+          </div>
+          <div>
+            <span class="text-sm text-gray-600">CPU 온도</span>
+            <span class="block text-gray-800 font-medium">
+              {{ robot.cpuTemp ? `${robot.cpuTemp}°C` : '알 수 없음' }}
+            </span>
           </div>
           <div>
             <span class="text-sm text-gray-600">현재 위치</span>
@@ -143,11 +148,6 @@ const visibleRobots = computed(() =>
 const hideRobot = (robotSeq) => hiddenRobots.value.push(robotSeq);
 const toast = useToast()
 
-// 사이드바 상태에 따른 그리드 레이아웃 계산
-const bothSidebarsCollapsed = computed(() => 
-  robotsStore.leftSidebarCollapsed
-);
-
 const getBatteryClass = (battery) => {
   return {
     'bg-green-500': battery >= 30,
@@ -196,11 +196,14 @@ const returnRobot = async (robotSeq) => {
 };
 
 const handleStartStop = async (robot) => {
+  if (!robot || !robot.seq) {
+    console.warn('로봇 정보가 없습니다.');
+    return;
+  }
+
   if (robot.status === 'navigating') {
-    // 현재 가동 중이면 비상 정지 실행
     try {
       await robotCommandsStore.tempStopCommand(robot.seq);
-      // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
       robot.status = 'emergencyStopped';
       toast.info('로봇이 일시정지 되었습니다.', {
         position: "bottom-center",
@@ -208,25 +211,36 @@ const handleStartStop = async (robot) => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-      })
+      });
     } catch (err) {
       console.error('비상 정지 명령 에러:', err);
+      toast.error('일시정지 실패', {
+        position: "bottom-center",
+        timeout: 3000,
+      });
     }
   } else {
-    // 현재 가동 중이 아니면 navigateCommand 실행 (기본 목표는 로봇의 현재 위치 또는 [0,0])
     try {
+      // AI 초기화 실행
+      await robotCommandsStore.initializeAI();
+      // resumeCommand 실행
       await robotCommandsStore.resumeCommand(robot.seq);
-      // 가동 시작 후 상태 업데이트
+      // 상태 업데이트
       robot.status = 'navigating';
+      
       toast.info('활동을 시작합니다.', {
         position: "bottom-center",
         timeout: 3000,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-      })
+      });
     } catch (err) {
       console.error('가동 시작 명령 에러:', err);
+      toast.error('가동 시작에 실패했습니다.', {
+        position: "bottom-center",
+        timeout: 3000,
+      });
     }
   }
 };
@@ -239,22 +253,23 @@ const isActive = (robot) => {
 }
 
 // SSE 관련 상태 및 함수들
-const sseConnections = ref(new Map());
+const positionSSEConnections = ref(new Map());
+const statusSSEConnections = ref(new Map());
 
 // 좌표 포맷팅 함수
 const formatCoordinate = (value) => {
   return value ? Number(value).toFixed(2) : '0.00';
 };
 
-// SSE 설정 함수
-const setupSSE = (seq) => {
+// SSE 설정 함수들
+const setupPositionSSE = (seq) => {
   if (!seq) return;
   
   const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${seq}/down-utm`;
   const eventSource = new EventSource(url);
   
   let lastUpdate = 0;
-  const updateInterval = 100; // 100ms 간격으로 제한
+  const updateInterval = 200;
 
   eventSource.onmessage = (event) => {
     const now = Date.now();
@@ -262,41 +277,85 @@ const setupSSE = (seq) => {
 
     try {
       const data = JSON.parse(event.data);
-      robotsStore.updateRobotPosition(seq, {
-        x: Number(data.position.x),
-        y: Number(data.position.y)
-      });
+      if (data.position) {  // position이 null이 아닐 때만 업데이트
+        robotsStore.updateRobotPosition(seq, {
+          x: Number(data.position.x),
+          y: Number(data.position.y)
+        });
+      }
       lastUpdate = now;
     } catch (error) {
-      console.error('SSE 메시지 처리 중 에러:', error);
+      console.error('Position SSE 메시지 처리 중 에러:', error);
     }
   };
 
   eventSource.onerror = (error) => {
-    console.error('SSE 연결 에러:', error);
+    console.error('Position SSE 연결 에러:', error);
     eventSource.close();
-    sseConnections.value.delete(seq);
+    positionSSEConnections.value.delete(seq);
   };
 
-  sseConnections.value.set(seq, eventSource);
+  positionSSEConnections.value.set(seq, eventSource);
+  return eventSource;
+};
+
+const setupStatusSSE = (seq) => {
+  if (!seq) return;
+  
+  const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${seq}/status`;
+  const eventSource = new EventSource(url);
+  
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.status && Object.keys(data.status).length > 0) {  // status가 존재하고 비어있지 않을 때만
+        robotsStore.updateRobotStatus(seq, {
+          battery: data.status.battery,
+          networkHealth: data.status.networkHealth,
+          cpuTemp: data.status.cpuTemp,
+          startAt: data.status.startAt,
+        });
+      }
+    } catch (error) {
+      console.error('Status SSE 메시지 처리 중 에러:', error);
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    console.error('Status SSE 연결 에러:', error);
+    eventSource.close();
+    statusSSEConnections.value.delete(seq);
+  };
+
+  statusSSEConnections.value.set(seq, eventSource);
   return eventSource;
 };
 
 // 모든 로봇에 대해 SSE 연결 설정
 const setupAllSSEConnections = () => {
   visibleRobots.value.forEach(robot => {
-    if (!sseConnections.value.has(robot.seq) && isActive(robot)) {
-      setupSSE(robot.seq);
+    if (isActive(robot)) {
+      if (!positionSSEConnections.value.has(robot.seq)) {
+        setupPositionSSE(robot.seq);
+      }
+      if (!statusSSEConnections.value.has(robot.seq)) {
+        setupStatusSSE(robot.seq);
+      }
     }
   });
 };
 
 // 모든 SSE 연결 정리
 const cleanupSSEConnections = () => {
-  sseConnections.value.forEach(eventSource => {
+  positionSSEConnections.value.forEach(eventSource => {
     eventSource.close();
   });
-  sseConnections.value.clear();
+  positionSSEConnections.value.clear();
+  
+  statusSSEConnections.value.forEach(eventSource => {
+    eventSource.close();
+  });
+  statusSSEConnections.value.clear();
 };
 
 // Lifecycle hooks
@@ -310,18 +369,29 @@ onUnmounted(() => {
 
 // visibleRobots 변경 감시
 watch(visibleRobots, (newRobots) => {
-  // 새로운 로봇이 추가되었을 때 SSE 연결 설정
   newRobots.forEach(robot => {
-    if (!sseConnections.value.has(robot.seq) && isActive(robot)) {
-      setupSSE(robot.seq);
+    if (isActive(robot)) {
+      if (!positionSSEConnections.value.has(robot.seq)) {
+        setupPositionSSE(robot.seq);
+      }
+      if (!statusSSEConnections.value.has(robot.seq)) {
+        setupStatusSSE(robot.seq);
+      }
     }
   });
   
-  // 더 이상 표시되지 않는 로봇의 SSE 연결 제거
-  sseConnections.value.forEach((eventSource, seq) => {
+  // 연결 정리
+  [...positionSSEConnections.value.keys()].forEach(seq => {
     if (!newRobots.some(robot => robot.seq === seq)) {
-      eventSource.close();
-      sseConnections.value.delete(seq);
+      positionSSEConnections.value.get(seq).close();
+      positionSSEConnections.value.delete(seq);
+    }
+  });
+  
+  [...statusSSEConnections.value.keys()].forEach(seq => {
+    if (!newRobots.some(robot => robot.seq === seq)) {
+      statusSSEConnections.value.get(seq).close();
+      statusSSEConnections.value.delete(seq);
     }
   });
 }, { deep: true });

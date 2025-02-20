@@ -121,10 +121,11 @@ import { useRoute } from "vue-router";
 import AlarmNotification from "@/components/dashboard/AlarmNotification.vue";
 import ListSidebarSection from "./components/dashboard/ListSidebarSection.vue";
 import AlertSystem from "./components/ai/AlertSystem.vue";
-import { webSocketService } from '@/services/websocket';
+import { useNotificationsStore } from "./stores/notifications";
 import { useRobotsStore } from '@/stores/robots';
 
 const robotsStore = useRobotsStore();
+const notificationsStore = useNotificationsStore();
 const route = useRoute();
 const isLoginPage = computed(() => route.path === "/login");
 
@@ -176,53 +177,56 @@ watch(
   }
 );
 
-let sse; // SSE 연결 객체를 저장할 변수
+const alertSSEConnections = new Map();
 
 onMounted(async () => {
-  // SSE 연결 생성
-const sseUrl = import.meta.env.PROD 
-  ? 'https://robocopbackendssafy.duckdns.org/sse'
-  : '/sse';
+  // 로봇별 alert SSE 연결 설정
+  const setupAlertSSE = (seq) => {
+    const alertSSE = new EventSource(
+      `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${seq}/alert`
+    );
 
-sse = new EventSource(sseUrl, {
-  withCredentials: true
-});
+    alertSSE.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.alert) {
+        const { type, message } = data.alert;
+        console.log('Alert received:', type, message);  // 디버깅용 로그 추가
+        
+        // emergency 타입일 경우 경보 시스템 활성화
+        if (type === 'emergency') {
+          robotsStore.alerts = true;
+        }
+        // clear 타입일 경우 경보 해제 및 알림 추가
+        else if (type === 'clear') {
+          robotsStore.alerts = false;
+          notificationsStore.addNotification({
+            message: '신원이 확인되었습니다',
+            timestamp: new Date().toISOString()
+          });
+        }
+        // caution 타입일 경우 알림 추가
+        else if (type === 'caution') {
+          notificationsStore.addNotification({
+            message: '거수자를 발견하였습니다',
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    };
 
-sse.onopen = () => {
-  console.log('SSE 연결 성공');
-};
+    return alertSSE;
+  };
 
-sse.onmessage = (event) => {
-  console.log('SSE 이벤트 수신:', event.data);
-  try {
-    const data = JSON.parse(event.data);
-    // 데이터 처리
-  } catch (error) {
-    console.error('SSE 데이터 파싱 에러:', error);
-  }
-};
-
-sse.onerror = (error) => {
-  console.error('SSE 에러:', error);
-  // 연결 재시도 로직
-  if (sse.readyState === EventSource.CLOSED) {
-    setTimeout(() => {
-      console.log('SSE 재연결 시도...');
-      sse.close();
-      // SSE 재연결 로직
-    }, 5000);
-  }
-};
+  // seq=1로 고정하여 테스트
+  alertSSEConnections.set(1, setupAlertSSE(1));
 });
 
 onUnmounted(() => {
   webSocketService.disconnect();
   
-  // SSE 연결 종료
-  if (sse) {
-    sse.close();
-    console.log('SSE 연결 종료');
-  }
+  // alert SSE 연결 정리
+  alertSSEConnections.forEach(sse => sse.close());
+  alertSSEConnections.clear();
 });
 
 // 사이드바 토글 함수

@@ -2,7 +2,7 @@
   <div>
     <!-- 알림 팝업 -->
     <Transition name="slide-fade">
-      <div v-if="robotsStore.alerts" 
+      <div v-if="notificationsStore.alerts" 
            class="fixed top-[55px] left-0 right-0 bg-red-600 text-white py-2 px-4 shadow-lg z-50">
         <div class="flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -15,7 +15,7 @@
 
     <!-- 경보 해제 버튼 -->
     <Transition name="fade">
-      <button v-if="robotsStore.alerts"
+      <button v-if="notificationsStore.alerts"
               @click="confirmDisableAlert"
               class="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -52,15 +52,15 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import { useRobotsStore } from '@/stores/robots';
+import { useNotificationsStore } from '@/stores/notifications';
 import axios from 'axios';
 
-const robotsStore = useRobotsStore();
+const notificationsStore = useNotificationsStore()
 const showConfirmModal = ref(false);
 const isLoading = ref(false);
 
 // alert 상태 변화 감지하여 navbar 스타일 변경
-watch(() => robotsStore.alerts, (newValue) => {
+watch(() => notificationsStore.alerts, (newValue) => {
   if (newValue) {
     document.querySelector('nav')?.classList.add('alert-active');
   } else {
@@ -87,7 +87,7 @@ const disableAlert = async () => {
     await axios.post('https://robocopbackendssafy.duckdns.org/api/v1/alert-off');
     
     // 성공하면 로컬 상태 업데이트
-    robotsStore.alerts = false;
+    notificationsStore.setAlertStatus(false);
     showConfirmModal.value = false;
   } catch (error) {
     console.error('경보 해제 실패:', error);
