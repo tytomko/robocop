@@ -23,6 +23,7 @@
           }
         ]"
       >
+        <!-- 이전 컴포넌트의 나머지 내용은 동일하게 유지 -->
         <!-- X 버튼 -->
         <button 
           class="absolute top-2 right-2 text-gray-500 hover:text-gray-600 z-10" 
@@ -35,6 +36,23 @@
             <div>
               <h3 class="text-lg font-semibold">{{ robot.nickname || robot.name }}</h3>
               <p class="text-sm text-gray-500">{{ robot.manufactureName }}</p>
+              <!-- 로봇 상태 표시 -->
+              <div class="mt-1">
+                <span :class="[
+                  'px-2 py-1 text-xs rounded-full',
+                  {
+                    'bg-gray-200 text-gray-700': robot.status === 'waiting',
+                    'bg-blue-200 text-blue-700': robot.status === 'patrol',
+                    'bg-yellow-200 text-yellow-700': robot.status === 'temp stop',
+                    'bg-red-200 text-red-700': robot.status === 'emergency stop',
+                    'bg-purple-200 text-purple-700': robot.status === 'manual',
+                    'bg-green-200 text-green-700': robot.status === 'navigating',
+                    'bg-blue-200 text-blue-700': robot.status === 'homing'
+                  }
+                ]">
+                  {{ getStatusLabel(robot.status) }}
+                </span>
+              </div>
             </div>
             
             <!-- 와이파이 아이콘 -->
@@ -81,6 +99,7 @@
               <span class="absolute inset-0 flex justify-center items-center text-xs text-white font-semibold">{{ robot.battery.level }}%</span>
             </div>
           </div>
+          <!-- CPU 온도 표시 -->
           <div>
             <span class="text-sm text-gray-600">CPU 온도</span>
             <span class="block text-gray-800 font-medium">
@@ -196,14 +215,11 @@ const returnRobot = async (robotSeq) => {
 };
 
 const handleStartStop = async (robot) => {
-  if (!robot || !robot.seq) {
-    console.warn('로봇 정보가 없습니다.');
-    return;
-  }
-
   if (robot.status === 'navigating') {
+    // 현재 가동 중이면 비상 정지 실행
     try {
       await robotCommandsStore.tempStopCommand(robot.seq);
+      // 비상 정지 후 상태 업데이트 (예: 'active' 상태)
       robot.status = 'emergencyStopped';
       toast.info('로봇이 일시정지 되었습니다.', {
         position: "bottom-center",
@@ -211,36 +227,29 @@ const handleStartStop = async (robot) => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-      });
+      })
     } catch (err) {
       console.error('비상 정지 명령 에러:', err);
-      toast.error('일시정지 실패', {
-        position: "bottom-center",
-        timeout: 3000,
-      });
     }
   } else {
+    // 현재 가동 중이 아니면 navigateCommand 실행 (기본 목표는 로봇의 현재 위치 또는 [0,0])
     try {
-      // AI 초기화 실행
-      await robotCommandsStore.initializeAI();
-      // resumeCommand 실행
-      await robotCommandsStore.resumeCommand(robot.seq);
-      // 상태 업데이트
-      robot.status = 'navigating';
       
+      await robotCommandsStore.initializeAI();
+      await robotCommandsStore.resumeCommand(robot.seq);
+      // 가동 시작 후 상태 업데이트
+      robot.status = 'navigating';
+
+
       toast.info('활동을 시작합니다.', {
         position: "bottom-center",
         timeout: 3000,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-      });
+      })
     } catch (err) {
       console.error('가동 시작 명령 에러:', err);
-      toast.error('가동 시작에 실패했습니다.', {
-        position: "bottom-center",
-        timeout: 3000,
-      });
     }
   }
 };
@@ -269,7 +278,7 @@ const setupPositionSSE = (seq) => {
   const eventSource = new EventSource(url);
   
   let lastUpdate = 0;
-  const updateInterval = 200;
+  const updateInterval = 1000;
 
   eventSource.onmessage = (event) => {
     const now = Date.now();
@@ -310,10 +319,12 @@ const setupStatusSSE = (seq) => {
       const data = JSON.parse(event.data);
       if (data.status && Object.keys(data.status).length > 0) {  // status가 존재하고 비어있지 않을 때만
         robotsStore.updateRobotStatus(seq, {
+          status: data.status.status,
           battery: data.status.battery,
           networkHealth: data.status.networkHealth,
           cpuTemp: data.status.cpuTemp,
           startAt: data.status.startAt,
+          isActive: data.status.IsActive  // 소문자 isActive로 통일
         });
       }
     } catch (error) {
@@ -395,4 +406,17 @@ watch(visibleRobots, (newRobots) => {
     }
   });
 }, { deep: true });
+
+const getStatusLabel = (status) => {
+  const statusMap = {
+    'waiting': '대기중',
+    'patrol': '순찰중',
+    'temp stop': '일시정지',
+    'emergency stop': '긴급정지',
+    'manual': '수동조작',
+    'navigating': '이동중',
+    'homing': '복귀중'
+  };
+  return statusMap[status] || status;
+};
 </script>

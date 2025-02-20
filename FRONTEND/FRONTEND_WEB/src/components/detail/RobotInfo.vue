@@ -6,7 +6,6 @@
       <p><strong>배터리:</strong> {{ currentRobot?.battery?.level || robot.battery.level }}%</p>
       <p><strong>네트워크 상태:</strong> {{ Math.floor(currentRobot?.networkHealth) || robot.networkHealth }}% ({{ currentRobot?.networkStatus || robot.networkStatus }})</p>
       <p><strong>CPU 온도:</strong> {{ robot.cpuTemp }}°C</p>
-      <p><strong>속도: {{ robot.motion }}</strong></p>
       <p><strong>작동 시작 시간:</strong> {{ getOperationTime(currentRobot?.startAt || robot.startAt, currentRobot?.isActive || robot.isActive) }}</p>
     </div>
     <hr class="border-gray-300 my-4">

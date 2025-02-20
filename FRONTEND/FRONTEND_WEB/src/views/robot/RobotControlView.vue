@@ -62,6 +62,7 @@
           @reset="resetSelection" 
           @tempStop="handleTempStop"
           @resume="handleResume"
+          :disabled="selectedNodes.length === 0"
         />
 
         <RobotMap 
@@ -135,7 +136,9 @@ import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 import ControlButtons from '@/components/map/ControlButtons.vue'
 import axios from 'axios'
+import { useToast } from 'vue-toastification'
 
+const toast = useToast()
 const robotsStore = useRobotsStore()
 const selectedRobotSeq = ref('')
 const selectedNodes = ref([])
@@ -157,10 +160,26 @@ function onSelectedNodesChange(newNodes) {
 
 function handleNavigate() {
   robotMap.value?.handleNavigate?.()
+  toast.info('이동을 시작합니다.', {
+    position: "bottom-center",
+    timeout: 3000,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  })
+  selectedNodes.value = [] // 노드 선택 초기화
 }
 
 function handlePatrol() {
   robotMap.value?.handlePatrol?.()
+  toast.success('순찰을 시작합니다.', {
+    position: "bottom-center",
+    timeout: 3000,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  })
+  selectedNodes.value = [] // 노드 선택 초기화
 }
 
 function resetSelection() {
@@ -270,24 +289,24 @@ const mapKey = ref(Date.now())
 
 watch(selectedRobotSeq, async (newVal, oldVal) => {
   if (newVal !== oldVal) {
-    console.log('Robot changed:', newVal);
-    selectedNodes.value = [];
+    console.log('Robot changed:', newVal)
+    selectedNodes.value = []
+    mapKey.value = Date.now()
     
-    // 로봇 선택이 유효한 경우에만 처리
-    if (newVal && activeRobot.value) {
-      mapKey.value = Date.now();
+    // 로봇이 선택되면 자동으로 resume 모드로 설정
+    if (newVal) {
       try {
         await axios.post(
           `https://robocopbackendssafy.duckdns.org/api/v1/${newVal}/call-service/resume`
-        );
-        isAutoMode.value = true;
-        mode.value = 'auto';
+        )
+        isAutoMode.value = true
+        mode.value = 'auto'
       } catch (error) {
-        console.error('초기 모드 설정 실패:', error);
+        console.error('초기 모드 설정 실패:', error)
       }
     }
   }
-});
+})
 
 onMounted(() => {
   robotsStore.loadRobots()
