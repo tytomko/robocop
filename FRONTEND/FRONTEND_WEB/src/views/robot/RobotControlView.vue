@@ -16,7 +16,7 @@
         >
           <option disabled value="">선택해주세요</option>
           <option 
-            v-for="robot in robotsStore.robots" 
+            v-for="robot in activeRobots" 
             :key="robot.seq" 
             :value="robot.seq"
           >
@@ -49,11 +49,11 @@
       </div>
     </div>
 
-    <div v-if="!activeRobot" class="text-center text-gray-500">
+    <div v-if="!selectedRobot" class="text-center text-gray-500">
       로봇을 먼저 선택해주세요.
     </div>
 
-    <div class="mt-5" v-if="activeRobot">
+    <div class="mt-5" v-if="selectedRobot">
       <div v-if="mode === 'auto'">
         <ControlButtons 
           :selectedNodes="selectedNodes" 
@@ -66,10 +66,10 @@
         />
 
         <RobotMap 
-          v-if="activeRobot"
+          v-if="selectedRobot"
           :key="mapKey"
           ref="robotMap" 
-          :robot="activeRobot"
+          :robot="selectedRobot"
           :isManualMode="mode === 'manual'"
           @selectedNodesChange="onSelectedNodesChange" 
         />
@@ -148,7 +148,11 @@ const isAutoMode = ref(true)
 const mode = ref('auto')
 const controlArea = ref(null)
 
-const activeRobot = computed(() => {
+const activeRobots = computed(() => {
+  return robotsStore.robots.filter(robot => robot.IsActive === true)
+})
+
+const selectedRobot = computed(() => {
   return robotsStore.robots.find(robot => 
     String(robot.seq) === String(selectedRobotSeq.value)
   ) || null

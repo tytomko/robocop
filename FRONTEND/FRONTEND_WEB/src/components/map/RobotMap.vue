@@ -381,40 +381,49 @@ function updateChartSeries() {
 
 // SSE 설정
 function setupSSE() {
-  // 항상 모든 로봇의 SSE 설정
-  const eventSources = new Map()
+  // 기존 연결들 정리
+  robotPositions.value.clear() // 기존 위치 정보도 초기화
+  eventSources.forEach(source => source.close())
+  eventSources.clear()
   
-  robotsStore.robots.forEach(robot => {
-    const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
-    const eventSource = new EventSource(url)
-    
-    let lastUpdate = 0
-    const updateInterval = 500
+  // seq가 1과 2인 로봇에 대해서만 SSE 설정
+  const newEventSources = new Map()
+  
+  robotsStore.robots
+    .filter(robot => robot.seq === 1 || robot.seq === 2)
+    .forEach(robot => {
+      console.log(`Setting up SSE for robot ${robot.seq}`) // 디버깅용
+      const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
+      const eventSource = new EventSource(url)
+      
+      let lastUpdate = 0
+      const updateInterval = 500
 
-    eventSource.onmessage = (event) => {
-      const now = Date.now()
-      if (now - lastUpdate < updateInterval) return
+      eventSource.onmessage = (event) => {
+        const now = Date.now()
+        if (now - lastUpdate < updateInterval) return
 
-      const data = JSON.parse(event.data)
-      if (data && data.position && 
-            typeof data.position.x === 'number' && 
-            typeof data.position.y === 'number') {
-          robotPositions.value.set(robot.seq, {
-            x: data.position.x,
-            y: data.position.y
-          })}
-      lastUpdate = now
-    }
+        const data = JSON.parse(event.data)
+        if (data && data.position && 
+              typeof data.position.x === 'number' && 
+              typeof data.position.y === 'number') {
+            robotPositions.value.set(robot.seq, {
+              x: data.position.x,
+              y: data.position.y
+            })}
+        lastUpdate = now
+      }
 
-    eventSource.onerror = (error) => {
-      console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
-      eventSource.close()
-    }
+      eventSource.onerror = (error) => {
+        console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
+        eventSource.close()
+        robotPositions.value.delete(robot.seq) // 에러 시 위치 정보도 삭제
+      }
 
-    eventSources.set(robot.seq, eventSource)
-  })
+      newEventSources.set(robot.seq, eventSource)
+    })
 
-  return eventSources || new Map()
+  return newEventSources
 }
 
 // 로봇 제어 함수들
@@ -510,8 +519,10 @@ async function fetchMapData() {
 let eventSources = new Map()
 
 // robotsStore.robots가 변경될 때 SSE 재설정
-watch(() => robotsStore.robots, () => {
+watch(() => robotsStore.robots, (newRobots) => {
+  console.log('Robots changed:', newRobots.map(r => r.seq))
   if (eventSources.size > 0) {
+    console.log('Closing existing SSE connections')
     eventSources.forEach(source => source.close())
     eventSources.clear()
   }
@@ -564,8 +575,13 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  eventSources.forEach(source => source.close())
+  console.log('Cleaning up SSE connections...') // 디버깅용
+  eventSources.forEach(source => {
+    source.close()
+    console.log('Closed SSE connection') // 디버깅용
+  })
   eventSources.clear()
+  robotPositions.value.clear() // 위치 정보도 정리
 })
 
 // 외부로 노출할 메서드
