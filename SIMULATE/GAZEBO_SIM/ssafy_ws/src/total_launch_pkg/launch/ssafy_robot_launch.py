@@ -92,6 +92,14 @@ def generate_launch_description():
         output='screen',
         parameters=[{'robot_name': robot_name, 'robot_number': robot_number}]
     )
+
+    gps_down_hz_node = Node(
+        package='gps_hz_pkg',
+        executable='gps_hz_node',
+        name='gps_hz_node',
+        output='screen',
+        parameters=[{'robot_number': robot_number}]
+    )
     return LaunchDescription([
         robot_name_arg,
         robot_number_arg,
@@ -103,5 +111,6 @@ def generate_launch_description():
         #robot_vision_node,
         middle_teleop_node,
         ai_process_node,
-        robot_speed_node
+        robot_speed_node,
+        gps_down_hz_node
     ])
