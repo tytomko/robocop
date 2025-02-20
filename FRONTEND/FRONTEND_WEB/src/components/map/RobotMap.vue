@@ -60,7 +60,7 @@ const mapData = ref({ nodes: [], links: [] })
 const selectedNodes = ref([])
 const imageWidth = ref(800)
 const imageHeight = ref(500)
-const robotPosition = ref({ x: null, y: null })
+const robotPositions = ref(new Map()) // 여러 로봇의 위치를 저장하는 Map
 
 // Props 정의
 const props = defineProps({
@@ -72,8 +72,25 @@ const props = defineProps({
     type: Object,
     required: false,
     default: () => null
+  },
+  isMonitoringMode: {
+    type: Boolean,
+    default: false
+  },
+  showNodes: {
+    type: Boolean,
+    default: true
   }
 })
+
+// Robot colors for monitoring mode
+const robotColors = {
+  0: '#0000ff',
+  1: '#ffff00',
+  2: '#00ff00',
+  3: '#ff00ff',
+  4: '#ff0000'
+}
 
 // Computed 속성
 const currentRobotSeq = computed(() => {
@@ -99,72 +116,177 @@ const selectedNodesInfo = computed(() => {
 })
 
 // 차트 옵션 computed
-const chartOption = computed(() => ({
-  animation: false,
-  backgroundColor: '#fff',
-  grid: {
-    left: '5%',
-    right: '5%',
-    top: '5%',
-    bottom: '5%',
-    containLabel: true
-  },
-  graphic: [
-    {
-      type: 'image',
-      id: 'backgroundImage',
-      z: -10,
-      left: 'center',
-      top: 'middle',
-      style: {
-        image: '/images/row-map.png',
-        width: imageWidth.value * 1.01,
-        height: imageHeight.value * 1.1
+const chartOption = computed(() => {
+  const robotSeries = []
+  
+  if (props.isMonitoringMode) {
+    // 모니터링 모드: 모든 로봇 표시
+    robotPositions.value.forEach((position, robotSeq) => {
+      // position이 존재하고 x, y값이 모두 있는 경우에만 처리
+      if (position && position.x != null && position.y != null) {
+        robotSeries.push({
+          type: 'scatter',
+          data: [[position.x, position.y]],
+          symbolSize: 15,
+          itemStyle: {
+            color: robotColors[robotSeq % Object.keys(robotColors).length],
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          symbol: 'circle',
+          zlevel: 3,
+          tooltip: {
+            formatter: () => {
+              const robot = robotsStore.robots.find(r => r.seq === robotSeq)
+              return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`
+            }
+          }
+        })
       }
+    })
+  } else {
+    // 단일 로봇 모드
+    const position = robotPositions.value.get(currentRobotSeq.value)
+    // position이 존재하고 x, y값이 모두 있는 경우에만 처리
+    if (position && position.x != null && position.y != null) {
+      robotSeries.push({
+        type: 'scatter',
+        data: [[position.x, position.y]],
+        symbolSize: 15,
+        itemStyle: {
+          color: '#ff0000',
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        symbol: 'circle',
+        zlevel: 3,
+        tooltip: { show: false }
+      })
     }
-  ],
-  tooltip: {
-    trigger: 'item',
-    formatter: (params) => {
-      if (params.componentSubType === 'scatter') {
-        return `좌표: (${params.data[0].toFixed(2)}, ${params.data[1].toFixed(2)})`
-      }
-      return ''
-    }
-  },
-  xAxis: {
-    type: 'value',
-    scale: true,
-    axisLine: { show: false },
-    splitLine: { show: false },
-    axisTick: { show: false },
-    axisLabel: { show: false }
-  },
-  yAxis: {
-    type: 'value',
-    scale: true,
-    axisLine: { show: false },
-    splitLine: { show: false },
-    axisTick: { show: false },
-    axisLabel: { show: false }
-  },
-  series: [
-    // 로봇 위치 시리즈
-    {
-      type: 'scatter',
-      data: robotPosition.value.x !== null ? [[robotPosition.value.x, robotPosition.value.y]] : [],
-      symbolSize: 15,
-      itemStyle: {
-        color: '#ff0000',
-        borderColor: '#fff',
-        borderWidth: 2
-      },
-      symbol: 'circle',
-      zlevel: 3,
-      tooltip: { show: false }
+  }
+
+  return {
+    animation: false,
+    backgroundColor: '#fff',
+    grid: {
+      left: '5%',
+      right: '5%',
+      top: '5%',
+      bottom: '5%',
+      containLabel: true
     },
-    // 라인 시리즈
-    {
+    graphic: [
+      {
+        type: 'image',
+        id: 'backgroundImage',
+        z: -10,
+        left: 'center',
+        top: 'middle',
+        style: {
+          image: '/images/row-map.png',
+          width: imageWidth.value * 1.01,
+          height: imageHeight.value * 1.1
+        }
+      }
+    ],
+    tooltip: {
+      trigger: 'item',
+      formatter: (params) => {
+        if (params.componentSubType === 'scatter' && !params.seriesIndex) {
+          return `좌표: (${params.data[0].toFixed(2)}, ${params.data[1].toFixed(2)})`
+        }
+        return ''
+      }
+    },
+    xAxis: {
+      type: 'value',
+      scale: true,
+      axisLine: { show: false },
+      splitLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { show: false }
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      axisLine: { show: false },
+      splitLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { show: false }
+    },
+    series: [
+      ...robotSeries,
+      {
+        type: 'lines',
+        coordinateSystem: 'cartesian2d',
+        data: mapData.value.links.map(link => ({
+          coords: [
+            [link.source[0], link.source[1]],
+            [link.target[0], link.target[1]]
+          ]
+        })),
+        lineStyle: {
+          color: '#2196F3',
+          width: 2,
+          opacity: 0.8
+        },
+        zlevel: 1
+      },
+      {
+        type: 'scatter',
+        data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+        symbolSize: (value) => {
+          return selectedNodes.value.some(selected => 
+            selected.id[0] === value[0] && selected.id[1] === value[1]
+          ) ? 20 : 8
+        },
+        itemStyle: {
+          color: (params) => {
+            const node = mapData.value.nodes[params.dataIndex]
+            return selectedNodes.value.some(selected => 
+              selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+            ) ? '#ff4081' : '#007bff'
+          }
+        },
+        label: {
+          show: true,
+          formatter: (params) => {
+            const node = mapData.value.nodes[params.dataIndex]
+            const index = selectedNodes.value.findIndex(selected => 
+              selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
+            )
+            return index !== -1 ? (index + 1).toString() : ''
+          },
+          color: '#fff',
+          fontSize: 12,
+          fontWeight: 'bold',
+          position: 'inside'
+        },
+        emphasis: {
+          scale: 1.5,
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.3)'
+          }
+        },
+        zlevel: 2
+      }
+    ]
+  }
+})
+
+function updateChartSeries() {
+  // Early return if required refs are not available
+  if (!chartRef.value || !mapData.value) {
+    console.warn('Chart reference or map data not available');
+    return;
+  }
+
+  const seriesData = [];
+
+  // Add lines series (paths between nodes)
+  if (mapData.value.links && Array.isArray(mapData.value.links)) {
+    seriesData.push({
       type: 'lines',
       coordinateSystem: 'cartesian2d',
       data: mapData.value.links.map(link => ({
@@ -179,32 +301,35 @@ const chartOption = computed(() => ({
         opacity: 0.8
       },
       zlevel: 1
-    },
-    // 노드 시리즈
-    {
+    });
+  }
+
+  // Add nodes series (waypoints)
+  if (mapData.value.nodes && Array.isArray(mapData.value.nodes)) {
+    seriesData.push({
       type: 'scatter',
       data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
       symbolSize: (value) => {
-        return selectedNodes.value.some(selected => 
-          selected.id[0] === value[0] && selected.id[1] === value[1]
-        ) ? 20 : 8
+        return selectedNodes.value?.some(sel => 
+          sel.id[0] === value[0] && sel.id[1] === value[1]
+        ) ? 20 : 8;
       },
       itemStyle: {
         color: (params) => {
-          const node = mapData.value.nodes[params.dataIndex]
-          return selectedNodes.value.some(selected => 
-            selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
-          ) ? '#ff4081' : '#007bff'
+          const node = mapData.value.nodes[params.dataIndex];
+          return selectedNodes.value?.some(sel =>
+            sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+          ) ? '#ff4081' : '#007bff';
         }
       },
       label: {
         show: true,
         formatter: (params) => {
-          const node = mapData.value.nodes[params.dataIndex]
-          const index = selectedNodes.value.findIndex(selected => 
-            selected.id[0] === node.id[0] && selected.id[1] === node.id[1]
-          )
-          return index !== -1 ? (index + 1).toString() : ''
+          const node = mapData.value.nodes[params.dataIndex];
+          const index = selectedNodes.value?.findIndex(sel => 
+            sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+          );
+          return index !== -1 ? (index + 1).toString() : '';
         },
         color: '#fff',
         fontSize: 12,
@@ -219,112 +344,141 @@ const chartOption = computed(() => ({
         }
       },
       zlevel: 2
-    }
-  ]
-}))
+    });
+  }
 
-// 메서드 정의
-function updateChartSeries() {
-  if (!chartRef.value) return;
-
-  const seriesData = [
-    // 로봇 위치 시리즈
-    {
-      type: 'scatter',
-      data: robotPosition.value.x !== null ? [[robotPosition.value.x, robotPosition.value.y]] : [],
-      symbolSize: 15,
-      itemStyle: {
-        color: '#ff0000',
-        borderColor: '#fff',
-        borderWidth: 2
-      },
-      symbol: 'circle',
-      zlevel: 3,
-      tooltip: { show: false }
-    },
-    // 라인 시리즈
-    {
-      type: 'lines',
-      coordinateSystem: 'cartesian2d',
-      data: mapData.value.links.map(link => ({
-        coords: [
-          [link.source[0], link.source[1]],
-          [link.target[0], link.target[1]]
-        ]
-      })),
-      lineStyle: {
-        color: '#2196F3',
-        width: 2,
-        opacity: 0.8
-      },
-      zlevel: 1
-    },
-    // 노드 시리즈
-    {
-      type: 'scatter',
-      data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-      symbolSize: (value) =>
-        selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-          ? 20
-          : 8,
-      itemStyle: {
-        color: (params) => {
-          const node = mapData.value.nodes[params.dataIndex]
-          return selectedNodes.value.some(sel =>
-            sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-          ) ? '#ff4081' : '#007bff'
-        }
-      },
-      label: {
-        show: true,
-        formatter: (params) => {
-          const node = mapData.value.nodes[params.dataIndex]
-          const index = selectedNodes.value.findIndex(sel => 
-            sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-          )
-          return index !== -1 ? (index + 1).toString() : ''
-        },
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: 'bold',
-        position: 'inside'
+  // Add robot position series based on mode
+  if (props.isMonitoringMode) {
+    // Monitoring mode: Show all robots
+    robotPositions.value?.forEach((position, robotSeq) => {
+      if (position && 
+          typeof position.x === 'number' && 
+          typeof position.y === 'number' &&
+          !isNaN(position.x) && 
+          !isNaN(position.y)) {
+        seriesData.push({
+          type: 'scatter',
+          data: [[position.x, position.y]],
+          symbolSize: 15,
+          itemStyle: {
+            color: robotColors[robotSeq % Object.keys(robotColors).length],
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          symbol: 'circle',
+          zlevel: 3,
+          tooltip: {
+            formatter: () => {
+              const robot = robotsStore.robots.find(r => r.seq === robotSeq);
+              return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`;
+            }
+          }
+        });
+      }
+    });
+  } else {
+    // Single robot mode
+    const robotSeq = currentRobotSeq.value;
+    if (robotSeq !== null && robotSeq !== undefined) {
+      const position = robotPositions.value?.get(robotSeq);
+      if (position && 
+          typeof position.x === 'number' && 
+          typeof position.y === 'number' &&
+          !isNaN(position.x) && 
+          !isNaN(position.y)) {
+        seriesData.push({
+          type: 'scatter',
+          data: [[position.x, position.y]],
+          symbolSize: 15,
+          itemStyle: {
+            color: '#ff0000',
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          symbol: 'circle',
+          zlevel: 3,
+          tooltip: { show: false }
+        });
       }
     }
-  ];
+  }
 
-  chartRef.value.setOption({
-    series: seriesData
-  }, { lazyUpdate: true });
+  // Safely update chart options
+  try {
+    chartRef.value.setOption({
+      series: seriesData
+    }, { 
+      lazyUpdate: true,
+      silent: true // Suppress unnecessary warnings
+    });
+  } catch (error) {
+    console.error('Failed to update chart series:', error);
+  }
 }
 
 // SSE 설정
 function setupSSE() {
-  if (!currentRobotSeq.value) return;
-  
-  const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${currentRobotSeq.value}/down-utm`;
-  const eventSource = new EventSource(url);
-  
-  let lastUpdate = 0;
-  const updateInterval = 100; // 100ms 간격으로 제한
+  if (props.isMonitoringMode) {
+    // 모니터링 모드: 모든 로봇의 SSE 설정
+    const eventSources = new Map()
+    
+    robotsStore.robots.forEach(robot => {
+      const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
+      const eventSource = new EventSource(url)
+      
+      let lastUpdate = 0
+      const updateInterval = 500
 
-  eventSource.onmessage = (event) => {
-    const now = Date.now();
-    if (now - lastUpdate < updateInterval) return;
+      eventSource.onmessage = (event) => {
+        const now = Date.now()
+        if (now - lastUpdate < updateInterval) return
 
-    const data = JSON.parse(event.data);
-    robotPosition.value = {
-      x: data.position.x,
-      y: data.position.y
-    };
-    lastUpdate = now;
-  };
+        const data = JSON.parse(event.data)
+        robotPositions.value.set(robot.seq, {
+          x: data.position.x,
+          y: data.position.y
+        })
+        lastUpdate = now
+      }
 
-  eventSource.onerror = (error) => {
-    console.error('SSE 연결 에러:', error);
-    eventSource.close();
-  };
+      eventSource.onerror = (error) => {
+        console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
+        eventSource.close()
+      }
 
-  return eventSource;
+      eventSources.set(robot.seq, eventSource)
+    })
+
+    return eventSources
+  } else if (currentRobotSeq.value) {
+    // 단일 로봇 모드
+    const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${currentRobotSeq.value}/down-utm`
+    const eventSource = new EventSource(url)
+    
+    let lastUpdate = 0
+    const updateInterval = 500
+
+    eventSource.onmessage = (event) => {
+      const now = Date.now()
+      if (now - lastUpdate < updateInterval) return
+
+      const data = JSON.parse(event.data)
+      robotPositions.value.set(currentRobotSeq.value, {
+        x: data.position.x,
+        y: data.position.y
+      })
+      lastUpdate = now
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('SSE 연결 에러:', error)
+      eventSource.close()
+    }
+
+    return new Map([[currentRobotSeq.value, eventSource]])
+  }
+
+  return new Map()
 }
 
 // 로봇 제어 함수들
@@ -351,6 +505,9 @@ async function handleResume() {
 
 // 노드 클릭 핸들러
 function handleNodeClick(params) {
+  // 모니터링 모드에서는 노드 클릭 비활성화
+  if (props.isMonitoringMode) return
+  
   if (params.componentSubType === 'scatter') {
     const clickedNode = mapData.value.nodes[params.dataIndex]
     if (!clickedNode) return
@@ -398,34 +555,48 @@ async function fetchMapData() {
 }
 
 // Watchers
-let eventSource = null;
+let eventSources = new Map()
 
 watch(() => currentRobotSeq.value, (newSeq) => {
-  if (eventSource) {
-    eventSource.close()
-  }
-  if (newSeq) {
-    eventSource = setupSSE()
+  if (!props.isMonitoringMode) {
+    if (eventSources.size > 0) {
+      eventSources.forEach(source => source.close())
+      eventSources.clear()
+    }
+    if (newSeq) {
+      eventSources = setupSSE()
+    }
   }
 })
 
-watch([robotPosition, currentRobotSeq], () => {
-  if (chartRef.value && robotPosition.value.x !== null && robotPosition.value.y !== null) {
-    updateChartSeries()
+watch([() => robotPositions.value, currentRobotSeq], () => {
+  if (chartRef.value && mapData.value) {
+    updateChartSeries();
   }
-})
+}, { deep: true });
 
 watch(selectedNodes, () => {
   updateChartSeries()
 })
 
 watch(() => props.robot, (newRobot) => {
-  if (newRobot) {
+  if (newRobot && !props.isMonitoringMode) {
     console.log('Robot changed in RobotMap:', newRobot)
     selectedNodes.value = []
     updateChartSeries()
   }
 }, { deep: true })
+
+watch(() => props.isMonitoringMode, (newMode) => {
+  // 모드 변경 시 기존 연결 정리
+  eventSources.forEach(source => source.close())
+  eventSources.clear()
+  
+  // 새로운 모드에 맞는 연결 설정
+  if (newMode || (!newMode && currentRobotSeq.value)) {
+    eventSources = setupSSE()
+  }
+}, { immediate: true })
 
 // Lifecycle hooks
 onMounted(() => {
@@ -446,16 +617,12 @@ onMounted(() => {
   }
 
   fetchMapData()
-  
-  if (currentRobotSeq.value) {
-    eventSource = setupSSE()
-  }
+  eventSources = setupSSE()
 })
 
 onUnmounted(() => {
-  if (eventSource) {
-    eventSource.close()
-  }
+  eventSources.forEach(source => source.close())
+  eventSources.clear()
 })
 
 // 외부로 노출할 메서드

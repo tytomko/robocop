@@ -2,6 +2,18 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 export const useNotificationsStore = defineStore('notifications', () => {
+  const alerts = ref(false);
+
+  // alerts 상태를 업데이트하는 action
+  function setAlertStatus(status) {
+    alerts.value = status;
+  }
+
+  // alerts 상태를 토글하는 action
+  function toggleAlert() {
+    alerts.value = !alerts.value;
+  }
+
   const notifications = ref([])
   const isNotificationsOpen = ref(false)
   const lastReadTimestamp = ref(localStorage.getItem('lastReadTimestamp') || null)
@@ -83,6 +95,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
     addNotification,
     markAllAsRead,
     toggleNotifications,
-    initializeTestNotifications
+    initializeTestNotifications,
+    alerts,
+    setAlertStatus,
+    toggleAlert
   }
 })
