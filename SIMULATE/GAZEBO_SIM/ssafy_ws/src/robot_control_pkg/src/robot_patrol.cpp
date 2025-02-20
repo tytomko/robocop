@@ -196,18 +196,30 @@ private:
         }
     }
 
+
+    void clearQueue(std::queue<Point>& q) {
+        std::queue<Point> empty;
+        std::swap(q, empty);
+    }
     // -------------------------------
     // 2) global_path 콜백
     // -------------------------------
     // 글로벌 경로 수신 콜백 함수
     void global_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
         // 기존 저장된 경로 비움
-        while (!save_path_queue_.empty()) {
-            save_path_queue_.pop();
-            global_path_received_ = false;
+        bool cleared = false;
+
+        if (!save_path_queue_.empty()) {
+            clearQueue(save_path_queue_);
+            cleared = true;
         }
-        while (!path_queue_.empty()) {
-            path_queue_.pop();
+    
+        if (!path_queue_.empty()) {
+            clearQueue(path_queue_);
+            cleared = true;
+        }
+    
+        if (cleared) {
             global_path_received_ = false;
         }
 
@@ -600,12 +612,7 @@ private:
         );
     }
 
-    // 큐 비우기 (경로 갱신 시 사용)
-    void clear_path_queue() {
-        while (!path_queue_.empty()) {
-            path_queue_.pop();
-        }
-    }
+
 
     // 역방향 순찰을 위한 경로 재구성 함수
     void construct_reverse_path_queue() {
