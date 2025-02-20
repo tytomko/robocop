@@ -106,7 +106,7 @@ class RobotAI(Node):
 
         # ai_info 토픽에 수신 메시지 발행 (필요 시 주석 해제)
         info_msg = String()
-        info_msg.data = f"Received command '{command}' for robot '{self.robot_name}'"
+        info_msg.data = command
         # self.ai_info_pub.publish(info_msg)
 
         if command == CMD_STOP:
@@ -125,12 +125,11 @@ class RobotAI(Node):
             ).start()
         elif command == CMD_DISAPPEAR:
             self.get_logger().info('Received disappear command. No service call will be executed.')
-        else:
-            # 미리 정의되지 않은 명령은 그대로 ai_info 토픽에 발행
-            unknown_msg = String()
-            unknown_msg.data = command
-            self.ai_info_pub.publish(unknown_msg)
-            self.get_logger().info(f"Published unknown command to ai_info: {command}")
+
+        unknown_msg = String()
+        unknown_msg.data = command
+        self.ai_info_pub.publish(unknown_msg)
+        self.get_logger().info(f"Published command to ai_info: {command}")
 
     def call_service_with_cancellation(self, client, command):
         max_call_attempts = 5
@@ -161,7 +160,7 @@ class RobotAI(Node):
                 self.get_logger().error(warning_msg)
                 warn = String()
                 warn.data = warning_msg
-                self.ai_info_pub.publish(warn)
+                #self.ai_info_pub.publish(warn)
                 return
 
             # 서비스 호출
@@ -182,7 +181,7 @@ class RobotAI(Node):
                 self.get_logger().error("Service call did not complete within timeout.")
                 warn = String()
                 warn.data = "Service call did not complete within timeout."
-                self.ai_info_pub.publish(warn)
+                #self.ai_info_pub.publish(warn)
             else:
                 with self.command_lock:
                     if self.current_command != command:
@@ -198,7 +197,7 @@ class RobotAI(Node):
                     self.get_logger().error(error_msg)
                     warn = String()
                     warn.data = error_msg
-                    self.ai_info_pub.publish(warn)
+                    #self.ai_info_pub.publish(warn)
             if call_attempt < max_call_attempts:
                 time.sleep(1)
 
@@ -206,7 +205,7 @@ class RobotAI(Node):
         self.get_logger().error(final_msg)
         final_warn = String()
         final_warn.data = final_msg
-        self.ai_info_pub.publish(final_warn)
+        #self.ai_info_pub.publish(final_warn)
 
 
     def shutdown(self):
