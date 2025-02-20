@@ -179,16 +179,6 @@ watch(
 let sse; // SSE 연결 객체를 저장할 변수
 
 onMounted(async () => {
-  // WebSocket 연결
-  try {
-    await webSocketService.connect('wss://robocopbackendssafy.duckdns.org/ws/test');
-    robotsStore.setWebSocketConnected(true);
-    console.log('웹소켓 연결 성공');
-  } catch (error) {
-    console.error('WebSocket 연결 실패:', error);
-    robotsStore.setWebSocketConnected(false);
-  }
-  
   // SSE 연결 생성
 const sseUrl = import.meta.env.PROD 
   ? 'https://robocopbackendssafy.duckdns.org/sse'

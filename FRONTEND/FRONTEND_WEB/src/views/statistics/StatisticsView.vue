@@ -81,7 +81,7 @@ const updateMetrics = () => {
 
 const loadRobots = async () => {
   await robotsStore.loadRobots()
-  robots.value = robotsStore.registered_robots
+  robots.value = robotsStore.robots
   updateMetrics()
 }
 

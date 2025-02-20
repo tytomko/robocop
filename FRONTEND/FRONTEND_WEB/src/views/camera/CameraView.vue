@@ -10,7 +10,7 @@
               <label class="font-medium text-gray-700">로봇 선택</label>
               <div class="w-full h-[120px] overflow-y-auto border border-gray-300 rounded bg-white text-sm">
                 <div 
-                  v-for="robot in robotsStore.registered_robots" 
+                  v-for="robot in robotsStore.robots" 
                   :key="robot.seq"
                   @click="toggleRobotSelection(robot.seq)"
                   :class="[
@@ -160,7 +160,7 @@ onMounted(() => {
   if (savedRobots) {
     const parsedRobots = JSON.parse(savedRobots)
     selectedRobots.value = Array.isArray(parsedRobots)
-      ? parsedRobots.filter(seq => robotsStore.registered_robots.some(robot => robot.seq === seq))
+      ? parsedRobots.filter(seq => robotsStore.robots.some(robot => robot.seq === seq))
       : []
   }
   if (robotsStore.selectedRobot && !selectedRobots.value.includes(robotsStore.selectedRobot)) {

@@ -16,7 +16,7 @@
         >
           <option disabled value="">선택해주세요</option>
           <option 
-            v-for="robot in robotsStore.registered_robots" 
+            v-for="robot in robotsStore.robots" 
             :key="robot.seq" 
             :value="robot.seq"
           >
@@ -146,7 +146,7 @@ const mode = ref('auto')
 const controlArea = ref(null)
 
 const activeRobot = computed(() => {
-  return robotsStore.registered_robots.find(robot => 
+  return robotsStore.robots.find(robot => 
     String(robot.seq) === String(selectedRobotSeq.value)
   ) || null
 })
