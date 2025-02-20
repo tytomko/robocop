@@ -281,10 +281,10 @@ private:
             current_queue = &path_queue_;
         }
 
-        // 경로가 비었으면 false
+        // 경로가 비었으면 true reached 반환
         if (current_queue->empty()) {
             RCLCPP_WARN(this->get_logger(), "현재 경로(선택된 큐)가 비어 있습니다.");
-            return false;
+            return true;
         }
 
         // ── (1) 이미 지나친 노드 스킵 ─────────────
