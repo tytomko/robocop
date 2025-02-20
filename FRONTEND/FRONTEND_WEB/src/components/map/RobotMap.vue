@@ -133,13 +133,7 @@ const chartOption = computed(() => {
           color: isSelectedRobot ? '#ff0000' : robotColors[robotSeq % Object.keys(robotColors).length]
         },
         symbol: 'circle',
-        zlevel: 3,
-        tooltip: {
-          formatter: () => {
-            const robot = robotsStore.robots.find(r => r.seq === robotSeq);
-            return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`;
-          }
-        }
+        zlevel: 3
       });
     }
   });
@@ -169,12 +163,30 @@ const chartOption = computed(() => {
       }
     ],
     tooltip: {
+      show: true,
       trigger: 'item',
-      formatter: (params) => {
-        if (params.componentSubType === 'scatter' && !params.seriesIndex) {
-          return `좌표: (${params.data[0].toFixed(2)}, ${params.data[1].toFixed(2)})`
+      confine: true,
+      enterable: false,
+      formatter: function(params) {
+        if (!params.data) return '';
+        
+        // 로봇 시리즈인 경우
+        if (params.seriesIndex < robotSeries.length) {
+          const robotSeq = Array.from(robotPositions.value.keys())[params.seriesIndex];
+          const robot = robotsStore.robots.find(r => r.seq === robotSeq);
+          return robot ? `로봇: ${robot.nickname || robot.manufactureName || robotSeq}` : '';
         }
-        return ''
+        
+        // 노드 시리즈인 경우 - monitoring mode가 아닐 때만 좌표 표시
+        if (!props.isMonitoringMode && params.componentSubType === 'scatter' && Array.isArray(params.data)) {
+          try {
+            return `좌표: (${Number(params.data[0]).toFixed(2)}, ${Number(params.data[1]).toFixed(2)})`;
+          } catch (e) {
+            return '';
+          }
+        }
+        
+        return '';
       }
     },
     xAxis: {
