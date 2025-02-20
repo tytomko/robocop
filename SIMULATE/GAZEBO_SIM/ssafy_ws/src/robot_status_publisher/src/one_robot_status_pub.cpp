@@ -58,6 +58,9 @@ public:
         status_message.id = robot_num;
         status_message.name = robot_name;
         status_message.battery = 75.0f;  // 초기 배터리 값
+        if(robot_num == 1) {
+            status_message.battery = 100.0f;  // 로봇 1의 배터리를 100%로 설정
+        }
         status_message.temperatures = {55.0f};  // 초기 온도 값
         status_message.network = 100.0f;  // 초기 네트워크 상태 값
         status_message.mode = "waiting"; // 초기 모드: 대기
