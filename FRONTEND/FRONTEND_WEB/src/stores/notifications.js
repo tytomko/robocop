@@ -34,8 +34,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
     notifications.value.unshift(notification)
     
-    // 최대 7개까지만 유지
-    if (notifications.value.length > 7) {
+    // 최대 5개까지만 유지
+    if (notifications.value.length > 5) {
       notifications.value.pop()
     }
 
@@ -76,15 +76,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
-  // 테스트용 알림 초기화 (이후 웹소켓으로 대체될 예정)
-  const initializeTestNotifications = () => {
-    // 이미 알림이 있다면 초기화하지 않음
-    if (notifications.value.length === 0) {
-      addNotification("거수자를 발견하였습니다")
-      addNotification("새 로봇이 등록되었습니다")
-    }
-  }
-
   // 컴포넌트 마운트 시 저장된 알림 로드
   loadNotificationsFromStorage()
 
@@ -95,7 +86,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     addNotification,
     markAllAsRead,
     toggleNotifications,
-    initializeTestNotifications,
     alerts,
     setAlertStatus,
     toggleAlert

@@ -81,7 +81,7 @@ const getNotificationImage = (message) => {
   if (message.includes("거수자를 발견하였습니다")) {
     return "/images/unknown.png";
   } else if (message.includes("신원이 확인되었습니다")) {
-    return "/images/verified.png";
+    return "/images/success.png";
   } else if (message.includes("새 로봇이 등록되었습니다")) {
     return "/images/robot.png";
   }
@@ -120,11 +120,6 @@ const dropdownClasses = computed(() => {
   return props.isCollapsed
     ? "absolute top-full right-0 mt-2 bg-white rounded-lg border border-gray-200 w-80 max-h-[32rem] overflow-y-auto shadow-lg z-50 divide-y divide-gray-100"
     : "absolute top-full left-[-290px] mt-2 bg-white rounded-lg border border-gray-200 w-80 max-h-[32rem] overflow-y-auto shadow-lg z-50 divide-y divide-gray-100";
-});
-
-onMounted(() => {
-  // store에서 테스트 알림 초기화 호출
-  notificationsStore.initializeTestNotifications();
 });
 
 // notifications store 디버깅 추가

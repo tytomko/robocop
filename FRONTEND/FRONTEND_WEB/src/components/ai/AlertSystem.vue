@@ -55,7 +55,7 @@ import { ref, watch } from 'vue';
 import { useNotificationsStore } from '@/stores/notifications';
 import axios from 'axios';
 
-const notificationsStore = useNotificationsStore()
+const notificationsStore = useNotificationsStore();
 const showConfirmModal = ref(false);
 const isLoading = ref(false);
 
@@ -87,7 +87,7 @@ const disableAlert = async () => {
     await axios.post('https://robocopbackendssafy.duckdns.org/api/v1/alert-off');
     
     // 성공하면 로컬 상태 업데이트
-    notificationsStore.setAlertStatus(false);
+    notificationsStore.alerts = false;
     showConfirmModal.value = false;
   } catch (error) {
     console.error('경보 해제 실패:', error);

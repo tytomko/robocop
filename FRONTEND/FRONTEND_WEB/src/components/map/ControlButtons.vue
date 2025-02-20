@@ -9,7 +9,7 @@
         'bg-green-500 shadow-md hover:shadow-green-200': selectedNodes.length >= 2
       }"
       :disabled="selectedNodes.length === 0"
-      @click="selectedNodes.length === 1 ? handleNavigate() : handlePatrol()"
+      @click="selectedNodes.length === 1 ? $emit('navigate') : $emit('patrol')"
     >
       <i class="mdi" :class="selectedNodes.length >= 2 ? 'mdi-routes' : 'mdi-navigation'"></i>
       {{ selectedNodes.length >= 2 ? '순찰' : '이동' }}
@@ -49,34 +49,16 @@ const props = defineProps({
   selectedNodes: {
     type: Array,
     default: () => []
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emits = defineEmits(['navigate', 'patrol', 'reset', 'tempStop', 'resume'])
 
 const isPaused = ref(false)
-
-function handleNavigate() {
-  emits('navigate')
-  toast.info('이동을 시작합니다.', {
-    position: "bottom-center",
-    timeout: 3000,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-  })
-}
-
-function handlePatrol() {
-  emits('patrol')
-  toast.success('순찰을 시작합니다.', {
-    position: "bottom-center",
-    timeout: 3000,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-  })
-}
 
 function handleReset() {
   emits('reset')

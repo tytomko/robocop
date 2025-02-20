@@ -119,51 +119,30 @@ const selectedNodesInfo = computed(() => {
 const chartOption = computed(() => {
   const robotSeries = []
   
-  if (props.isMonitoringMode) {
-    // 모니터링 모드: 모든 로봇 표시
-    robotPositions.value.forEach((position, robotSeq) => {
-      // position이 존재하고 x, y값이 모두 있는 경우에만 처리
-      if (position && position.x != null && position.y != null) {
-        robotSeries.push({
-          type: 'scatter',
-          data: [[position.x, position.y]],
-          symbolSize: 15,
-          itemStyle: {
-            color: robotColors[robotSeq % Object.keys(robotColors).length],
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          symbol: 'circle',
-          zlevel: 3,
-          tooltip: {
-            formatter: () => {
-              const robot = robotsStore.robots.find(r => r.seq === robotSeq)
-              return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`
-            }
-          }
-        })
-      }
-    })
-  } else {
-    // 단일 로봇 모드
-    const position = robotPositions.value.get(currentRobotSeq.value)
+  // 모든 로봇 위치 표시
+  robotPositions.value.forEach((position, robotSeq) => {
     // position이 존재하고 x, y값이 모두 있는 경우에만 처리
     if (position && position.x != null && position.y != null) {
+      const isSelectedRobot = !props.isMonitoringMode && robotSeq === currentRobotSeq.value;
+      
       robotSeries.push({
         type: 'scatter',
         data: [[position.x, position.y]],
         symbolSize: 15,
         itemStyle: {
-          color: '#ff0000',
-          borderColor: '#fff',
-          borderWidth: 2
+          color: isSelectedRobot ? '#ff0000' : robotColors[robotSeq % Object.keys(robotColors).length]
         },
         symbol: 'circle',
         zlevel: 3,
-        tooltip: { show: false }
-      })
+        tooltip: {
+          formatter: () => {
+            const robot = robotsStore.robots.find(r => r.seq === robotSeq);
+            return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`;
+          }
+        }
+      });
     }
-  }
+  });
 
   return {
     animation: false,
@@ -348,60 +327,32 @@ function updateChartSeries() {
   }
 
   // Add robot position series based on mode
-  if (props.isMonitoringMode) {
-    // Monitoring mode: Show all robots
-    robotPositions.value?.forEach((position, robotSeq) => {
-      if (position && 
-          typeof position.x === 'number' && 
-          typeof position.y === 'number' &&
-          !isNaN(position.x) && 
-          !isNaN(position.y)) {
-        seriesData.push({
-          type: 'scatter',
-          data: [[position.x, position.y]],
-          symbolSize: 15,
-          itemStyle: {
-            color: robotColors[robotSeq % Object.keys(robotColors).length],
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          symbol: 'circle',
-          zlevel: 3,
-          tooltip: {
-            formatter: () => {
-              const robot = robotsStore.robots.find(r => r.seq === robotSeq);
-              return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`;
-            }
+  robotPositions.value?.forEach((position, robotSeq) => {
+    if (position && 
+        typeof position.x === 'number' && 
+        typeof position.y === 'number' &&
+        !isNaN(position.x) && 
+        !isNaN(position.y)) {
+      const isSelectedRobot = !props.isMonitoringMode && robotSeq === currentRobotSeq.value;
+      
+      seriesData.push({
+        type: 'scatter',
+        data: [[position.x, position.y]],
+        symbolSize: 15,
+        itemStyle: {
+          color: isSelectedRobot ? '#ff0000' : robotColors[robotSeq % Object.keys(robotColors).length]
+        },
+        symbol: 'circle',
+        zlevel: 3,
+        tooltip: {
+          formatter: () => {
+            const robot = robotsStore.robots.find(r => r.seq === robotSeq);
+            return `로봇: ${robot?.nickname || robot?.manufactureName || robotSeq}`;
           }
-        });
-      }
-    });
-  } else {
-    // Single robot mode
-    const robotSeq = currentRobotSeq.value;
-    if (robotSeq !== null && robotSeq !== undefined) {
-      const position = robotPositions.value?.get(robotSeq);
-      if (position && 
-          typeof position.x === 'number' && 
-          typeof position.y === 'number' &&
-          !isNaN(position.x) && 
-          !isNaN(position.y)) {
-        seriesData.push({
-          type: 'scatter',
-          data: [[position.x, position.y]],
-          symbolSize: 15,
-          itemStyle: {
-            color: '#ff0000',
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          symbol: 'circle',
-          zlevel: 3,
-          tooltip: { show: false }
-        });
-      }
+        }
+      });
     }
-  }
+  });
 
   // Safely update chart options
   try {
@@ -418,41 +369,11 @@ function updateChartSeries() {
 
 // SSE 설정
 function setupSSE() {
-  if (props.isMonitoringMode) {
-    // 모니터링 모드: 모든 로봇의 SSE 설정
-    const eventSources = new Map()
-    
-    robotsStore.robots.forEach(robot => {
-      const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
-      const eventSource = new EventSource(url)
-      
-      let lastUpdate = 0
-      const updateInterval = 500
-
-      eventSource.onmessage = (event) => {
-        const now = Date.now()
-        if (now - lastUpdate < updateInterval) return
-
-        const data = JSON.parse(event.data)
-        robotPositions.value.set(robot.seq, {
-          x: data.position.x,
-          y: data.position.y
-        })
-        lastUpdate = now
-      }
-
-      eventSource.onerror = (error) => {
-        console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
-        eventSource.close()
-      }
-
-      eventSources.set(robot.seq, eventSource)
-    })
-
-    return eventSources
-  } else if (currentRobotSeq.value) {
-    // 단일 로봇 모드
-    const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${currentRobotSeq.value}/down-utm`
+  // 항상 모든 로봇의 SSE 설정
+  const eventSources = new Map()
+  
+  robotsStore.robots.forEach(robot => {
+    const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${robot.seq}/down-utm`
     const eventSource = new EventSource(url)
     
     let lastUpdate = 0
@@ -463,7 +384,7 @@ function setupSSE() {
       if (now - lastUpdate < updateInterval) return
 
       const data = JSON.parse(event.data)
-      robotPositions.value.set(currentRobotSeq.value, {
+      robotPositions.value.set(robot.seq, {
         x: data.position.x,
         y: data.position.y
       })
@@ -471,23 +392,39 @@ function setupSSE() {
     }
 
     eventSource.onerror = (error) => {
-      console.error('SSE 연결 에러:', error)
+      console.error(`SSE 연결 에러 (로봇 ${robot.seq}):`, error)
       eventSource.close()
     }
 
-    return new Map([[currentRobotSeq.value, eventSource]])
-  }
+    eventSources.set(robot.seq, eventSource)
+  })
 
-  return new Map()
+  return eventSources || new Map()
 }
 
 // 로봇 제어 함수들
 async function handleNavigate() {
-  await robotCommandsStore.navigateCommand(selectedNodes.value, currentRobotSeq.value)
+  try {
+    await robotCommandsStore.navigateCommand(selectedNodes.value, currentRobotSeq.value)
+    // 명령 전송 후 선택된 노드 초기화
+    selectedNodes.value = []
+    updateChartSeries()
+    emit('selectedNodesChange', selectedNodes.value)
+  } catch (error) {
+    console.error('Navigation command failed:', error)
+  }
 }
 
 async function handlePatrol() {
-  await robotCommandsStore.patrolCommand(selectedNodes.value, currentRobotSeq.value)
+  try {
+    await robotCommandsStore.patrolCommand(selectedNodes.value, currentRobotSeq.value)
+    // 명령 전송 후 선택된 노드 초기화
+    selectedNodes.value = []
+    updateChartSeries()
+    emit('selectedNodesChange', selectedNodes.value)
+  } catch (error) {
+    console.error('Patrol command failed:', error)
+  }
 }
 
 async function resetSelection() {
@@ -557,46 +494,37 @@ async function fetchMapData() {
 // Watchers
 let eventSources = new Map()
 
-watch(() => currentRobotSeq.value, (newSeq) => {
-  if (!props.isMonitoringMode) {
-    if (eventSources.size > 0) {
-      eventSources.forEach(source => source.close())
-      eventSources.clear()
-    }
-    if (newSeq) {
-      eventSources = setupSSE()
-    }
+// robotsStore.robots가 변경될 때 SSE 재설정
+watch(() => robotsStore.robots, () => {
+  if (eventSources.size > 0) {
+    eventSources.forEach(source => source.close())
+    eventSources.clear()
   }
+  eventSources = setupSSE()
+}, { deep: true })
+
+// currentRobotSeq 변경 시에는 선택된 로봇만 업데이트
+watch(() => currentRobotSeq.value, () => {
+  updateChartSeries()
 })
 
-watch([() => robotPositions.value, currentRobotSeq], () => {
+watch([() => robotPositions.value], () => {
   if (chartRef.value && mapData.value) {
-    updateChartSeries();
+    updateChartSeries()
   }
-}, { deep: true });
+}, { deep: true })
 
 watch(selectedNodes, () => {
   updateChartSeries()
 })
 
 watch(() => props.robot, (newRobot) => {
-  if (newRobot && !props.isMonitoringMode) {
+  if (newRobot) {
     console.log('Robot changed in RobotMap:', newRobot)
     selectedNodes.value = []
     updateChartSeries()
   }
 }, { deep: true })
-
-watch(() => props.isMonitoringMode, (newMode) => {
-  // 모드 변경 시 기존 연결 정리
-  eventSources.forEach(source => source.close())
-  eventSources.clear()
-  
-  // 새로운 모드에 맞는 연결 설정
-  if (newMode || (!newMode && currentRobotSeq.value)) {
-    eventSources = setupSSE()
-  }
-}, { immediate: true })
 
 // Lifecycle hooks
 onMounted(() => {
