@@ -63,8 +63,10 @@
 ## 4.2 언어(예시)
 |            |         |
 |------------|---------|
-| **Backend**  | Python, C++ |
+| **Backend**  | Python |
 | **Frontend** | JavaScript (Vue3) |
+| **Robot** | Python, C++ (ROS2) |
+| **AI** | Python |
 
 <br/>
 
