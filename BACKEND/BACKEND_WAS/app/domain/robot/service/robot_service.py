@@ -667,6 +667,11 @@ class RobotService:
         """
         topic_name = f"/robot_{seq}/down_utm"
         msg_type = "geometry_msgs/msg/PoseStamped"
+        # 이미 해당 토픽을 구독 중이면 재구독하지 않음
+        if topic_name in self.topics:
+            logger.info(f"Already subscribed to {topic_name}")
+            return
+        
         try:
             # ROS Bridge 연결이 되어 있지 않다면 재연결 시도
             if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
