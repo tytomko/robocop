@@ -1,23 +1,5 @@
 <template>
   <div class="h-full flex flex-col gap-1.5 p-5 overflow-y-auto bg-gray-100">
-    <!-- 연결 상태 표시 -->
-    <div class="bg-white rounded-lg p-3 mb-4 shadow">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">연결 상태:</span>
-          <span :class="[
-            'px-2 py-1 rounded text-white text-sm',
-            webSocketConnected ? 'bg-green-500' : 'bg-red-500'
-          ]">
-            {{ connectionStatus }}
-          </span>
-        </div>
-        <div class="text-sm text-gray-600">
-          {{ webSocketConnected ? '실시간 데이터 수신 중' : 'DB에서 데이터 폴링 중' }}
-        </div>
-      </div>
-    </div>
-
     <div class="container mx-auto px-4">
     <!-- 기존 MonitoringView 내용 -->
 
@@ -84,7 +66,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { webSocketService } from '@/services/websocket';
 import { useRobotsStore } from '@/stores/robots';
 import RobotList from '@/components/dashboard/RobotList.vue';
 import RobotManagement from '@/components/dashboard/RobotManagement.vue';
@@ -94,11 +75,7 @@ import StatisticsView from '@/views/statistics/StatisticsView.vue';
 
 // 모니터링 컴포넌트 순서 관리
 const robotsStore = useRobotsStore()
-const robots = computed(() => robotsStore.registered_robots)
-const webSocketConnected = computed(() => robotsStore.webSocketConnected)
-const connectionStatus = computed(() => 
-  webSocketConnected.value ? '실시간 모드' : 'API 모드'
-)
+const robots = computed(() => robotsStore.robots)
 
 // 탭 관리
 const activeTab = ref('robotMap') // 기본값: 로봇 목록 탭
@@ -108,39 +85,8 @@ const tabs = ref([
   { name: 'statistics', label: '통계' }
 ])
 
-// 웹소켓 메시지 핸들러
-const handleWebSocketMessage = (message) => {
-  if (message.type === 'ros_topic') {
-    const robotId = message.topic.split('/')[1]
-    
-    switch (message.topic) {
-      case `/${robotId}/status`:
-        robotsStore.updateRobotWebSocketData(robotId, message.data)
-        break
-      case `/${robotId}/utm_pose`:
-        const poseData = message.messageData || message.data
-        if (poseData?.position) {
-          robotsStore.updateRobotWebSocketData(robotId, {
-            position: `x: ${poseData.position.x.toFixed(2)}, y: ${poseData.position.y.toFixed(2)}`
-          })
-        }
-        break
-    }
-  }
-}
-
 // 단순화된 테스트 함수
 const triggerAlert = () => {
   robotsStore.alerts = true;
 };
-
-onMounted(() => {
-  // 핸들러만 등록
-  webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
-})
-
-onUnmounted(() => {
-  // 핸들러만 제거
-  webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
-})
 </script>

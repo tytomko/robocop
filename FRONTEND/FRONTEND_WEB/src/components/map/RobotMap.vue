@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import axios from 'axios'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -47,11 +47,22 @@ use([
   LinesChart
 ])
 
+// Store 초기화
 const robotsStore = useRobotsStore()
 const robotCommandsStore = useRobotCommandsStore()
 const emit = defineEmits(['selectedNodesChange'])
-const containerRef = ref(null)
 
+// Refs 정의
+const containerRef = ref(null)
+const chartRef = ref(null)
+const loading = ref(true)
+const mapData = ref({ nodes: [], links: [] })
+const selectedNodes = ref([])
+const imageWidth = ref(800)
+const imageHeight = ref(500)
+const robotPosition = ref({ x: null, y: null })
+
+// Props 정의
 const props = defineProps({
   showSelectedNodes: {
     type: Boolean,
@@ -64,6 +75,7 @@ const props = defineProps({
   }
 })
 
+// Computed 속성
 const currentRobotSeq = computed(() => {
   if (props.robot) {
     return props.robot.seq
@@ -71,68 +83,12 @@ const currentRobotSeq = computed(() => {
 
   const selectedRobotSeq = robotsStore.selectedRobot
   if (selectedRobotSeq) {
-    const selectedRobot = robotsStore.registered_robots.find(
+    const selectedRobot = robotsStore.robots.find(
       robot => robot.seq === selectedRobotSeq
     )
     return selectedRobot?.seq
   }
   return null
-})
-
-async function handleNavigate() {
-  await robotCommandsStore.navigateCommand(selectedNodes.value, currentRobotSeq.value)
-}
-
-async function handlePatrol() {
-  await robotCommandsStore.patrolCommand(selectedNodes.value, currentRobotSeq.value)
-}
-
-async function resetSelection() {
-  selectedNodes.value = await robotCommandsStore.resetSelectionCommand(currentRobotSeq.value)
-  updateChartSeries()
-}
-
-async function handleTempStop() {
-  await robotCommandsStore.tempStopCommand(currentRobotSeq.value)
-}
-
-async function handleResume() {
-  await robotCommandsStore.resumeCommand(currentRobotSeq.value)
-}
-
-defineExpose({
-  handleNavigate,
-  handlePatrol,
-  resetSelection,
-  handleTempStop,
-  handleResume
-})
-
-const chartRef = ref(null)
-const loading = ref(true)
-const mapData = ref({ nodes: [], links: [] })
-const selectedNodes = ref([])
-const imageWidth = ref(800)
-const imageHeight = ref(500)  // 이미지 높이 조정
-
-// resize observer 설정
-onMounted(() => {
-  const resizeObserver = new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      const { width, height } = entry.contentRect
-      // 컨테이너 크기에 맞춰 이미지 크기 조정
-      imageWidth.value = width * 0.9  // 여백을 위해 90%만 사용
-      imageHeight.value = height * 0.95  // 높이를 80%로 조정
-      
-      if (chartRef.value) {
-        chartRef.value.resize()
-      }
-    }
-  })
-
-  if (containerRef.value) {
-    resizeObserver.observe(containerRef.value)
-  }
 })
 
 const selectedNodesInfo = computed(() => {
@@ -142,46 +98,7 @@ const selectedNodesInfo = computed(() => {
   }))
 })
 
-function updateChartSeries() {
-  if (chartRef.value) {
-    chartRef.value.setOption({
-      series: [
-        chartOption.value.series[0],
-        {
-          ...chartOption.value.series[1],
-          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-          symbolSize: (value) =>
-            selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-              ? 20
-              : 8,
-          itemStyle: {
-            color: (params) => {
-              const node = mapData.value.nodes[params.dataIndex]
-              return selectedNodes.value.some(sel =>
-                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-              ) ? '#ff4081' : '#007bff'
-            }
-          },
-          label: {
-            show: true,
-            formatter: (params) => {
-              const node = mapData.value.nodes[params.dataIndex]
-              const index = selectedNodes.value.findIndex(sel => 
-                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-              )
-              return index !== -1 ? (index + 1).toString() : ''
-            },
-            color: '#fff',
-            fontSize: 12,
-            fontWeight: 'bold',
-            position: 'inside'
-          }
-        }
-      ]
-    })
-  }
-}
-
+// 차트 옵션 computed
 const chartOption = computed(() => ({
   animation: false,
   backgroundColor: '#fff',
@@ -232,6 +149,21 @@ const chartOption = computed(() => ({
     axisLabel: { show: false }
   },
   series: [
+    // 로봇 위치 시리즈
+    {
+      type: 'scatter',
+      data: robotPosition.value.x !== null ? [[robotPosition.value.x, robotPosition.value.y]] : [],
+      symbolSize: 15,
+      itemStyle: {
+        color: '#ff0000',
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      symbol: 'circle',
+      zlevel: 3,
+      tooltip: { show: false }
+    },
+    // 라인 시리즈
     {
       type: 'lines',
       coordinateSystem: 'cartesian2d',
@@ -248,13 +180,14 @@ const chartOption = computed(() => ({
       },
       zlevel: 1
     },
+    // 노드 시리즈
     {
       type: 'scatter',
       data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
       symbolSize: (value) => {
         return selectedNodes.value.some(selected => 
           selected.id[0] === value[0] && selected.id[1] === value[1]
-        ) ? 20 : 8  // 선택된 노드의 크기를 더 크게
+        ) ? 20 : 8
       },
       itemStyle: {
         color: (params) => {
@@ -290,6 +223,133 @@ const chartOption = computed(() => ({
   ]
 }))
 
+// 메서드 정의
+function updateChartSeries() {
+  if (!chartRef.value) return;
+
+  const seriesData = [
+    // 로봇 위치 시리즈
+    {
+      type: 'scatter',
+      data: robotPosition.value.x !== null ? [[robotPosition.value.x, robotPosition.value.y]] : [],
+      symbolSize: 15,
+      itemStyle: {
+        color: '#ff0000',
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      symbol: 'circle',
+      zlevel: 3,
+      tooltip: { show: false }
+    },
+    // 라인 시리즈
+    {
+      type: 'lines',
+      coordinateSystem: 'cartesian2d',
+      data: mapData.value.links.map(link => ({
+        coords: [
+          [link.source[0], link.source[1]],
+          [link.target[0], link.target[1]]
+        ]
+      })),
+      lineStyle: {
+        color: '#2196F3',
+        width: 2,
+        opacity: 0.8
+      },
+      zlevel: 1
+    },
+    // 노드 시리즈
+    {
+      type: 'scatter',
+      data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
+      symbolSize: (value) =>
+        selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
+          ? 20
+          : 8,
+      itemStyle: {
+        color: (params) => {
+          const node = mapData.value.nodes[params.dataIndex]
+          return selectedNodes.value.some(sel =>
+            sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+          ) ? '#ff4081' : '#007bff'
+        }
+      },
+      label: {
+        show: true,
+        formatter: (params) => {
+          const node = mapData.value.nodes[params.dataIndex]
+          const index = selectedNodes.value.findIndex(sel => 
+            sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
+          )
+          return index !== -1 ? (index + 1).toString() : ''
+        },
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+        position: 'inside'
+      }
+    }
+  ];
+
+  chartRef.value.setOption({
+    series: seriesData
+  }, { lazyUpdate: true });
+}
+
+// SSE 설정
+function setupSSE() {
+  if (!currentRobotSeq.value) return;
+  
+  const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${currentRobotSeq.value}/down-utm`;
+  const eventSource = new EventSource(url);
+  
+  let lastUpdate = 0;
+  const updateInterval = 100; // 100ms 간격으로 제한
+
+  eventSource.onmessage = (event) => {
+    const now = Date.now();
+    if (now - lastUpdate < updateInterval) return;
+
+    const data = JSON.parse(event.data);
+    robotPosition.value = {
+      x: data.position.x,
+      y: data.position.y
+    };
+    lastUpdate = now;
+  };
+
+  eventSource.onerror = (error) => {
+    console.error('SSE 연결 에러:', error);
+    eventSource.close();
+  };
+
+  return eventSource;
+}
+
+// 로봇 제어 함수들
+async function handleNavigate() {
+  await robotCommandsStore.navigateCommand(selectedNodes.value, currentRobotSeq.value)
+}
+
+async function handlePatrol() {
+  await robotCommandsStore.patrolCommand(selectedNodes.value, currentRobotSeq.value)
+}
+
+async function resetSelection() {
+  selectedNodes.value = await robotCommandsStore.resetSelectionCommand(currentRobotSeq.value)
+  updateChartSeries()
+}
+
+async function handleTempStop() {
+  await robotCommandsStore.tempStopCommand(currentRobotSeq.value)
+}
+
+async function handleResume() {
+  await robotCommandsStore.resumeCommand(currentRobotSeq.value)
+}
+
+// 노드 클릭 핸들러
 function handleNodeClick(params) {
   if (params.componentSubType === 'scatter') {
     const clickedNode = mapData.value.nodes[params.dataIndex]
@@ -305,110 +365,31 @@ function handleNodeClick(params) {
       selectedNodes.value.splice(index, 1)
     }
 
-    if (chartRef.value) {
-      chartRef.value.setOption({
-        series: [
-          chartOption.value.series[0],
-          {
-            ...chartOption.value.series[1],
-            data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-            symbolSize: (value) => 
-              selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-                ? 15
-                : 8,
-            itemStyle: {
-              color: (p) => {
-                const node = mapData.value.nodes[p.dataIndex]
-                return selectedNodes.value.some(sel =>
-                  sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-                ) ? '#ff4081' : '#007bff'
-              }
-            }
-          }
-        ]
-      })
-    }
-
-    console.log('Selected nodes updated:', selectedNodes.value)
+    updateChartSeries()
     emit('selectedNodesChange', selectedNodes.value)
   }
 }
 
-watch(selectedNodes, (newVal) => {
-  console.log("🔵 Selected nodes updated:", newVal)
-  if (chartRef.value) {
-    chartRef.value.setOption({
-      series: [
-        chartOption.value.series[0],
-        {
-          ...chartOption.value.series[1],
-          data: mapData.value.nodes.map(node => [node.id[0], node.id[1]]),
-          symbolSize: (value) =>
-            selectedNodes.value.some(sel => sel.id[0] === value[0] && sel.id[1] === value[1])
-              ? 15
-              : 8,
-          itemStyle: {
-            color: (p) => {
-              const node = mapData.value.nodes[p.dataIndex]
-              return selectedNodes.value.some(sel =>
-                sel.id[0] === node.id[0] && sel.id[1] === node.id[1]
-              ) ? '#ff4081' : '#007bff'
-            }
-          }
-        }
-      ]
-    })
-  }
-})
-
-// 노드 제거 핸들러 추가
+// 노드 제거 핸들러
 const handleNodeRemove = ({ node }) => {
   const index = selectedNodes.value.findIndex(n => 
     n.id[0].toFixed(2) === node.x && n.id[1].toFixed(2) === node.y
-  );
+  )
   
   if (index !== -1) {
-    // 기존 배열을 직접 수정하는 대신 새 배열 생성
-    selectedNodes.value = selectedNodes.value.filter((_, i) => i !== index);
-    
-    // chartOption을 직접 업데이트
-    if (chartRef.value) {
-      const option = chartRef.value.getOption();
-      option.series[1].data = mapData.value.nodes.map(node => [node.id[0], node.id[1]]);
-      
-      chartRef.value.setOption({
-        series: [
-          option.series[0],
-          {
-            ...option.series[1],
-            symbolSize: (value) => {
-              return selectedNodes.value.some(sel => 
-                sel.id[0] === value[0] && sel.id[1] === value[1]
-              ) ? 20 : 8;
-            }
-          }
-        ]
-      }, {
-        replaceMerge: ['series']
-      });
-    }
-    
-    emit('selectedNodesChange', selectedNodes.value);
+    selectedNodes.value = selectedNodes.value.filter((_, i) => i !== index)
+    updateChartSeries()
+    emit('selectedNodesChange', selectedNodes.value)
   }
-};
+}
 
-watch(() => props.robot, (newRobot) => {
-  if (newRobot) {
-    console.log('Robot changed in RobotMap:', newRobot)
-    selectedNodes.value = []
-  }
-}, { deep: true })
-
+// 맵 데이터 fetch
 async function fetchMapData() {
   try {
     loading.value = true
     const response = await axios.get('https://robocopbackendssafy.duckdns.org/api/v1/map')
     mapData.value = { nodes: response.data.nodes, links: response.data.links }
+    updateChartSeries()
   } catch (error) {
     console.error('맵 데이터 로딩 실패:', error)
   } finally {
@@ -416,7 +397,73 @@ async function fetchMapData() {
   }
 }
 
+// Watchers
+let eventSource = null;
+
+watch(() => currentRobotSeq.value, (newSeq) => {
+  if (eventSource) {
+    eventSource.close()
+  }
+  if (newSeq) {
+    eventSource = setupSSE()
+  }
+})
+
+watch([robotPosition, currentRobotSeq], () => {
+  if (chartRef.value && robotPosition.value.x !== null && robotPosition.value.y !== null) {
+    updateChartSeries()
+  }
+})
+
+watch(selectedNodes, () => {
+  updateChartSeries()
+})
+
+watch(() => props.robot, (newRobot) => {
+  if (newRobot) {
+    console.log('Robot changed in RobotMap:', newRobot)
+    selectedNodes.value = []
+    updateChartSeries()
+  }
+}, { deep: true })
+
+// Lifecycle hooks
 onMounted(() => {
+  const resizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      const { width, height } = entry.contentRect
+      imageWidth.value = width * 0.9
+      imageHeight.value = height * 0.95
+      
+      if (chartRef.value) {
+        chartRef.value.resize()
+      }
+    }
+  })
+
+  if (containerRef.value) {
+    resizeObserver.observe(containerRef.value)
+  }
+
   fetchMapData()
+  
+  if (currentRobotSeq.value) {
+    eventSource = setupSSE()
+  }
+})
+
+onUnmounted(() => {
+  if (eventSource) {
+    eventSource.close()
+  }
+})
+
+// 외부로 노출할 메서드
+defineExpose({
+  handleNavigate,
+  handlePatrol,
+  resetSelection,
+  handleTempStop,
+  handleResume
 })
 </script>

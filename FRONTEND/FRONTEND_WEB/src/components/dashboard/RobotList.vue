@@ -18,8 +18,8 @@
         :class="[
           'bg-white rounded-lg p-4 shadow transition-all relative min-h-[250px]',
           {
-            'opacity-40': webSocketConnected && !isActiveInWebSocket(robot),
-            'hover:shadow-lg': !webSocketConnected || isActiveInWebSocket(robot)
+            'opacity-40': !isActive(robot),
+            'hover:shadow-lg': isActive(robot)
           }
         ]"
       >
@@ -72,34 +72,26 @@
               </svg>
             </div>
           </div>
-
-          <!-- 웹소켓 연결 상태 표시 -->
-          <div v-if="webSocketConnected" 
-            :class="[
-              'px-2 py-1 rounded text-xs',
-              isActiveInWebSocket(robot) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-            ]"
-          >
-            {{ isActiveInWebSocket(robot) ? '실시간 연결' : '연결 대기' }}
-          </div>
         </div>
 
         <div class="space-y-2 mt-4">
           <div>
             <span class="text-sm text-gray-600">배터리</span>
             <div class="relative w-full h-4 bg-gray-200 rounded overflow-hidden">
-              <div class="h-full" :class="getBatteryClass(robot.battery)" :style="{ width: robot.battery + '%' }"></div>
-              <span class="absolute inset-0 flex justify-center items-center text-xs text-white font-semibold">{{ robot.battery }}%</span>
+              <div class="h-full" :class="getBatteryClass(robot.battery.level)" :style="{ width: robot.battery.level + '%' }"></div>
+              <span class="absolute inset-0 flex justify-center items-center text-xs text-white font-semibold">{{ robot.battery.level }}%</span>
             </div>
           </div>
           <div>
             <span class="text-sm text-gray-600">현재 위치</span>
-            <span class="block text-gray-800 font-medium">{{ robot.position ? `x: ${robot.position.x}, y: ${robot.position.y}` : '알 수 없음' }}</span>
-          </div>
+            <span class="block text-gray-800 font-medium">
+              {{ robot.position ? `x: ${formatCoordinate(robot.position.x)}, y: ${formatCoordinate(robot.position.y)}` : '알 수 없음' }}
+            </span>          
+        </div>
           <div>
             <span class="text-sm text-gray-600">작동 시간</span>
             <span class="block text-gray-800 font-medium">
-              {{ getOperationTime(robot.startAt) }}
+              {{ getOperationTime(robot.startAt, robot.isActive) }}
             </span>
           </div>
         </div>
@@ -132,11 +124,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
 import { useRobotCommandsStore } from '@/stores/robotCommands';
-import { webSocketService } from '@/services/websocket';
 import { useToast } from 'vue-toastification';
 
 const router = useRouter();
@@ -171,8 +162,8 @@ const getEmergencyClass = (status) => {
   };
 };
 
-const getOperationTime = (startTime) => {
-  if (!startTime) return '알 수 없음'
+const getOperationTime = (startTime, isActive) => {
+  if (!startTime || !isActive) return '00시간 00분'
   
   const start = new Date(startTime)
   const now = new Date()
@@ -181,7 +172,11 @@ const getOperationTime = (startTime) => {
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
   
-  return `${hours}시간 ${minutes}분`
+  // 시간과 분을 2자리 숫자로 포맷팅
+  const formattedHours = String(hours).padStart(2, '0')
+  const formattedMinutes = String(minutes).padStart(2, '0')
+  
+  return `${formattedHours}시간 ${formattedMinutes}분`
 };
 
 const returnRobot = async (robotSeq) => {
@@ -238,56 +233,96 @@ const handleStartStop = async (robot) => {
 
 const goToDetailPage = (robotSeq) => router.push(`/${robotSeq}`);
 
-// 웹소켓으로 활성화된 로봇인지 확인 (manufactureName 기준으로 수정)
-const isActiveInWebSocket = (robot) => {
-  return /^robot_\d+$/.test(robot.manufactureName) && robot.isActive;
+const isActive = (robot) => {
+  return /^robot_\d+$/.test(robot.manufactureName) && 
+         (robot.isActive === true || robot.IsActive === true);
 }
 
-// 웹소켓 메시지 핸들러
-const handleWebSocketMessage = (message) => {
-  if (message.type === 'ros_topic') {
-    const robotId = message.topic.split('/')[1]
-    
-    switch (message.topic) {
-      case `/${robotId}/status`:
-        robotsStore.updateRobotWebSocketData(robotId, message.data, 'status')
-        break
+// SSE 관련 상태 및 함수들
+const sseConnections = ref(new Map());
 
-      case `/${robotId}/utm_pose`:
-        if (message.messageData?.position) {
-          // 데이터 타입 확인 및 가공
-          console.log('UTM Position Types:', {
-            x: typeof message.messageData.position.x,
-            y: typeof message.messageData.position.y,
-            rawX: message.messageData.position.x,
-            rawY: message.messageData.position.y
-          })
+// 좌표 포맷팅 함수
+const formatCoordinate = (value) => {
+  return value ? Number(value).toFixed(2) : '0.00';
+};
 
-          // position 객체 구조를 DB 형식에 맞게 변환
-          const positionData = {
-            x: Number(message.messageData.position.x.toFixed(4)),  // 소수점 4자리까지만
-            y: Number(message.messageData.position.y.toFixed(4))   // Number로 변환
-          }
+// SSE 설정 함수
+const setupSSE = (seq) => {
+  if (!seq) return;
+  
+  const url = `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${seq}/down-utm`;
+  const eventSource = new EventSource(url);
+  
+  let lastUpdate = 0;
+  const updateInterval = 100; // 100ms 간격으로 제한
 
-          const formattedData = {
-            position: positionData,
-            rawPosition: message.messageData.position,
-            orientation: message.messageData.orientation
-          }
-          robotsStore.updateRobotWebSocketData(robotId, formattedData, 'utm_pose')
-        }
-        break
+  eventSource.onmessage = (event) => {
+    const now = Date.now();
+    if (now - lastUpdate < updateInterval) return;
+
+    try {
+      const data = JSON.parse(event.data);
+      robotsStore.updateRobotPosition(seq, {
+        x: Number(data.position.x),
+        y: Number(data.position.y)
+      });
+      lastUpdate = now;
+    } catch (error) {
+      console.error('SSE 메시지 처리 중 에러:', error);
     }
-  }
-}
+  };
 
+  eventSource.onerror = (error) => {
+    console.error('SSE 연결 에러:', error);
+    eventSource.close();
+    sseConnections.value.delete(seq);
+  };
+
+  sseConnections.value.set(seq, eventSource);
+  return eventSource;
+};
+
+// 모든 로봇에 대해 SSE 연결 설정
+const setupAllSSEConnections = () => {
+  visibleRobots.value.forEach(robot => {
+    if (!sseConnections.value.has(robot.seq) && isActive(robot)) {
+      setupSSE(robot.seq);
+    }
+  });
+};
+
+// 모든 SSE 연결 정리
+const cleanupSSEConnections = () => {
+  sseConnections.value.forEach(eventSource => {
+    eventSource.close();
+  });
+  sseConnections.value.clear();
+};
+
+// Lifecycle hooks
 onMounted(() => {
-  // 핸들러만 등록
-  webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
-})
+  setupAllSSEConnections();
+});
 
 onUnmounted(() => {
-  // 핸들러만 제거
-  webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
-})
+  cleanupSSEConnections();
+});
+
+// visibleRobots 변경 감시
+watch(visibleRobots, (newRobots) => {
+  // 새로운 로봇이 추가되었을 때 SSE 연결 설정
+  newRobots.forEach(robot => {
+    if (!sseConnections.value.has(robot.seq) && isActive(robot)) {
+      setupSSE(robot.seq);
+    }
+  });
+  
+  // 더 이상 표시되지 않는 로봇의 SSE 연결 제거
+  sseConnections.value.forEach((eventSource, seq) => {
+    if (!newRobots.some(robot => robot.seq === seq)) {
+      eventSource.close();
+      sseConnections.value.delete(seq);
+    }
+  });
+}, { deep: true });
 </script>
