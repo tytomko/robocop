@@ -384,10 +384,13 @@ function setupSSE() {
       if (now - lastUpdate < updateInterval) return
 
       const data = JSON.parse(event.data)
-      robotPositions.value.set(robot.seq, {
-        x: data.position.x,
-        y: data.position.y
-      })
+      if (data && data.position && 
+            typeof data.position.x === 'number' && 
+            typeof data.position.y === 'number') {
+          robotPositions.value.set(robot.seq, {
+            x: data.position.x,
+            y: data.position.y
+          })}
       lastUpdate = now
     }
 
