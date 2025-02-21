@@ -2,8 +2,9 @@
   <div>
     <!-- 알림 팝업 -->
     <Transition name="slide-fade">
-      <div v-if="robotsStore.alerts" 
-           class="fixed top-[55px] left-0 right-0 bg-red-600 text-white py-2 px-4 shadow-lg z-50">
+      <div v-if="notificationsStore.alerts" 
+           class="fixed top-[55px] bg-red-600 text-white py-2 px-4 shadow-lg z-50"
+           :style="{ left: sidebarWidth + 'px', right: '0' }">
         <div class="flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -15,7 +16,7 @@
 
     <!-- 경보 해제 버튼 -->
     <Transition name="fade">
-      <button v-if="robotsStore.alerts"
+      <button v-if="notificationsStore.alerts"
               @click="confirmDisableAlert"
               class="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-md flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,18 +52,32 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useRobotsStore } from '@/stores/robots';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { useNotificationsStore } from '@/stores/notifications';
 import axios from 'axios';
 
-const robotsStore = useRobotsStore();
+const notificationsStore = useNotificationsStore();
 const showConfirmModal = ref(false);
 const isLoading = ref(false);
 
+// 사이드바 너비를 계산하는 함수
+const sidebarWidth = ref(245); // 기본값으로 사이드바 너비 설정 (픽셀 단위)
+
+// DOM에서 사이드바 요소를 찾아 너비를 측정
+const updateSidebarWidth = () => {
+  // ListSidebarSection 컴포넌트의 DOM 요소 찾기
+  const sidebarElement = document.querySelector('.sidebar-container');
+  if (sidebarElement) {
+    sidebarWidth.value = sidebarElement.offsetWidth;
+  }
+};
+
 // alert 상태 변화 감지하여 navbar 스타일 변경
-watch(() => robotsStore.alerts, (newValue) => {
+watch(() => notificationsStore.alerts, (newValue) => {
   if (newValue) {
     document.querySelector('nav')?.classList.add('alert-active');
+    // 알림이 표시될 때 사이드바 너비 업데이트
+    updateSidebarWidth();
   } else {
     document.querySelector('nav')?.classList.remove('alert-active');
   }
@@ -87,7 +102,7 @@ const disableAlert = async () => {
     await axios.post('https://robocopbackendssafy.duckdns.org/api/v1/alert-off');
     
     // 성공하면 로컬 상태 업데이트
-    robotsStore.alerts = false;
+    notificationsStore.alerts = false;
     showConfirmModal.value = false;
   } catch (error) {
     console.error('경보 해제 실패:', error);
@@ -96,6 +111,16 @@ const disableAlert = async () => {
     isLoading.value = false;
   }
 };
+
+// 컴포넌트가 마운트될 때와 창 크기가 변경될 때 사이드바 너비 업데이트
+onMounted(() => {
+  updateSidebarWidth();
+  window.addEventListener('resize', updateSidebarWidth);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateSidebarWidth);
+});
 </script>
 
 <style scoped>

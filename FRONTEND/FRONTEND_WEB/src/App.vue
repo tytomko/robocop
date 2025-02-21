@@ -1,105 +1,115 @@
 <template>
-  <div id="app" class="fixed inset-0 bg-gray-100 overflow-auto">
-    <div class="layout-container">
-      <!-- Left Sidebar -->
-      <ListSidebarSection
-        v-if="!isLoginPage"
-        :is-collapsed="isLeftSidebarCollapsed"
-        @toggle-left-sidebar="toggleLeftSidebar"
-        class="sidebar-container z-30"
-      />
+  <!-- 최상단 컨테이너 -->
+  <div
+    id="app"
+    :class="[
+      // 기존 배경이나 전체 화면 설정
+      'fixed inset-0 bg-gray-100',
+      // 로그인 페이지면 스크롤 막기
+      { 'overflow-hidden': isLoginPage, 'overflow-auto': !isLoginPage }
+    ]"
+  >
+    <!-- 로그인 페이지가 아닐 때만 기존 레이아웃을 보여줌 -->
+    <template v-if="!isLoginPage">
+      <div class="layout-container">
+        <!-- Left Sidebar -->
+        <ListSidebarSection
+          :is-collapsed="isLeftSidebarCollapsed"
+          @toggle-left-sidebar="toggleLeftSidebar"
+          class="sidebar-container z-30"
+        />
 
-      <!-- Main Content -->
-      <div class="flex flex-col flex-1 overflow-auto relative">
-        <!-- Navbar -->
-        <nav v-if="!isLoginPage" class="bg-gray-900 text-white px-4 lg:px-10 h-[55px] flex items-center justify-between sticky top-0 z-40">
-          <!-- 로고 및 경보 시스템 -->
-          <div class="flex items-center">
-            <div class="cursor-pointer" @click="refreshPage">
-              <img src="@/assets/whitelogo.png" alt="로고" class="h-10 lg:h-14" />
+        <!-- 메인 영역 -->
+        <div class="flex flex-col flex-1 relative">
+          <!-- 상단 네비게이션 -->
+          <nav class="bg-gray-900 text-white px-4 lg:px-10 h-[55px] flex items-center justify-between sticky top-0 z-40">
+            <!-- 로고 및 경보 시스템 -->
+            <div class="flex items-center">
+              <div class="cursor-pointer" @click="refreshPage">
+                <img src="@/assets/whitelogo.png" alt="로고" class="h-10 lg:h-14" />
+              </div>
+              <AlertSystem /> <!-- AlertSystem 컴포넌트 추가 -->
             </div>
-            <AlertSystem /> <!-- AlertSystem 컴포넌트 추가 -->
-          </div>
 
-          <!-- 데스크탑 네비게이션 -->
-          <div class="hidden lg:flex items-center space-x-8">
-            <router-link 
-              v-for="link in navLinks"
-              :key="link.path"
-              :to="link.path"
-              class="nav-link"
-              :class="{ 'nav-link-active': route.path === link.path }"
-            >
-              {{ link.name }}
-            </router-link>
-            <!-- 데스크탑 알림 - 사이드바 확장 시 -->
-            <AlarmNotification inline class="ml-4"  />
-          </div>
-
-          <!-- 모바일 네비게이션 -->
-          <div class="lg:hidden flex items-center space-x-4">
-            <!-- 모바일 알림 아이콘 -->
-            <AlarmNotification compact class="mr-2" />
-            
-            <!-- 햄버거 메뉴 버튼 -->
-            <button @click="toggleMobileMenu" class="p-2" aria-label="메뉴 열기">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round" 
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16" 
-                />
-              </svg>
-            </button>
-
-            <!-- 모바일 드롭다운 메뉴 -->
-            <div 
-              v-if="mobileMenuOpen" 
-              class="absolute right-0 top-[55px] bg-gray-900 w-48 rounded-b-lg shadow-lg z-40"
-            >
+            <!-- 데스크탑 네비게이션 -->
+            <div class="hidden lg:flex items-center space-x-8">
               <router-link 
                 v-for="link in navLinks"
                 :key="link.path"
                 :to="link.path"
-                class="mobile-nav-link"
-                :class="{ 'bg-white/15': route.path === link.path }"
-                @click="closeMobileMenu"
+                class="nav-link"
+                :class="{ 'nav-link-active': route.path === link.path }"
               >
                 {{ link.name }}
               </router-link>
+              <!-- 데스크탑 알림 - 사이드바 확장 시 -->
+              <AlarmNotification inline class="ml-4"  />
             </div>
+
+            <!-- 모바일 네비게이션 -->
+            <div class="lg:hidden flex items-center space-x-4">
+              <!-- 모바일 알림 아이콘 -->
+              <AlarmNotification compact class="mr-2" />
+              
+              <!-- 햄버거 메뉴 버튼 -->
+              <button @click="toggleMobileMenu" class="p-2" aria-label="메뉴 열기">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16" 
+                  />
+                </svg>
+              </button>
+
+              <!-- 모바일 드롭다운 메뉴 -->
+              <div 
+                v-if="mobileMenuOpen" 
+                class="absolute right-0 top-[55px] bg-gray-900 w-48 rounded-b-lg shadow-lg z-40"
+              >
+                <router-link 
+                  v-for="link in navLinks"
+                  :key="link.path"
+                  :to="link.path"
+                  class="mobile-nav-link"
+                  :class="{ 'bg-white/15': route.path === link.path }"
+                  @click="closeMobileMenu"
+                >
+                  {{ link.name }}
+                </router-link>
+              </div>
+            </div>
+          </nav>
+
+          <!-- 메인 콘텐츠 -->
+          <div class="main-content z-10 overflow-auto">
+            <router-view />
           </div>
-        </nav>
-
-        <!-- 메인 콘텐츠 영역 -->
-        <div class="main-content z-10">
-          <router-view />
         </div>
+
+        <!-- (우측 사이드바가 있다면 필요에 따라 추가) -->
+        <!--
+        <div
+          v-if="!isLoginPage"
+          :class="[
+            sidebarClasses,
+            'sidebar-container z-30'
+          ]"
+        >
+          <MapSidebarSection 
+            :isCollapsed="isSidebarCollapsed" 
+            @toggle-sidebar="toggleSidebar" 
+          />
+        </div>
+        -->
       </div>
+    </template>
 
-      <!-- Right Sidebar -->
-      <!-- <div 
-        v-if="!isLoginPage" 
-        :class="[
-          sidebarClasses,
-          'sidebar-container z-30'
-        ]"
-      >
-        <MapSidebarSection 
-          :isCollapsed="isSidebarCollapsed" 
-          @toggle-sidebar="toggleSidebar" 
-        />
-      </div> -->
-    </div>
-
-    <!-- 고정 알림 아이콘 (데스크탑 사이드바 축소 시) -->
-    <!-- <AlarmNotification 
-      v-if="!isLoginPage && isSidebarCollapsed" 
-      :isCollapsed="true"
-      class="hidden lg:block fixed right-2 z-35"
-      :class="{'top-[55px]': !isSidebarCollapsed, 'top-[10px]': isSidebarCollapsed}"
-    /> -->
+    <!-- 로그인 페이지일 때는 오직 LoginView만 렌더링 -->
+    <template v-else>
+      <router-view />
+    </template>
   </div>
 </template>
 
@@ -111,10 +121,11 @@ import { useRoute } from "vue-router";
 import AlarmNotification from "@/components/dashboard/AlarmNotification.vue";
 import ListSidebarSection from "./components/dashboard/ListSidebarSection.vue";
 import AlertSystem from "./components/ai/AlertSystem.vue";
-import { webSocketService } from '@/services/websocket';
+import { useNotificationsStore } from "./stores/notifications";
 import { useRobotsStore } from '@/stores/robots';
 
 const robotsStore = useRobotsStore();
+const notificationsStore = useNotificationsStore();
 const route = useRoute();
 const isLoginPage = computed(() => route.path === "/login");
 
@@ -166,19 +177,54 @@ watch(
   }
 );
 
+const alertSSEConnections = new Map();
+
 onMounted(async () => {
-  try {
-    await webSocketService.connect('wss://robocopbackendssafy.duckdns.org/ws/test');
-    robotsStore.setWebSocketConnected(true);
-    console.log('웹소켓 연결 성공');
-  } catch (error) {
-    console.error('WebSocket 연결 실패:', error);
-    robotsStore.setWebSocketConnected(false);
-  }
+  // 로봇별 alert SSE 연결 설정
+  const setupAlertSSE = (seq) => {
+    const alertSSE = new EventSource(
+      `https://robocopbackendssafy.duckdns.org/api/v1/robots/sse/${seq}/alert`
+    );
+
+    alertSSE.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.alert) {
+        const { type, message } = data.alert;
+        console.log('Alert received:', type, message);  // 디버깅용 로그 추가
+        
+        // emergency 타입일 경우 경보 시스템 활성화
+        if (type === 'emergency') {
+          notificationsStore.alerts = true;
+        }
+        // clear 타입일 경우 경보 해제 및 알림 추가
+        else if (type === 'clear') {
+          notificationsStore.alerts = false;
+          notificationsStore.addNotification({
+            message: '신원이 확인되었습니다',
+            timestamp: new Date().toISOString()
+          });
+        }
+        // caution 타입일 경우 알림 추가
+        else if (type === 'caution') {
+          notificationsStore.addNotification({
+            message: '거수자를 발견하였습니다',
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    };
+
+    return alertSSE;
+  };
+
+  // seq=1로 고정하여 테스트
+  alertSSEConnections.set(1, setupAlertSSE(1));
 });
 
 onUnmounted(() => {
-  webSocketService.disconnect();
+  // alert SSE 연결 정리
+  alertSSEConnections.forEach(sse => sse.close());
+  alertSSEConnections.clear();
 });
 
 // 사이드바 토글 함수

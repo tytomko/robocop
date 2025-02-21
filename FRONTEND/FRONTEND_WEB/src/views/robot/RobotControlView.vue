@@ -16,7 +16,7 @@
         >
           <option disabled value="">선택해주세요</option>
           <option 
-            v-for="robot in robotsStore.registered_robots" 
+            v-for="robot in activeRobots" 
             :key="robot.seq" 
             :value="robot.seq"
           >
@@ -49,11 +49,11 @@
       </div>
     </div>
 
-    <div v-if="!activeRobot" class="text-center text-gray-500">
+    <div v-if="!selectedRobot" class="text-center text-gray-500">
       로봇을 먼저 선택해주세요.
     </div>
 
-    <div class="mt-5" v-if="activeRobot">
+    <div class="mt-5" v-if="selectedRobot">
       <div v-if="mode === 'auto'">
         <ControlButtons 
           :selectedNodes="selectedNodes" 
@@ -62,13 +62,14 @@
           @reset="resetSelection" 
           @tempStop="handleTempStop"
           @resume="handleResume"
+          :disabled="selectedNodes.length === 0"
         />
 
         <RobotMap 
-          v-if="activeRobot"
+          v-if="selectedRobot"
           :key="mapKey"
           ref="robotMap" 
-          :robot="activeRobot"
+          :robot="selectedRobot"
           :isManualMode="mode === 'manual'"
           @selectedNodesChange="onSelectedNodesChange" 
         />
@@ -77,8 +78,8 @@
       <div v-else-if="mode === 'manual'" class="flex justify-between items-start">
         <div class="flex flex-row items-center w-full">
           <Cctv 
-            v-if="activeRobot"
-            :robotSeq="String(activeRobot.seq)" 
+            v-if="selectedRobot"
+            :robotSeq="String(selectedRobot.seq)" 
             :cameraType="'front'" 
             class="w-full h-[530px] bg-black rounded-lg shadow-lg flex items-center justify-center text-white text-xl" 
           />
@@ -135,7 +136,9 @@ import Cctv from '@/components/camera/Cctv.vue'
 import RobotMap from '@/components/map/RobotMap.vue'
 import ControlButtons from '@/components/map/ControlButtons.vue'
 import axios from 'axios'
+import { useToast } from 'vue-toastification'
 
+const toast = useToast()
 const robotsStore = useRobotsStore()
 const selectedRobotSeq = ref('')
 const selectedNodes = ref([])
@@ -145,8 +148,12 @@ const isAutoMode = ref(true)
 const mode = ref('auto')
 const controlArea = ref(null)
 
-const activeRobot = computed(() => {
-  return robotsStore.registered_robots.find(robot => 
+const activeRobots = computed(() => {
+  return robotsStore.robots.filter(robot => robot.IsActive === true)
+})
+
+const selectedRobot = computed(() => {
+  return robotsStore.robots.find(robot => 
     String(robot.seq) === String(selectedRobotSeq.value)
   ) || null
 })
@@ -157,10 +164,26 @@ function onSelectedNodesChange(newNodes) {
 
 function handleNavigate() {
   robotMap.value?.handleNavigate?.()
+  toast.info('이동을 시작합니다.', {
+    position: "bottom-center",
+    timeout: 3000,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  })
+  selectedNodes.value = [] // 노드 선택 초기화
 }
 
 function handlePatrol() {
   robotMap.value?.handlePatrol?.()
+  toast.success('순찰을 시작합니다.', {
+    position: "bottom-center",
+    timeout: 3000,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  })
+  selectedNodes.value = [] // 노드 선택 초기화
 }
 
 function resetSelection() {

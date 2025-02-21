@@ -43,8 +43,8 @@
                   <td class="table-data-cell">{{ robot.seq }}</td>
                   <td class="table-data-cell">{{ robot.nickname || robot.name }}</td>
                   <td class="table-data-cell">{{ robot.ipAddress }}</td>
-                  <td class="table-data-cell">{{ robot.battery }}%</td>
-                  <td class="table-data-cell">{{ robot.position }}</td>
+                  <td class="table-data-cell">{{ robot.battery.level }}%</td>
+                  <td class="table-data-cell">{{ robot.position ? `x: ${formatCoordinate(robot.position.x)}, y: ${formatCoordinate(robot.position.y)}` : '알 수 없음' }}</td>
                   <td class="table-data-cell">
                     <span :class="['status-badge', getStatusClass(robot.status)]">
                       {{ getStatusLabel(robot.status) }}
@@ -94,6 +94,10 @@ const handleBreakdown = async (robotSeq) => {
   } catch (error) {
     console.error('Error in handleBreakdown:', error);
   }
+};
+
+const formatCoordinate = (value) => {
+  return value ? Number(value).toFixed(2) : '0.00';
 };
 
 const handleActivate = async (robotSeq) => {

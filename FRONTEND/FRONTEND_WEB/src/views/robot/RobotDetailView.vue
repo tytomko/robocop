@@ -30,10 +30,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useRobotsStore } from '@/stores/robots';
-import { webSocketService } from '@/services/websocket';
 import RobotNickname from '@/components/detail/RobotNickname.vue';
 import RobotInfo from '@/components/detail/RobotInfo.vue';
 import axios from 'axios'
@@ -68,9 +67,9 @@ const setRobotNickname = async (seq, nickname) => {
     );
 
     // 성공적으로 업데이트하면 로컬 데이터도 반영
-    const robotIndex = robotsStore.registered_robots.findIndex(r => r.seq === seq);
+    const robotIndex = robotsStore.robots.findIndex(r => r.seq === seq);
     if (robotIndex !== -1) {
-      robotsStore.registered_robots[robotIndex].nickname = nickname;
+      robotsStore.robots[robotIndex].nickname = nickname;
     }
 
     // 로컬 스토리지에도 저장 (선택한 로봇이 있을 경우)
@@ -93,72 +92,22 @@ const goBack = () => {
   router.push('/');
 };
 
-// 웹소켓 관련
-// 웹소켓 메시지 핸들러
-const handleWebSocketMessage = (message) => {
-  if (message.type === 'ros_topic') {
-    const robotId = message.topic.split('/')[1]
-    
-    switch (message.topic) {
-      case `/${robotId}/status`:
-        robotsStore.updateRobotWebSocketData(robotId, message.data, 'status')
-        break
-
-      case `/${robotId}/utm_pose`:
-        if (message.messageData?.position) {
-          const formattedData = {
-            position: `x: ${message.messageData.position.x.toFixed(2)}, y: ${message.messageData.position.y.toFixed(2)}`,
-            rawPosition: message.messageData.position,
-            orientation: message.messageData.orientation
-          }
-          robotsStore.updateRobotWebSocketData(robotId, formattedData, 'utm_pose')
-        }
-        break
-    }
-  }
-}
-
-// DB와 웹소켓 데이터를 병합하여 로봇 정보 가져오기
 const robot = computed(() => {
-  const dbRobot = robotsStore.registered_robots.find(r => r.seq == seq)
-  if (!dbRobot) return null
+  // seq로 먼저 검색
+  const robotBySeq = robotsStore.robots.find(r => r.seq == seq);
+  if (robotBySeq) return robotBySeq;
   
-  if (robotsStore.webSocketConnected) {
-    // manufactureName으로만 매칭
-    const wsRobot = robotsStore.websocket_robots.find(r => 
-      r.manufactureName === dbRobot.manufactureName
-    )
-    if (wsRobot) {
-      return {
-        ...dbRobot,
-        isWebSocketConnected: true,
-        battery: wsRobot.battery,
-        networkHealth: wsRobot.network,
-        status: wsRobot.status,
-        position: wsRobot.position,
-        cpuTemp: wsRobot.temperature,
-        isActive: wsRobot.is_active,
-        rawPosition: wsRobot.rawPosition,
-        orientation: wsRobot.orientation
-      }
-    }
-  }
-  return { ...dbRobot, isWebSocketConnected: false }
-})
+  // seq로 찾지 못한 경우 manufactureName으로 검색
+  const robotByName = robotsStore.robots.find(r => r.manufactureName === seq);
+  return robotByName || null;
+});
 
 onMounted(() => {
-  // 핸들러만 등록
-  webSocketService.registerHandler('ros_topic', handleWebSocketMessage)
   robotsStore.loadRobots()
 })
 
-onUnmounted(() => {
-  // 핸들러만 제거
-  webSocketService.removeHandler('ros_topic', handleWebSocketMessage)
-})
-
 // watch 수정 - 로봇이 없을 때만 다시 로드
-watch(() => robotsStore.registered_robots, () => {
+watch(() => robotsStore.robots, () => {
   if (!robot.value) {
     robotsStore.loadRobots()
   }

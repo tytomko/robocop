@@ -16,7 +16,7 @@
     <!-- 알림 드롭다운 -->
     <transition name="slide-fade">
       <div
-        v-if="notificationsStore.isNotificationsOpen"
+        v-if="showDropdown"
         :class="dropdownClasses"
       >
         <div class="py-2 px-4 bg-gray-50 border-b border-gray-200">
@@ -30,13 +30,13 @@
           >
             <div class="w-8 h-8 rounded-full overflow-hidden">
               <img
-                :src="getNotificationImage(notification.message)"
+                :src="getNotificationImage(notification?.message)"
                 alt="알림 아이콘"
                 class="w-full h-full object-cover"
               />
             </div>
             <div class="flex-1">
-              <p class="text-sm text-gray-800 font-medium leading-snug">{{ notification.message }}</p>
+              <p class="text-sm text-gray-800 font-medium leading-snug">{{ notification?.message.message || '알 수 없는 알림' }}</p>
               <span class="text-xs text-gray-500 mt-1 block">{{ getTimeAgo(notification.timestamp) }}</span>
             </div>
           </li>
@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useNotificationsStore } from '@/stores/notifications';
 
 const props = defineProps({
@@ -73,8 +73,15 @@ const bellIconClass = computed(() => {
 });
 
 const getNotificationImage = (message) => {
+  console.log('Notification message:', message, typeof message);  // 디버깅용
+  if (!message || typeof message !== 'string') {
+    return "/images/unknown.png";
+  }
+
   if (message.includes("거수자를 발견하였습니다")) {
     return "/images/unknown.png";
+  } else if (message.includes("신원이 확인되었습니다")) {
+    return "/images/success.png";
   } else if (message.includes("새 로봇이 등록되었습니다")) {
     return "/images/robot.png";
   }
@@ -115,9 +122,14 @@ const dropdownClasses = computed(() => {
     : "absolute top-full left-[-290px] mt-2 bg-white rounded-lg border border-gray-200 w-80 max-h-[32rem] overflow-y-auto shadow-lg z-50 divide-y divide-gray-100";
 });
 
-onMounted(() => {
-  // store에서 테스트 알림 초기화 호출
-  notificationsStore.initializeTestNotifications();
+// notifications store 디버깅 추가
+watch(() => notificationsStore.notifications, (newNotifications) => {
+  console.log('Notifications updated:', newNotifications);
+}, { deep: true });
+
+// 드롭다운 표시 여부를 computed로 분리
+const showDropdown = computed(() => {
+  return notificationsStore.isNotificationsOpen;
 });
 </script>
 

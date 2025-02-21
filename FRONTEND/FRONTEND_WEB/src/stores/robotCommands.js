@@ -161,6 +161,19 @@ export const useRobotCommandsStore = defineStore('robotCommands', () => {
     }
   }
 
+  // AI 초기화 함수
+  const initializeAI = async () => {
+    try {
+      await axios.post(
+        'https://robocopbackendssafy.duckdns.org/api/v1/ai-init'
+      )
+      console.log('[RobotCommandsStore] AI 초기화 완료')
+    } catch (error) {
+      console.error('AI initialization failed:', error)
+      throw error
+    }
+  }
+
   return {
     navigateCommand,
     patrolCommand,
@@ -170,6 +183,7 @@ export const useRobotCommandsStore = defineStore('robotCommands', () => {
     estopCommand,
     robotBreakdownCommand,
     robotActivateCommand,
-    resumeCommand
+    resumeCommand,
+    initializeAI
   }
 })
