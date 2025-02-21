@@ -40,6 +40,10 @@ opencv-python==4.11.0.86
 av==13.1.0
 aiortc==1.10.1
 websockets==14.2
+hangul-romanize==0.1.0
+python-dotenv==1.0.0 
+redis==5.0.1
+websockets
 
 # ROS2 Related (Commented out)
 # ackermann-msgs==2.0.2
