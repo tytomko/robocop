@@ -44,7 +44,13 @@ public:
             RCLCPP_INFO(this->get_logger(), "Manual mode");
             is_manual_mode = true;
           }
-        } 
+        }
+        else {//메뉴얼모드가 아닐때 매뉴얼모드면 false로
+          if(is_manual_mode){
+            RCLCPP_INFO(this->get_logger(), "Not Manual mode");
+            is_manual_mode = false;
+          }
+        }
       }
     );
 
