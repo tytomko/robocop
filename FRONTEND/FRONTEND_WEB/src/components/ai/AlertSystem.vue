@@ -57,7 +57,6 @@ import { useNotificationsStore } from '@/stores/notifications';
 import axios from 'axios';
 
 const notificationsStore = useNotificationsStore();
-// 이 라인 제거
 const showConfirmModal = ref(false);
 const isLoading = ref(false);
 
@@ -72,7 +71,6 @@ const updateSidebarWidth = () => {
     sidebarWidth.value = sidebarElement.offsetWidth;
   }
 };
-// const isLeftSidebarCollapsed = computed(() => robotsStore.isLeftSidebarCollapsed);
 
 // alert 상태 변화 감지하여 navbar 스타일 변경
 watch(() => notificationsStore.alerts, (newValue) => {
