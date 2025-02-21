@@ -1,0 +1,7 @@
+# 긴급정지 서비스 
+# 메시지타입을 이용해서
+# /stop 이름으로 보내면 정지
+# /resume 이름으로 보내면 재개
+---
+bool success
+string message

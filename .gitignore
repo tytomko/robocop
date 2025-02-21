@@ -1,0 +1,5 @@
+build/
+log/
+install/
+*.mp4
+node_modules/

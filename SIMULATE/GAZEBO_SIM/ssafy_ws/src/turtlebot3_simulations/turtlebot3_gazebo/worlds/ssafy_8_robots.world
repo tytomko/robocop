@@ -1,0 +1,66 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <world name="default">
+    <!-- 지면 -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- 태양(조명) -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- 8대의 로봇 (각각 다른 모델, 위치는 반지름 7인 원 위) -->
+    <include>
+      <!-- 0°: (7, 0) -->
+      <pose>7 0 0.01 0 0 0</pose>
+      <uri>model://ssafy_model</uri>
+    </include>
+    <include>
+      <!-- 45°: (4.9497, 4.9497) -->
+      <pose>4.9497 4.9497 0.01 0 0 0.7854</pose>
+      <uri>model://charging_model</uri>
+    </include>
+    <include>
+      <!-- 90°: (0, 7) -->
+      <pose>0 7 0.01 0 0 1.5708</pose>
+      <uri>model://samsung_model</uri>
+    </include>
+    <include>
+      <!-- 135°: (-4.9497, 4.9497) -->
+      <pose>-4.9497 4.9497 0.01 0 0 2.3562</pose>
+      <uri>model://samsung2_model</uri>
+    </include>
+    <include>
+      <!-- 180°: (-7, 0) -->
+      <pose>-7 0 0.01 0 0 3.1416</pose>
+      <uri>model://samsung3_model</uri>
+    </include>
+    <include>
+      <!-- 225°: (-4.9497, -4.9497) -->
+      <pose>-4.9497 -4.9497 0.01 0 0 3.92699</pose>
+      <uri>model://samsung4_model</uri>
+    </include>
+    <include>
+      <!-- 270°: (0, -7) -->
+      <pose>0 -7 0.01 0 0 4.71239</pose>
+      <uri>model://samsung5_model</uri>
+    </include>
+    <include>
+      <!-- 315°: (4.9497, -4.9497) -->
+      <pose>4.9497 -4.9497 0.01 0 0 5.49779</pose>
+      <uri>model://samsung6_model</uri>
+    </include>
+
+    <!-- 위치(위도, 경도, 고도) 설정 -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <!-- 예: 광주광역시청 근방 -->
+      <latitude_deg>35.1595</latitude_deg>
+      <longitude_deg>126.8526</longitude_deg>
+      <elevation>50</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+  </world>
+</sdf>

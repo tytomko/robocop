@@ -1,0 +1,5 @@
+# goal.x goal.y goal.theta
+geometry_msgs/Pose2D goal
+---
+bool success
+string message

@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd"
+ schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ukf_ros2</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="s01087350661@gmail.com">ubuntu</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- 의존성: ROS2 및 시스템 의존성 -->
+  <depend>eigen</depend>
+  <depend>geographic_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>diagnostic_msgs</depend>
+  <depend>diagnostic_updater</depend>
+  <depend>geographiclib</depend>
+  <depend>message_filters</depend>
+  <depend>nav_msgs</depend>
+  <depend>angles</depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rmw_implementation</build_depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>yaml_cpp_vendor</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>builtin_interfaces</test_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rmw_implementation</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>launch_ros</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

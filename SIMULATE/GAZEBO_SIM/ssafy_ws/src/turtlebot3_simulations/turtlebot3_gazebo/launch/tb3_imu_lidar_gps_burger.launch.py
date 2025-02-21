@@ -28,6 +28,7 @@ TURTLEBOT3_MODEL = "burger"
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    #world_file_name = 'ssafy_map.world'
     world_file_name = 'turtlebot3_velodyne_robots.world'
     world = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'worlds', world_file_name)
     robot_desc_path = os.path.join(get_package_share_directory("turtlebot3_description"), "urdf", "turtlebot3_velodyne_burger.urdf")
