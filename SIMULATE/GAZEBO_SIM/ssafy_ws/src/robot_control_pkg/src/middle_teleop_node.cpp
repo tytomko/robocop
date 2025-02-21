@@ -44,7 +44,13 @@ public:
             RCLCPP_INFO(this->get_logger(), "Manual mode");
             is_manual_mode = true;
           }
-        } 
+        }
+        else {//메뉴얼모드가 아닐때 매뉴얼모드면 false로
+          if(is_manual_mode){
+            RCLCPP_INFO(this->get_logger(), "Not Manual mode");
+            is_manual_mode = false;
+          }
+        }
       }
     );
 
@@ -61,7 +67,7 @@ public:
 
     // 일정 주기로 속도 갱신(가속/감속)하는 타이머
     timer_ = this->create_wall_timer(
-      std::chrono::milliseconds(50), // 20Hz
+      std::chrono::milliseconds(100), // 10Hz
       std::bind(&MiddleTeleop::controlLoop, this)
     );
 
@@ -167,14 +173,14 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr speed_publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  static constexpr double ACCEL_STEP = 0.13;
-  static constexpr double ANGLE_STEP = 0.4;
+  static constexpr double ACCEL_STEP = 0.10;
+  static constexpr double ANGLE_STEP = 0.10;
   static constexpr double BRAKE_FACTOR_LINEAR = 0.01;
-  static constexpr double BRAKE_FACTOR_ANGULAR = 0.003;
-  static constexpr double FRICTION_FACTOR_LINEAR = 0.98;
-  static constexpr double FRICTION_FACTOR_ANGULAR = 0.95;
-  static constexpr double MAX_LINEAR_SPEED = 2.0;
-  static constexpr double MAX_ANGULAR_SPEED = 2.0;
+  static constexpr double BRAKE_FACTOR_ANGULAR = 0.01;
+  static constexpr double FRICTION_FACTOR_LINEAR = 0.90;
+  static constexpr double FRICTION_FACTOR_ANGULAR = 0.85;
+  static constexpr double MAX_LINEAR_SPEED = 1.0;
+  static constexpr double MAX_ANGULAR_SPEED = 1.0;
 };
 
 int main(int argc, char *argv[])

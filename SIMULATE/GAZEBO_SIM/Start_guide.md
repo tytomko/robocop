@@ -161,7 +161,15 @@ ros2 launch turtlebot3_gazebo tb3_imu_lidar_gps_burger.launch.py
 ```bash
 ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=ssafy robot_number:=1
 ```
-
+```bash
+ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=samsung robot_number:=2
+```
+```bash
+ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=charging robot_number:=3
+```
+```bash
+ros2 launch total_launch_pkg ssafy_robot_launch.py robot_name:=champ robot_number:=4
+```
 ### 키보드입력(먼저 메뉴얼모드로변경)
 ```bash
 ros2 run robot_control_pkg key_publisher --ros-args -p robot_name:=ssafy -p robot_number:=1
@@ -204,7 +212,20 @@ ros2 service call /robot_1/waiting robot_custom_interfaces/srv/Waiting
 ### Manual 서비스(모드변경)
 ```bash
 ros2 service call /robot_1/manual robot_custom_interfaces/srv/Manual 
----
+```
+
+### 로봇 여러 대 동시 주행
+```bash
+ros2 service call /robot_2/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304396.57, y: 3892844.46, theta: 0.0}, {x: 304401.15, y: 3892849.86, theta: 0.0}]}"
+```
+
+```bash
+ros2 service call /robot_1/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304417.70, y: 3892839.59, theta: 0.0}, {x: 304417.77, y: 3892845.46, theta: 0.0}, {x: 304408.34, y: 3892851.10, theta: 0.0}]}"
+```
+
+```bash
+ros2 service call /robot_3/patrol robot_custom_interfaces/srv/Patrol "{goals: [{x: 304401.85, y: 3892835.85, theta: 0.0}, {x: 304417.43, y: 3892837.16, theta: 0.0}]}"
+```
 
 ### [수정된 사항]
 1. **섹션 제목 추가**  
@@ -259,6 +280,10 @@ install(TARGETS
 ```bash
 sudo apt-get update
 sudo apt-get install libgeographic-dev
+```
+```bash
+sudo apt-get update
+sudo apt-get install ros-humble-pcl-conversions
 ```
 
 ```bash

@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor  # 멀티스레드 실행자 추가
 from geometry_msgs.msg import PoseStamped, Point
 from nav_msgs.msg import Path as NavPath
 from std_msgs.msg import Float32
@@ -9,6 +10,7 @@ import networkx as nx
 import os
 import math
 from functools import partial
+import threading
 
 class MultiRobotPathVisualizer(Node):
     def __init__(self, num_robots):
@@ -19,8 +21,8 @@ class MultiRobotPathVisualizer(Node):
         # ─── 그래프 로드 (배경 지도) ─────────────────────────────
         self.load_graph_data("global_map.json")
 
-        # ─── Matplotlib 설정 (인터랙티브 모드) ─────────────────
-        plt.ion()
+        # ─── Matplotlib 설정 (인터랙티브 모드 비활성화) ─────────────────
+        # GUI 관련 코드는 메인 스레드에서 처리하기 위해 interactive mode를 사용하지 않습니다.
         self.fig, self.ax = plt.subplots(figsize=(8, 8))
 
         # 배경 지도(그래프) 표시
@@ -30,8 +32,8 @@ class MultiRobotPathVisualizer(Node):
                 self.G, 
                 pos=self.pos, 
                 ax=self.ax, 
-                node_size=50, 
-                node_color='blue',
+                node_size=20, 
+                node_color='lightgray',  # 파란색 대신 연한 회색 사용
                 edge_color='gray', 
                 with_labels=False
             )
@@ -100,7 +102,8 @@ class MultiRobotPathVisualizer(Node):
                 10
             )
 
-        self.ax.legend()
+        # 범례 제거(필요하면 주석 해제)
+        # self.ax.legend()
 
     def load_graph_data(self, file_name):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -150,16 +153,14 @@ class MultiRobotPathVisualizer(Node):
         y_vals = [pose.pose.position.y for pose in msg.poses]
         self.robots[robot_id]["global_path_plot"].set_xdata(x_vals)
         self.robots[robot_id]["global_path_plot"].set_ydata(y_vals)
-        plt.draw()
-        plt.pause(0.1)
+        # GUI 갱신은 메인 스레드의 타이머에서 처리합니다.
 
     def approach_path_callback(self, msg: NavPath, robot_id):
         x_vals = [pose.pose.position.x for pose in msg.poses]
         y_vals = [pose.pose.position.y for pose in msg.poses]
         self.robots[robot_id]["approach_path_plot"].set_xdata(x_vals)
         self.robots[robot_id]["approach_path_plot"].set_ydata(y_vals)
-        plt.draw()
-        plt.pause(0.1)
+        # GUI 갱신은 메인 스레드의 타이머에서 처리합니다.
 
     def update_current_position_plot(self, robot_id):
         current_x = self.robots[robot_id]["current_x"]
@@ -167,11 +168,7 @@ class MultiRobotPathVisualizer(Node):
         if current_x is not None and current_y is not None:
             self.robots[robot_id]["current_pos_plot"].set_xdata([current_x])
             self.robots[robot_id]["current_pos_plot"].set_ydata([current_y])
-            # 아래 축 범위 변경 코드를 제거하거나 주석 처리합니다.
-            # self.ax.set_xlim(current_x - (25.0/2), current_x + (25.0/2))
-            # self.ax.set_ylim(current_y - (25.0/2), current_y + (25.0/2))
-            plt.draw()
-            plt.pause(0.1)
+            # plt.draw(), plt.pause() 제거
             self.update_current_heading_arrow(robot_id)
 
     def update_current_heading_arrow(self, robot_id):
@@ -186,8 +183,7 @@ class MultiRobotPathVisualizer(Node):
             y_vals = [current_y, current_y + dy]
             self.robots[robot_id]["heading_line"].set_xdata(x_vals)
             self.robots[robot_id]["heading_line"].set_ydata(y_vals)
-            plt.draw()
-            plt.pause(0.1)
+            # plt.draw(), plt.pause() 제거
 
     def update_target_position_plot(self, robot_id):
         target_x = self.robots[robot_id]["target_x"]
@@ -195,8 +191,7 @@ class MultiRobotPathVisualizer(Node):
         if target_x is not None and target_y is not None:
             self.robots[robot_id]["target_pos_plot"].set_xdata([target_x])
             self.robots[robot_id]["target_pos_plot"].set_ydata([target_y])
-            plt.draw()
-            plt.pause(0.1)
+            # plt.draw(), plt.pause() 제거
 
     def update_target_heading_arrow(self, robot_id):
         target_x = self.robots[robot_id]["target_x"]
@@ -210,16 +205,33 @@ class MultiRobotPathVisualizer(Node):
             y_vals = [target_y, target_y + dy]
             self.robots[robot_id]["target_heading_line"].set_xdata(x_vals)
             self.robots[robot_id]["target_heading_line"].set_ydata(y_vals)
-            plt.draw()
-            plt.pause(0.1)
+            # plt.draw(), plt.pause() 제거
 
 def main(args=None):
     num_robots = int(input("로봇 대수를 입력하세요: "))
     rclpy.init(args=args)
     multi_robot_visualizer = MultiRobotPathVisualizer(num_robots)
-    rclpy.spin(multi_robot_visualizer)
-    multi_robot_visualizer.destroy_node()
-    rclpy.shutdown()
+
+    # ROS 실행은 별도 스레드에서 진행
+    executor = MultiThreadedExecutor()
+    executor.add_node(multi_robot_visualizer)
+    ros_thread = threading.Thread(target=executor.spin, daemon=True)
+    ros_thread.start()
+
+    # Matplotlib GUI는 메인 스레드에서 실행
+    # 타이머를 등록하여 주기적으로 캔버스 갱신 (100ms 간격)
+    timer = multi_robot_visualizer.fig.canvas.new_timer(interval=100)
+    timer.add_callback(lambda: multi_robot_visualizer.fig.canvas.draw_idle())
+    timer.start()
+
+    try:
+        plt.show()  # 메인 스레드에서 GUI 이벤트 루프 실행
+    except KeyboardInterrupt:
+        pass
+    finally:
+        executor.shutdown()
+        multi_robot_visualizer.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

@@ -27,20 +27,23 @@ using namespace std::chrono_literals;
 // 필터 및 클러스터링 상수
 constexpr float VOXEL_GRID_SIZE = 0.1f;   // Voxel 필터 리프 사이즈
 constexpr float CLUSTER_TOLERANCE = 0.7f;  // 클러스터링 허용 오차
-constexpr int MIN_CLUSTER_SIZE = 15;       // 최소 클러스터 포인트 수
 
+
+//클러스터 자체가 '의미 있는' 객체임을 보장하기 위한 최소 포인트 수로, 노이즈 제거에 중점을 둡니다.
+constexpr int MIN_CLUSTER_SIZE = 15;       // 최소 클러스터 포인트 수
 // CropBox ROI (전방 5미터, 좌우 2미터, 높이 2미터 내의 영역)
 // X: 0 ~ 5, Y: -2 ~ 2, Z: -0.4 ~ 2 (여기서는 X 최대값 8로 제한)
-const Eigen::Vector4f CROP_MIN(0.0, -2.0, -0.4, 0.0);
-const Eigen::Vector4f CROP_MAX(5.0, 2.0, 2.0, 0.0);
+// 수정 후 (바닥 제거를 위해 z 최소값을 0.2로 올림):
+const Eigen::Vector4f CROP_MIN(0.0, -1.0, 0.1, 0.0);
+const Eigen::Vector4f CROP_MAX(3.0, 1.0, 1.0, 0.0);
 
 // 객체 크기 조건 (바운딩 박스 생성 조건, 필요에 따라 조정)
 // (여기서는 y축, z축 조건으로 사용)
-const double object_min_y = 0.2; // 객체의 최소 높이  범위는 위의 Z축
-const double object_max_y = 1.5; // 객체의 최대 높이 
+const double object_min_y = 0.5; // 객체의 최소 높이  범위는 위의 Z축 바닥거르기용
+const double object_max_y = 1.0; // 객체의 최대 높이 
 
 const double object_min_x = 0.2; // 객체의 최소 너비 범위는 위의 y축
-const double object_max_x = 2.0; // 객체의 최대 너비 
+const double object_max_x = 0.6; // 객체의 최대 너비 
 
 bool mode_allowed(const std::string &mode)
 {
@@ -173,7 +176,12 @@ private:
 
     // 4. 클러스터링
     pcl::search::KdTree<pcl::PointXYZI>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZI>);
-    tree->setInputCloud(cloud_roi);
+    if (!cloud_roi->empty()) {
+      tree->setInputCloud(cloud_roi);
+      // KD-트리 사용 코드
+    } else {
+      //RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "입력 포인트 클라우드가 비어 있습니다. KD-트리 생성 건너뛰기.");
+    }
 
     std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
