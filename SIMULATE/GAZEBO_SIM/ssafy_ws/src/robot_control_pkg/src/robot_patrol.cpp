@@ -34,7 +34,7 @@ const double ANGLE_ERROR_THRESHOLD    = 0.05; // 각 오차 임계값 (rad)
 const double heading_threshold_       = M_PI / 3;  // 목표 각도 오차 임계값 (rad)
 // (중간 지점 스킵용) 이미 지나간 지점이라고 간주할 거리 기준
 //30cm이내의 점은 스킵
-const double SKIP_THRESHOLD = 0.3;
+const double SKIP_THRESHOLD = 0.35;
 
 //스무딩계수
 // 높으면 새로 바뀐 속도의 영향력이커진다. -> 더 민감하ㅏ게 반응함
@@ -196,18 +196,30 @@ private:
         }
     }
 
+
+    void clearQueue(std::queue<Point>& q) {
+        std::queue<Point> empty;
+        std::swap(q, empty);
+    }
     // -------------------------------
     // 2) global_path 콜백
     // -------------------------------
     // 글로벌 경로 수신 콜백 함수
     void global_path_callback(const nav_msgs::msg::Path::SharedPtr msg) {
         // 기존 저장된 경로 비움
-        while (!save_path_queue_.empty()) {
-            save_path_queue_.pop();
-            global_path_received_ = false;
+        bool cleared = false;
+
+        if (!save_path_queue_.empty()) {
+            clearQueue(save_path_queue_);
+            cleared = true;
         }
-        while (!path_queue_.empty()) {
-            path_queue_.pop();
+    
+        if (!path_queue_.empty()) {
+            clearQueue(path_queue_);
+            cleared = true;
+        }
+    
+        if (cleared) {
             global_path_received_ = false;
         }
 
@@ -281,10 +293,10 @@ private:
             current_queue = &path_queue_;
         }
 
-        // 경로가 비었으면 false
+        // 경로가 비었으면 true reached 반환
         if (current_queue->empty()) {
             RCLCPP_WARN(this->get_logger(), "현재 경로(선택된 큐)가 비어 있습니다.");
-            return false;
+            return true;
         }
 
         // ── (1) 이미 지나친 노드 스킵 ─────────────
@@ -330,6 +342,7 @@ private:
         // 선속도 제어
         // 새로 계산된 속도
         double computed_speed = std::min(distance, MAX_LINEAR_SPEED);
+        computed_speed = std::max(computed_speed, 0.3);//최소속도 0.6m/s
         // α (0 < α < 1)은 스무딩 계수, 예: 0.1 ~ 0.3 정도
         double target_speed_ = ALPHA * computed_speed + (1 - ALPHA) * previous_target_speed;
         // 이후 target_speed_와 현재 선속도의 차이를 기반으로 가속 제어
@@ -407,7 +420,7 @@ private:
                 RCLCPP_INFO(this->get_logger(),
                     "경로에 도달했습니다. Waiting service 호출하여 대기모드로 전환.");
                 callTempStop();  // temp stop service 호출
-                stop_robot();
+                //stop_robot();
                 callWaitingService();
                 return;
             }
@@ -531,7 +544,7 @@ private:
 
     // 로봇 정지
     void stop_robot() {
-
+        //RCLCPP_INFO(this->get_logger(), "stop_robot() 호출 \n");
         geometry_msgs::msg::Twist stop_msg;
         stop_msg.linear.x  = 0.0;
         stop_msg.angular.z = 0.0;
@@ -600,12 +613,7 @@ private:
         );
     }
 
-    // 큐 비우기 (경로 갱신 시 사용)
-    void clear_path_queue() {
-        while (!path_queue_.empty()) {
-            path_queue_.pop();
-        }
-    }
+
 
     // 역방향 순찰을 위한 경로 재구성 함수
     void construct_reverse_path_queue() {
