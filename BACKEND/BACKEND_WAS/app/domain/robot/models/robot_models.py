@@ -9,6 +9,10 @@ class Position(BaseModel):
     z: float = 0
     orientation: float = 0
 
+class Motion(BaseModel):
+    kph: float = 0.0
+    mps: float = 0.0
+
 class BatteryStatus(BaseModel):
     level: float = 100.0
     isCharging: bool = False
@@ -27,6 +31,8 @@ class RobotStatus(str, Enum):
     PATROLLING = "patrolling"
     CHARGING = "charging"
     ERROR = "error"
+<<<<<<< HEAD
+=======
 
 class NetworkStatus(str):
     CONNECTED = "connected"
@@ -38,16 +44,32 @@ class NetworkStatus(str):
 class Waypoint(BaseModel):
     x: float
     y: float
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
 
+class NetworkStatus(str):
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    CONNECTING = "connecting"
+    DISCONNECTING = "disconnecting"
+    networkHealth: float = 100.0
+
+class Waypoint(BaseModel):
+    x: float
+    y: float
 class Robot(BaseModel):
     seq: int
     manufactureName: str
     nickname: str
+<<<<<<< HEAD
+    sensorName: str
+=======
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
     ipAddress: str
     networkStatus: str = NetworkStatus.CONNECTED
     status: str = RobotStatus.WAITING
     networkHealth: float = 100.0
     position: Position
+    motion: Motion
     battery: BatteryStatus
     cpuTemp: float = 0.0
     image: Optional[RobotImage] = None
@@ -72,6 +94,13 @@ class StatusResponse(BaseModel):
     timestamp: datetime
     location: Position
 
+class NicknameResponse(BaseModel):
+    seq: int
+    robotID: str
+    nickname: str
+    status: str
+    timestamp: datetime
+
 class LogEntry(BaseModel):
     x: int
     y: int
@@ -93,7 +122,7 @@ class DetectionInfo(BaseModel):
     status: str
 
 class LogResponse(BaseModel):
-    robotId: str
+    seq: str
     routes: Optional[List[RouteLog]] = None
     detections: Optional[List[DetectionInfo]] = None
     pagination: Dict[str, Any]
@@ -116,4 +145,10 @@ class ROS2RobotStatus(BaseModel):
     cpu_temp: float
     error_code: Optional[int] = None
     error_message: Optional[str] = None
+<<<<<<< HEAD
     timestamp: datetime
+
+
+=======
+    timestamp: datetime
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23

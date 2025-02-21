@@ -1,48 +1,101 @@
-# version: '3'
-# services:
-#   backend:
-#     build: .
-#     ports:
-#       - "8000:8000"
-#     env_file:
-#       - .env  # 환경변수 파일 사용
-#     volumes:
-#       - ./app:/BACKEND_WAS/app  # 로컬의 app 폴더를 컨테이너와 연결
-#     # mongodb 서비스는 필요없으므로 제거 
+version: '3.8'
 
-version: '3'
 services:
-  ros2:
-    image: osrf/ros:humble-desktop
-    container_name: ros2_gazebo
-    environment:
-      - DISPLAY=host.docker.internal:0
-      - QT_X11_NO_MITSHM=1
-      - LIBGL_ALWAYS_INDIRECT=1
-    volumes:
-      - ./ros2_ws:/ros2_ws
-    network_mode: "host"
-    privileged: true
-    command: bash -c "source /opt/ros/humble/setup.bash && bash"
-
-  backend:
+  # ---------------------------------------
+  # (A) WAS ????
+  # ---------------------------------------
+  was:
     build: .
-    ports:
-      - "8000:8000"
-#    env_file:
-#      - .env
+    image: robocop-was:latest
+    container_name: robocop-was
+    deploy:
+      resources:
+        limits:
+          memory: 8G  # ?? ??
+        reservations:
+          memory: 6G  # ??? ??
     volumes:
       - ./app:/BACKEND_WAS/app
-      - robocop_storage:/data/storage  # 영구 스토리지를 위한 볼륨
+      - ./storage:/BACKEND_WAS/storage
+      - /var/www/media:/BACKEND_WAS/media
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+      - redis
+    network_mode: host
     environment:
-      - STORAGE_PATH=/data/storage
-    networks:
-      - robocop_network
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - TZ=Asia/Seoul
+    # WAS ?? ???? ENTRYPOINT? ???? ??? ?
+
+  # ---------------------------------------
+  # (B) MongoDB
+  # ---------------------------------------
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    volumes:
+      - mongodb_data:/data/db
+    network_mode: host
+    environment:
+      - TZ=Asia/Seoul
+
+  # ---------------------------------------
+  # (C) Redis
+  # ---------------------------------------
+  redis:
+    image: redis
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1
+    network_mode: host
+    environment:
+      - TZ=Asia/Seoul
+  # ---------------------------------------
+  # (D) ROS2 Discovery Server
+  # ---------------------------------------
+#  ros2-discovery:
+#    build:
+#      context: ./ros2-discovery   # Dockerfile ??
+#      dockerfile: Dockerfile
+#    container_name: ros2-discovery
+#    environment:
+##      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      # ? Dockerfile?? ?? ENV ?????, ????
+#      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
+#    network_mode: host
+    # ??? ? ????? ??, ?? Discovery Server? ??
+
+
+  # ---------------------------------------
+  # (E) ROS Bridge (WebSocket)
+  # ---------------------------------------
+
+
+    
+#  rosbridge:
+#    build: 
+#      context: ./rosbridge
+#      dockerfile: Dockerfile
+#    container_name: ros2-bridge
+#    environment:
+#      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#    command: >
+#      bash -c "source /opt/ros/humble/setup.bash &&
+#               (ros2 launch rosbridge_server rosbridge_websocket_launch.xml 
+#               port:=9090 
+#               address:=0.0.0.0) && python3 /ros2_ws/test_publisher.py"
+#    network_mode: host
+#    restart: unless-stopped
+
+
+    # WAS ?? ???? ENTRYPOINT? ???? ??? ?
+
 
 volumes:
-  robocop_storage:  # 영구 볼륨 정의
-    name: robocop_storage
-
-networks:
-  robocop_network:
-    name: robocop_network
+  media_volume:
+    external: true
+  mongodb_data:
+  redis_data:

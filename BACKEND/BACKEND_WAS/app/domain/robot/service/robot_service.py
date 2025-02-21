@@ -1,26 +1,149 @@
 import re
 from datetime import datetime
-from fastapi import HTTPException, UploadFile
-from typing import List, Optional, Union
+from fastapi import HTTPException, UploadFile, WebSocket
+from typing import List, Optional, Union, Set, Dict, Callable
 from ..repository.robot_repository import RobotRepository
 from ..models.robot_models import (
     Robot, Position, BatteryStatus, RobotStatus, RobotImage,
+<<<<<<< HEAD
+    StatusResponse, LogResponse, Motion
+=======
     StatusResponse, LogResponse, ROS2RobotStatus
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
 )
 from ....common.config.manager import get_settings
 import aiohttp
 import os
+<<<<<<< HEAD
+import roslibpy
+import json
+import logging
+from redis import Redis
+import asyncio
+import websockets
+import traceback
+from ...ros_publisher.service.ros_bridge_connection import RosBridgeConnection
+import math  # radian -> degree 변환을 위해 추가
+import time
+
+settings = get_settings()
+logger = logging.getLogger(__name__)
+=======
 from .ros2_robot_service import ROS2RobotClient
 
 settings = get_settings()
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
 
 class RobotService:
+    _instances: Dict[int, "RobotService"] = {}
+    
+    @classmethod
+    async def get_instance(cls, seq: int) -> "RobotService":
+        if seq not in cls._instances:
+            instance = cls()
+            # 추가 초기화 작업이 필요하면 여기에 작성하세요.
+            cls._instances[seq] = instance
+        return cls._instances[seq]
+
+    """로봇 관련 비즈니스 로직과 프론트엔드 통신을 담당하는 서비스"""
     def __init__(self):
         self.repository = RobotRepository()
+<<<<<<< HEAD
+        self.ros_bridge = RosBridgeConnection()  # 싱글톤 인스턴스 사용
+        self.media_server_url = settings.storage.MEDIA_SERVER_URL
+        self.upload_api_url = settings.storage.UPLOAD_API_URL
+        
+        # 웹소켓 클라이언트 관리 (프론트엔드)
+        self.frontend_clients = set()
+ 
+        self.topics = {}  # 구독 중인 토픽 관리를 위해 추가
+        
+        # Redis 연결
+        self.redis_client = Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            decode_responses=True
+        )
+ 
+        self.message_buffer = {}  # 로봇별 메시지 버퍼ㅐ
+        self.last_robot_states = {}  # 로봇별 마지막 상태 저장
+        
+        # 새로운 down_utm 메시지를 저장할 변수 추가
+        self.last_down_utm = None
+        self.last_status = None  # status 메시지를 저장할 변수 추가
+        self.last_alert = None  # alert 메시지를 저장할 변수 추가
+        self.client_id = None  # ROS Bridge 클라이언트 ID 추가
+
+    # === 프론트엔드 WebSocket 관리 ===
+    async def register_frontend_client(self, websocket: WebSocket):
+        """프론트엔드 웹소켓 클라이언트 등록"""
+        # 이미 등록된 클라이언트인지 확인
+        if websocket in self.frontend_clients:
+            logger.info(f"클라이언트가 이미 등록되어 있습니다: {id(websocket)}")
+            return
+        
+        self.frontend_clients.add(websocket)
+        client_id = id(websocket)
+        self.redis_client.sadd('frontend_clients', client_id)
+        logger.info(f"프론트엔드 클라이언트 등록: {client_id}")
+        
+        # 등록 확인 메시지 전송
+        try:
+            await websocket.send_json({
+                "type": "connection_status",
+                "status": "connected",
+                "client_id": client_id,
+                "message": "프론트엔드 연결 성공"
+            })
+            logger.info(f"클라이언트 {client_id}에 연결 확인 메시지 전송 성공")
+        except Exception as e:
+            logger.error(f"클라이언트 {client_id} 초기 메시지 전송 실패: {str(e)}")
+
+    async def unregister_frontend_client(self, websocket: WebSocket):
+        """프론트엔드 웹소켓 클라이언트 제거"""
+        self.frontend_clients.discard(websocket)
+        client_id = id(websocket)
+        self.redis_client.srem('frontend_clients', client_id)
+        logger.info(f"프론트엔드 클라이언트 제거: {client_id}")
+
+    async def broadcast_to_frontend(self, message: dict):
+        """프론트엔드 클라이언트들에게 메시지 브로드캐스트"""
+        try:
+            await asyncio.sleep(0.5)
+            if not self.frontend_clients:
+                logger.warning("No frontend clients registered")
+                return
+    
+            logger.info(f"Broadcasting to {len(self.frontend_clients)} clients")
+            disconnected = set()
+            
+            for client in self.frontend_clients:
+                try:
+                    logger.info(f"Sending to client {id(client)}")
+                    await client.send_json(message)
+                except Exception as e:
+                    disconnected.add(client)
+                
+            # 끊어진 클라이언트 제거
+            for client in disconnected:
+                await self.unregister_frontend_client(client)
+                
+        except asyncio.CancelledError:
+            # Task 취소 시 조용히 종료
+            pass
+        except Exception as e:
+            logger.error(f"Broadcasting error: {str(e)}")
+        finally:
+            # 추가적인 정리 작업이 필요한 경우
+            pass
+        
+    # === 기존 REST API 관련 메서드들 ===
+=======
         self.ros2_client = ROS2RobotClient()
         self.media_server_url = settings.storage.MEDIA_SERVER_URL
         self.upload_api_url = settings.storage.UPLOAD_API_URL
 
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
     async def create_robot(self, nickname: str, ip_address: str, image: Optional[UploadFile] = None) -> Robot:
         try:
             # IP 주소 형식 검증
@@ -43,8 +166,13 @@ class RobotService:
             seq = await self.repository.get_next_robot_id()
             
             # 제조사 지정 이름 생성
+<<<<<<< HEAD
+            manufacturer_name = f"robot_{seq:02d}"
+            sensor_name = f"sensor_{seq:02d}"
+=======
             manufacturer_name = f"ROBOT_{seq:03d}"
 
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
             # 이미지 처리
             robot_image = None
             if image:
@@ -78,9 +206,14 @@ class RobotService:
                 seq=seq,
                 manufactureName=manufacturer_name,
                 nickname=nickname,
+<<<<<<< HEAD
+                sensorName=sensor_name,
+=======
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23
                 ipAddress=ip_address,
                 status=RobotStatus.WAITING,
                 position=Position(),
+                motion=Motion(),
                 battery=BatteryStatus(),
                 image=robot_image,
                 startAt=datetime.now(),
@@ -215,6 +348,492 @@ class RobotService:
 
     async def start_ros2_client(self):
         """ROS2 클라이언트를 시작합니다."""
+<<<<<<< HEAD
+        # 연결 상태 확인
+        if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+            logger.info("ROS Bridge 연결이 필요합니다.")
+            await self.ros_bridge._connect()
+        
+        # 토픽 설정
+        topics = {
+            "/robot_1/utm_pose": "geometry_msgs/PoseStamped",
+            "/robot_1/status": "robot_custom_interfaces/msg/Status",
+        }
+        
+        # 토픽 구독
+        for topic_name, msg_type in topics.items():
+            if topic_name not in self.topics:
+                try:
+                    topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type)
+                    
+                    def callback(message):
+                        processed_message = self.process_message_by_topic(topic_name, message)
+                        if processed_message:
+                            asyncio.create_task(self.broadcast_to_frontend(processed_message))
+                    
+                    topic.subscribe(callback)
+                    self.topics[topic_name] = topic
+                    logger.info(f"토픽 구독 성공: {topic_name}")
+                except Exception as e:
+                    logger.error(f"토픽 구독 실패 {topic_name}: {str(e)}")
+
+    async def process_message_by_topic(self, topic_name: str, message: dict):
+        """토픽별 메시지를 가공하고 필요시 DB 업데이트"""
+        try:
+            topic_parts = topic_name.split('/')
+            
+            if topic_parts[1] == "filtered_points":  # 센서 데이터
+                sensor_name = topic_parts[0][1:]  # /ssafy -> ssafy
+                
+                header = message.get("header", {})
+                points_data = {
+                    "sensorName": sensor_name,
+                    "header": {
+                        "stamp": {
+                            "sec": header.get("stamp", {}).get("sec", 0),
+                            "nanosec": header.get("stamp", {}).get("nanosec", 0)
+                        },
+                        "frame_id": header.get("frame_id", "")
+                    },
+                    "points_info": {
+                        "height": message.get("height", 0),
+                        "width": message.get("width", 0),
+                        "fields": message.get("fields", [])
+                    },
+                    "timestamp": datetime.now()
+                }
+                
+                # 센서 데이터 버퍼 초기화 및 추가
+                if sensor_name not in self.message_buffer:
+                    self.message_buffer[sensor_name] = []
+                
+                self.message_buffer[sensor_name].append(points_data)
+                
+                # 반환값: 필터링된 포인트 데이터 (sensorName 포함)
+                return {
+                    "type": "filtered_points",
+                    "sensorName": sensor_name,
+                    "data": points_data
+                }
+            
+            elif len(topic_parts) > 1:  # 로봇 관련 토픽 처리
+                manufacturer_name = topic_parts[1]
+                if manufacturer_name not in self.message_buffer:
+                    self.message_buffer[manufacturer_name] = []
+                
+                if "utm_pose" in topic_name:
+                    position = message.get("pose", {}).get("position", {})
+                    
+                    processed_data = {
+                        "manufactureName": manufacturer_name,
+                        "position": {
+                            "x": round(position.get("x", 0), 4),
+                            "y": round(position.get("y", 0), 4),
+                            "z": round(position.get("z", 0), 4),
+                            "orientation": self.last_robot_states.get(manufacturer_name, {}).get("orientation", 0)  # heading에서 업데이트된 값 사용
+                        },
+                        "timestamp": datetime.now()
+                    }
+                    
+                    # 위치 변화 감지 (일정 거리 이상 변화가 있을 때만)
+                    last_state = self.last_robot_states.get(manufacturer_name, {})
+                    last_position = last_state.get("position", {})
+                    
+                    # 위치 변화량 계산
+                    position_changed = False
+                    if last_position:
+                        dx = abs(last_position.get("x", 0) - position.get("x", 0))
+                        dy = abs(last_position.get("y", 0) - position.get("y", 0))
+                        dz = abs(last_position.get("z", 0) - position.get("z", 0))
+                        
+                        # 일정 거리 이상 변화가 있을 때만 업데이트 (예: 0.5m)
+                        threshold = 0.5
+                        position_changed = (dx > threshold or dy > threshold or dz > threshold)
+                    
+                    # 버퍼에 추가
+                    self.message_buffer[manufacturer_name].append(processed_data)
+                    
+                    # 위치가 크게 변했을 때만 DB 업데이트
+                    if position_changed:
+                        await self._update_robot_position(manufacturer_name, processed_data)
+                        self.last_robot_states[manufacturer_name]["position"] = {
+                            "x": position.get("x", 0),
+                            "y": position.get("y", 0),
+                            "z": position.get("z", 0)
+                        }
+                    
+                    # 반환값: 로봇 위치 데이터 (manufactureName 포함)
+                    return {
+                        "type": "robot_position",
+                        "manufactureName": manufacturer_name,
+                        "data": processed_data
+                    }
+                
+                elif "heading" in topic_name:
+                    heading_rad = message.get("data", 0)
+                    heading_deg = math.degrees(heading_rad)
+                    
+                    if manufacturer_name not in self.last_robot_states:
+                        self.last_robot_states[manufacturer_name] = {}
+                    
+                    last_state = self.last_robot_states[manufacturer_name]
+                    last_state["orientation"] = heading_deg
+                    
+                    # 방향이 크게 변했을 때만 DB 업데이트 (5도 이상)
+                    orientation_changed = (
+                        abs(last_state.get("last_orientation", 0) - heading_deg) > 5
+                    )
+                    
+                    if orientation_changed:
+                        processed_data = {
+                            "manufactureName": manufacturer_name,
+                            "position": {
+                                "orientation": heading_deg
+                            },
+                            "timestamp": datetime.now()
+                        }
+                        
+                        await self._update_robot_position(manufacturer_name, processed_data)
+                        last_state["last_orientation"] = heading_deg
+                    
+                    # 반환값: 로봇 방향 데이터 (manufactureName 포함)
+                    return {
+                        "type": "robot_heading",
+                        "manufactureName": manufacturer_name,
+                        "data": {
+                            "orientation": heading_deg,
+                            "timestamp": datetime.now()
+                        }
+                    }
+                
+                elif topic_name.endswith(('/speed_kph', '/speed_mps')):
+                    current_time = datetime.now()
+                    
+                    if manufacturer_name not in self.last_robot_states:
+                        self.last_robot_states[manufacturer_name] = {}
+                    
+                    last_state = self.last_robot_states[manufacturer_name]
+                    
+                    data_value = message.get("data", 0)
+                    if "speed_kph" in topic_name:
+                        last_state["speed_kph"] = round(data_value, 2)
+                    elif "speed_mps" in topic_name:
+                        last_state["speed_mps"] = round(data_value, 2)
+                    
+                    # 모든 속도 정보가 있는 경우에만 처리
+                    if all(key in last_state for key in ["speed_kph", "speed_mps"]):
+                        processed_data = {
+                            "manufactureName": manufacturer_name,
+                            "motion": {
+                                "kph": last_state["speed_kph"],
+                                "mps": last_state["speed_mps"]
+                            },
+                            "timestamp": current_time
+                        }
+                        
+                        self.message_buffer[manufacturer_name].append(processed_data)
+                        
+                        # 속도가 크게 변했을 때만 DB 업데이트
+                        motion_changed = (
+                            abs(last_state.get("last_speed_kph", 0) - last_state["speed_kph"]) > 0.5
+                        )
+                        
+                        if motion_changed:
+                            await self._update_robot_motion(manufacturer_name, processed_data)
+                            last_state["last_speed_kph"] = last_state["speed_kph"]
+                        
+                        # 반환값: 로봇 모션 데이터 (manufactureName 포함)
+                        return {
+                            "type": "robot_motion",
+                            "manufactureName": manufacturer_name,
+                            "data": processed_data
+                        }
+
+        except Exception as e:
+            logger.error(f"메시지 처리 중 오류: {str(e)}")
+            logger.error(traceback.format_exc())
+            return None  # 에러 발생 시 None 반환
+
+    async def _update_robot_and_logs(self, manufacturer_name: str, data: dict):
+        """로봇 상태 업데이트 및 로그 저장"""
+        try:
+            # 로봇 정보 업데이트
+            update_data = {
+                "status": data["status"],
+                "networkHealth": data["networkHealth"],
+                "battery": data["battery"],
+                "cpuTemp": data["cpuTemp"],
+                "IsActive": data["IsActive"],
+                "lastActive": data["timestamp"]
+            }
+            
+            robot = await self.repository.find_robot_by_name(manufacturer_name)
+            if robot:
+                await self.repository.update_robot_status(robot.seq, update_data)
+                
+                # 버퍼의 로그들을 DB에 저장
+                if manufacturer_name in self.message_buffer:
+                    logs = self.message_buffer[manufacturer_name]
+                    if logs:
+                        await self._save_robot_logs(robot.seq, logs)
+                        self.message_buffer[manufacturer_name] = []  # 버퍼 비우기
+                        
+        except Exception as e:
+            logger.error(f"로봇 상태 업데이트 중 오류: {str(e)}")
+
+    async def _save_robot_logs(self, robot_seq: int, logs: list):
+        """로봇 로그를 형식화하고 저장"""
+        try:
+            formatted_logs = []
+            for log in logs:
+                log_type = log.get("type")
+                
+                if log_type == "status":
+                    formatted_log = {
+                        "robotSeq": robot_seq,
+                        "type": "status",
+                        "data": {
+                            "status": log["status"],
+                            "networkHealth": log["networkHealth"],
+                            "battery": log["battery"],
+                            "cpuTemp": log["cpuTemp"],
+                            "isActive": log["IsActive"]
+                        },
+                        "timestamp": log["timestamp"],
+                        "createdAt": datetime.now()
+                    }
+                elif log_type == "position":
+                    formatted_log = {
+                        "robotSeq": robot_seq,
+                        "type": "position",
+                        "data": {
+                            "position": log["position"],
+                            "motion": log.get("motion", {}),
+                        },
+                        "timestamp": log["timestamp"],
+                        "createdAt": datetime.now()
+                    }
+                elif log_type == "error":
+                    formatted_log = {
+                        "robotSeq": robot_seq,
+                        "type": "error",
+                        "data": {
+                            "code": log.get("error_code"),
+                            "message": log.get("error_message"),
+                            "status": log.get("status")
+                        },
+                        "timestamp": log["timestamp"],
+                        "createdAt": datetime.now()
+                    }
+                
+                formatted_logs.append(formatted_log)
+            
+            if formatted_logs:
+                await self.repository.save_robot_logs(formatted_logs)
+                
+        except Exception as e:
+            logger.error(f"로그 형식화 및 저장 중 오류: {str(e)}")
+            logger.error(traceback.format_exc())
+
+    async def update_nickname(self, seq: int, new_nickname: str) -> Robot:
+        """로봇의 닉네임을 업데이트합니다."""
+        try:
+            # 닉네임 중복 검사
+            existing_robot = await self.repository.find_robot_by_nickname(new_nickname)
+            if existing_robot:
+                raise HTTPException(
+                    status_code=400,
+                    detail="이미 사용 중인 로봇 닉네임입니다."
+                )
+
+            updated_robot = await self.repository.update_robot_nickname(seq, new_nickname)
+            if not updated_robot:
+                raise HTTPException(
+                    status_code=500,
+                    detail="로봇 닉네임 업데이트 실패"
+                )
+            
+            return updated_robot
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"로봇 닉네임 업데이트 중 오류 발생: {str(e)}"
+            )
+
+    async def _update_robot_position(self, manufacturer_name: str, data: dict):
+        """로봇 위치 업데이트"""
+        try:
+            robot = await self.repository.find_robot_by_name(manufacturer_name)
+            if robot:
+                update_data = {
+                    "position": data["position"],
+                    "lastActive": data["timestamp"]
+                }
+                await self.repository.update_robot_status(robot.seq, update_data)
+                
+        except Exception as e:
+            logger.error(f"로봇 위치 업데이트 중 오류: {str(e)}")
+
+    async def _update_robot_motion(self, manufacturer_name: str, data: dict):
+        """로봇 모션(속도/방향) 정보 업데이트"""
+        try:
+            robot = await self.repository.find_robot_by_name(manufacturer_name)
+            if robot:
+                update_data = {
+                    "motion": data["motion"],
+                    "lastActive": data["timestamp"]
+                }
+                await self.repository.update_robot_status(robot.seq, update_data)
+                
+        except Exception as e:
+            logger.error(f"로봇 모션 업데이트 중 오류: {str(e)}")
+
+#    async def subscribe_down_utm(self, seq: int) -> None:
+#        """
+#        /robot_{seq}/down_utm 토픽을 구독합니다.
+#        """
+#        topic_name = f"/robot_{seq}/down_utm"
+#        msg_type = "geometry_msgs/msg/PoseStamped"
+#        
+#        if topic_name in self.topics:
+#            return
+#        
+#        try:
+#            if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+#                self.ros_bridge.ensure_connected()
+#            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type, throttle_rate=1000)  # 1000ms = 1Hz
+#            topic.subscribe(self._on_down_utm_message)
+#            self.topics[topic_name] = topic
+#        except Exception as e:
+#            raise
+            
+    async def subscribe_down_utm(self, seq: int) -> None:
+        """
+        /robot_{seq}/down_utm 토픽을 구독합니다.
+        """
+        if seq not in [1, 2]:
+            return  # seq가 1이나 2가 아니면 함수 종료
+
+        topic_name = f"/robot_{seq}/down_utm"
+        msg_type = "geometry_msgs/msg/PoseStamped"
+    
+        if topic_name in self.topics:
+            return
+    
+        try:
+            if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+                self.ros_bridge.ensure_connected()
+            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type, throttle_rate=1000)  # 1000ms = 1Hz
+            topic.subscribe(self._on_down_utm_message)
+            self.topics[topic_name] = topic
+        except Exception as e:
+            raise
+
+    def _on_down_utm_message(self, message: dict) -> None:
+        """
+        /robot_{seq}/down_utm 토픽에서 수신한 메시지를 처리합니다.
+        """
+        try:
+            #logger.info(f"Received down_utm message: {message}")
+            header = message.get("header", {})
+            pose = message.get("pose", {})
+            position = pose.get("position", {})
+            orientation = pose.get("orientation", {})
+            down_utm_data = {
+                "header": header,
+                "position": position,
+                "orientation": orientation
+            }
+            # 마지막으로 수신한 메시지를 저장합니다.
+            self.last_down_utm = down_utm_data
+            #logger.info(f"Updated last_down_utm: {down_utm_data}")
+        except Exception as e:
+            logger.error(f"Error processing down_utm message: {str(e)}")
+            
+    async def subscribe_alert(self, seq: int) -> None:
+        """
+        /robot_{seq}/ai_info 토픽을 구독합니다.
+        """
+        topic_name = f"/robot_{seq}/ai_info"
+        msg_type = "std_msgs/msg/String"
+        
+        if topic_name in self.topics:
+            return
+        
+        try:
+            if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+                self.ros_bridge.ensure_connected()
+            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type, throttle_rate=1000)  # 1000ms = 1Hz
+            topic.subscribe(self._on_alert_message)
+            self.topics[topic_name] = topic
+        except Exception as e:
+            raise
+
+    def _on_alert_message(self, message: dict) -> None:
+        """
+        /robot_{seq}/ai_info 토픽에서 수신한 메시지를 처리합니다.
+        """
+        try:
+            data = message.get("data", "")
+            logger.info(f"수신된 알림 메시지: {data}")
+            alert_type = None
+            
+            if data == "거수자 처리완료-재개":
+                alert_type = "clear"
+            elif data == "거수자인식-정지":
+                alert_type = "caution"
+            elif data == "거수자 사라짐":
+                alert_type = "emergency"
+                
+            if alert_type:
+                self.last_alert = {
+                    "type": alert_type,
+                    "message": data,
+                    "timestamp": time.time()
+                }
+                logger.info(f"Alert 메시지 수신: {self.last_alert}")
+        except Exception as e:
+            logger.error(f"Alert 메시지 처리 중 오류 발생: {str(e)}", exc_info=True)
+
+
+    async def cleanup(self, seq: int) -> None:
+        """로봇 서비스의 리소스를 정리합니다."""
+        try:
+            # 구독 중인 토픽 해제
+            topic_names = [
+                f"/robot_{seq}/status",
+                f"/robot_{seq}/down_utm",
+                f"/robot_{seq}/ai_info"  # alert 토픽 추가
+            ]
+            
+            for topic_name in topic_names:
+                if topic_name in self.topics:
+                    self.topics[topic_name].unsubscribe()
+                    del self.topics[topic_name]
+                    logger.info(f"토픽 {topic_name} 구독 해제 완료")
+
+            # ROS Bridge 클라이언트 해제
+            if self.ros_bridge and self.client_id:
+                await self.ros_bridge.unregister_client(self.client_id)
+                logger.info(f"ROS Bridge 클라이언트 {self.client_id} 해제 완료")
+
+            # 인스턴스 제거
+            if seq in self.__class__._instances:
+                del self.__class__._instances[seq]
+                logger.info(f"로봇 서비스 인스턴스 {seq} 제거 완료")
+
+            # 마지막 데이터 초기화
+            self.last_status = None
+            self.last_down_utm = None
+            self.last_alert = None
+
+        except Exception as e:
+            logger.error(f"로봇 서비스 정리 중 에러 발생: {str(e)}")
+            raise
+
+=======
         # 모든 활성 로봇에 대한 토픽 구독
         robots = await self.get_all_robots()
         for robot in robots:
@@ -272,3 +891,4 @@ class RobotService:
 
         except Exception as e:
             print(f"로봇 상태 처리 중 오류 발생: {str(e)}")
+>>>>>>> dc86656e24a4d32ae1d229d37b8d461d9390ac23

@@ -51,3 +51,7 @@ class SecurityService:
     def get_password_hash(self, password: str) -> str:
         """비밀번호를 해시화합니다."""
         return self.pwd_context.hash(password)
+        
+    def hash_password(self, password: str) -> str:
+        """비밀번호를 해시화합니다."""
+        return self.get_password_hash(password)

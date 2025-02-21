@@ -4,6 +4,8 @@ from .database import DatabaseSettings
 from .security import SecuritySettings
 from .storage import StorageSettings
 from typing import List
+from pydantic_settings import BaseSettings
+
 
 class Settings:
     """설정 관리자"""
@@ -33,8 +35,16 @@ class Settings:
         IMAGE_STORAGE_PATH: str
         
     class ROS:
-        ROS_BRIDGE_HOST: str = "172.30.1.78"
-        ROS_BRIDGE_PORT: int = 9090
+        ROS_BRIDGE_HOST: str = "localhost"
+        ROS_BRIDGE_PORT: int = 10000
+
+    class ROS2:
+        BRIDGE_URL: str = "ws://localhost:10000"
+        RETRY_INTERVAL: int = 5
+        MAX_RETRIES: int = 3
+
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 6379
 
     base: Base
     security: Security
@@ -42,12 +52,14 @@ class Settings:
     jwt: JWT
     storage: Storage
     ros: ROS
+    ros2: ROS2
 
     def __init__(self):
         self.base = BaseAppSettings()
         self.database = DatabaseSettings()
         self.security = SecuritySettings()
         self.storage = StorageSettings()
+        self.ros2 = self.ROS2()
 
 @lru_cache()
 def get_settings() -> Settings:
