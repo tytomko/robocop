@@ -54,11 +54,14 @@ class RobotService:
             decode_responses=True
         )
  
-        self.message_buffer = {}  # 로봇별 메시지 버퍼ㅣㅐ
+        self.message_buffer = {}  # 로봇별 메시지 버퍼ㅐ
         self.last_robot_states = {}  # 로봇별 마지막 상태 저장
         
         # 새로운 down_utm 메시지를 저장할 변수 추가
         self.last_down_utm = None
+        self.last_status = None  # status 메시지를 저장할 변수 추가
+        self.last_alert = None  # alert 메시지를 저장할 변수 추가
+        self.client_id = None  # ROS Bridge 클라이언트 ID 추가
 
     # === 프론트엔드 WebSocket 관리 ===
     async def register_frontend_client(self, websocket: WebSocket):
@@ -661,27 +664,45 @@ class RobotService:
         except Exception as e:
             logger.error(f"로봇 모션 업데이트 중 오류: {str(e)}")
 
+#    async def subscribe_down_utm(self, seq: int) -> None:
+#        """
+#        /robot_{seq}/down_utm 토픽을 구독합니다.
+#        """
+#        topic_name = f"/robot_{seq}/down_utm"
+#        msg_type = "geometry_msgs/msg/PoseStamped"
+#        
+#        if topic_name in self.topics:
+#            return
+#        
+#        try:
+#            if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+#                self.ros_bridge.ensure_connected()
+#            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type, throttle_rate=1000)  # 1000ms = 1Hz
+#            topic.subscribe(self._on_down_utm_message)
+#            self.topics[topic_name] = topic
+#        except Exception as e:
+#            raise
+            
     async def subscribe_down_utm(self, seq: int) -> None:
         """
-        /robot_{seq}/down_utm 토픽(메시지 타입: geometry_msgs/msg/PoseStamped)을 구독합니다.
+        /robot_{seq}/down_utm 토픽을 구독합니다.
         """
+        if seq not in [1, 2]:
+            return  # seq가 1이나 2가 아니면 함수 종료
+
         topic_name = f"/robot_{seq}/down_utm"
         msg_type = "geometry_msgs/msg/PoseStamped"
-        # 이미 해당 토픽을 구독 중이면 재구독하지 않음
+    
         if topic_name in self.topics:
-            logger.info(f"Already subscribed to {topic_name}")
             return
-        
+    
         try:
-            # ROS Bridge 연결이 되어 있지 않다면 재연결 시도
             if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
                 self.ros_bridge.ensure_connected()
-            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type)
+            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type, throttle_rate=1000)  # 1000ms = 1Hz
             topic.subscribe(self._on_down_utm_message)
             self.topics[topic_name] = topic
-            logger.info(f"Subscribed to {topic_name} with type {msg_type}")
         except Exception as e:
-            logger.error(f"Failed to subscribe to {topic_name}: {str(e)}")
             raise
 
     def _on_down_utm_message(self, message: dict) -> None:
@@ -704,4 +725,85 @@ class RobotService:
             #logger.info(f"Updated last_down_utm: {down_utm_data}")
         except Exception as e:
             logger.error(f"Error processing down_utm message: {str(e)}")
+            
+    async def subscribe_alert(self, seq: int) -> None:
+        """
+        /robot_{seq}/ai_info 토픽을 구독합니다.
+        """
+        topic_name = f"/robot_{seq}/ai_info"
+        msg_type = "std_msgs/msg/String"
+        
+        if topic_name in self.topics:
+            return
+        
+        try:
+            if not self.ros_bridge.client or not self.ros_bridge.client.is_connected:
+                self.ros_bridge.ensure_connected()
+            topic = roslibpy.Topic(self.ros_bridge.client, topic_name, msg_type, throttle_rate=1000)  # 1000ms = 1Hz
+            topic.subscribe(self._on_alert_message)
+            self.topics[topic_name] = topic
+        except Exception as e:
+            raise
+
+    def _on_alert_message(self, message: dict) -> None:
+        """
+        /robot_{seq}/ai_info 토픽에서 수신한 메시지를 처리합니다.
+        """
+        try:
+            data = message.get("data", "")
+            logger.info(f"수신된 알림 메시지: {data}")
+            alert_type = None
+            
+            if data == "거수자 처리완료-재개":
+                alert_type = "clear"
+            elif data == "거수자인식-정지":
+                alert_type = "caution"
+            elif data == "거수자 사라짐":
+                alert_type = "emergency"
+                
+            if alert_type:
+                self.last_alert = {
+                    "type": alert_type,
+                    "message": data,
+                    "timestamp": time.time()
+                }
+                logger.info(f"Alert 메시지 수신: {self.last_alert}")
+        except Exception as e:
+            logger.error(f"Alert 메시지 처리 중 오류 발생: {str(e)}", exc_info=True)
+
+
+    async def cleanup(self, seq: int) -> None:
+        """로봇 서비스의 리소스를 정리합니다."""
+        try:
+            # 구독 중인 토픽 해제
+            topic_names = [
+                f"/robot_{seq}/status",
+                f"/robot_{seq}/down_utm",
+                f"/robot_{seq}/ai_info"  # alert 토픽 추가
+            ]
+            
+            for topic_name in topic_names:
+                if topic_name in self.topics:
+                    self.topics[topic_name].unsubscribe()
+                    del self.topics[topic_name]
+                    logger.info(f"토픽 {topic_name} 구독 해제 완료")
+
+            # ROS Bridge 클라이언트 해제
+            if self.ros_bridge and self.client_id:
+                await self.ros_bridge.unregister_client(self.client_id)
+                logger.info(f"ROS Bridge 클라이언트 {self.client_id} 해제 완료")
+
+            # 인스턴스 제거
+            if seq in self.__class__._instances:
+                del self.__class__._instances[seq]
+                logger.info(f"로봇 서비스 인스턴스 {seq} 제거 완료")
+
+            # 마지막 데이터 초기화
+            self.last_status = None
+            self.last_down_utm = None
+            self.last_alert = None
+
+        except Exception as e:
+            logger.error(f"로봇 서비스 정리 중 에러 발생: {str(e)}")
+            raise
 

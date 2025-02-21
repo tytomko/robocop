@@ -308,4 +308,55 @@ async def get_robot_down_utm(seq: int, request: Request):
         return StreamingResponse(event_generator(), media_type="text/event-stream")
     except Exception as e:
         logger.error(f"다운 UTm SSE 에러: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+        
+        
+@router.get("/sse/1/alert", tags=["robots"])
+async def get_robot_alert( request: Request):
+    """
+    SSE 형식으로 /robot_{seq}/ai_info 토픽 메시지를 전송합니다.
+    거수자 인식 관련 알림을 실시간으로 전송합니다.
+    
+    메시지 예시:
+    {
+        "seq": <seq>,
+        "alert": {
+            "type": "emergency" | "clear" | "caution",
+            "message": <original_message>,  # "거수자인식-정지", "거수자 처리완료-재개", "거수자 사라짐"
+            "timestamp": <timestamp>
+        }
+    }
+    """
+
+    
+    seq = 1
+    robot_service = await RobotService.get_instance(1)
+    await robot_service.subscribe_alert(1)
+    
+    try:
+        # logger.info(f"로봇 알림 SSE 스트림 시작 - seq: {seq}")
+        # logger.info(f"로봇 {seq}의 알림 토픽 구독 시작")
+
+        async def event_generator():
+            # 초기 연결 시 빈 데이터 전송
+            yield f"data: {json.dumps({'seq': seq, 'alert': None})}\n\n"
+            
+            while True:
+                if await request.is_disconnected():
+                    await robot_service.cleanup(seq)
+                    break
+
+                alert_data = robot_service.last_alert
+                if alert_data:
+                    payload = {
+                        "seq": seq,
+                        "alert": alert_data
+                    }
+                    robot_service.last_alert = None
+                    yield f"data: {json.dumps(payload)}\n\n"
+                
+                await asyncio.sleep(0.2)
+        
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 

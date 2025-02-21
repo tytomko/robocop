@@ -8,6 +8,12 @@ services:
     build: .
     image: robocop-was:latest
     container_name: robocop-was
+    deploy:
+      resources:
+        limits:
+          memory: 8G  # ?? ??
+        reservations:
+          memory: 6G  # ??? ??
     volumes:
       - ./app:/BACKEND_WAS/app
       - ./storage:/BACKEND_WAS/storage
