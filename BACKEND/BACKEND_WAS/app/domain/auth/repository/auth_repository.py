@@ -43,6 +43,8 @@ class AuthRepository:
         return None
 
     async def update_user_refresh_token(self, username: str, refresh_token: str):
+        """사용자의 리프레시 토큰을 업데이트합니다."""
+        await self.connect()
         return await self.collection.update_one(
             {"username": username},
             {
@@ -67,6 +69,8 @@ class AuthRepository:
         )
 
     async def invalidate_refresh_token(self, username: str):
+        """사용자의 리프레시 토큰을 무효화합니다."""
+        await self.connect()
         return await self.collection.update_one(
             {"username": username},
             {

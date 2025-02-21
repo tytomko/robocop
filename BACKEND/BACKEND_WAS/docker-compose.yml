@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------
+  # (A) WAS ????
+  # ---------------------------------------
+  was:
+    build: .
+    image: robocop-was:latest
+    container_name: robocop-was
+    deploy:
+      resources:
+        limits:
+          memory: 8G  # ?? ??
+        reservations:
+          memory: 6G  # ??? ??
+    volumes:
+      - ./app:/BACKEND_WAS/app
+      - ./storage:/BACKEND_WAS/storage
+      - /var/www/media:/BACKEND_WAS/media
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+      - redis
+    network_mode: host
+    environment:
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - TZ=Asia/Seoul
+    # WAS ?? ???? ENTRYPOINT? ???? ??? ?
+
+  # ---------------------------------------
+  # (B) MongoDB
+  # ---------------------------------------
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    volumes:
+      - mongodb_data:/data/db
+    network_mode: host
+    environment:
+      - TZ=Asia/Seoul
+
+  # ---------------------------------------
+  # (C) Redis
+  # ---------------------------------------
+  redis:
+    image: redis
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1
+    network_mode: host
+    environment:
+      - TZ=Asia/Seoul
+  # ---------------------------------------
+  # (D) ROS2 Discovery Server
+  # ---------------------------------------
+#  ros2-discovery:
+#    build:
+#      context: ./ros2-discovery   # Dockerfile ??
+#      dockerfile: Dockerfile
+#    container_name: ros2-discovery
+#    environment:
+##      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      # ? Dockerfile?? ?? ENV ?????, ????
+#      - ROS_DISCOVERY_SERVER=UDPv4:[52.79.51.253]:11811
+#    network_mode: host
+    # ??? ? ????? ??, ?? Discovery Server? ??
+
+
+  # ---------------------------------------
+  # (E) ROS Bridge (WebSocket)
+  # ---------------------------------------
+
+
+    
+#  rosbridge:
+#    build: 
+#      context: ./rosbridge
+#      dockerfile: Dockerfile
+#    container_name: ros2-bridge
+#    environment:
+#      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+#    command: >
+#      bash -c "source /opt/ros/humble/setup.bash &&
+#               (ros2 launch rosbridge_server rosbridge_websocket_launch.xml 
+#               port:=9090 
+#               address:=0.0.0.0) && python3 /ros2_ws/test_publisher.py"
+#    network_mode: host
+#    restart: unless-stopped
+
+
+    # WAS ?? ???? ENTRYPOINT? ???? ??? ?
+
+
+volumes:
+  media_volume:
+    external: true
+  mongodb_data:
+  redis_data:
