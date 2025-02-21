@@ -1,0 +1,105 @@
+<!doctype html>
+
+<html lang="ko">
+
+  <head>
+
+    <meta name="viewport"content="width=device-width,initial-scale=1,user-scalable=no"/>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <script src="ws.js" defer></script>
+
+    <title>WebSocket 테스트</title>
+
+    <style>
+
+      .container {
+
+        margin: 20px;
+
+        padding: 20px;
+
+        border: 1px solid #ccc;
+
+        border-radius: 5px;
+
+      }
+
+      .status {
+
+        margin: 10px 0;
+
+        padding: 10px;
+
+        background-color: #f0f0f0;
+
+      }
+
+      #message-log {
+
+        margin-top: 20px;
+
+        padding: 10px;
+
+        background-color: #f8f8f8;
+
+        border: 1px solid #ddd;
+
+        border-radius: 4px;
+
+        height: 300px;
+
+        overflow-y: auto;
+
+      }
+
+      .message {
+
+        margin: 5px 0;
+
+        padding: 5px;
+
+        border-bottom: 1px solid #eee;
+
+      }
+
+      .timestamp {
+
+        color: #666;
+
+        font-size: 0.8em;
+
+      }
+
+    </style>
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <h2>WebSocket 테스트</h2>
+
+      <div class="status">
+
+        <p>서버 주소: ws://192.168.100.104:3000</p>
+
+        <p>연결 상태: <span id="connection-status">연결 중...</span></p>
+
+      </div>
+
+      <div>
+
+        <h3>수신된 메시지</h3>
+
+        <div id="message-log"></div>
+
+      </div>
+
+    </div>
+
+  </body>
+
+</html>

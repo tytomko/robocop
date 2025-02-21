@@ -1,0 +1,27 @@
+.Vue-Toastification__toast {
+    background-color: black !important;
+  }
+  
+  .Vue-Toastification__toast--info {
+    background-color: black !important;
+  }
+  
+  .Vue-Toastification__toast--success {
+    background-color: black !important;
+  }
+  
+  .Vue-Toastification__toast--error {
+    background-color: black !important;
+  }
+  
+  .Vue-Toastification__toast--warning {
+    background-color: black !important;
+  }
+  
+  .Vue-Toastification__toast--default {
+    background-color: black !important;
+  }
+  
+  .Vue-Toastification__progress-bar {
+    background: #505050 !important;
+  }
