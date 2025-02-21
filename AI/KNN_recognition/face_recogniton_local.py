@@ -59,7 +59,7 @@ with open(MODEL_PATH, 'rb') as f:
 video_capture = cv2.VideoCapture(4) # 환경에 따라 0~4번까지 변경해야함, 리얼센스 웹캠만 쓸거면 4번
 
 
-def predict(frame, knn_clf, distance_threshold=0.38):
+def predict(frame, knn_clf, distance_threshold=0.33):
     """
     실시간 얼굴 인식을 위한 함수
     """
@@ -186,7 +186,7 @@ while True:
             safe_person_count += 1
 
         if isCheckNow:
-            if distance <= 0.35:
+            if distance <= 0.33:
                 power = (20 / distance) * delta_time
                 isCheckCount += power
         
