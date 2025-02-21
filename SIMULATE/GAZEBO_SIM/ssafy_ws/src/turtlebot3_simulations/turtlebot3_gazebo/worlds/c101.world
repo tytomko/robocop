@@ -27,7 +27,7 @@
     </include>
 
     <include>
-      <pose>-25 5.5 0.01 0 0 0</pose>
+      <pose>-5.5 16 0.01 0 0 1.57</pose>
       <uri>model://samsung_model</uri>
     </include>
 
