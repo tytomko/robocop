@@ -62,6 +62,7 @@ OTHER_COMMAND = ''
 
 # 네트워크 설정
 ROS_IP = "192.168.100.34"
+#ROS_IP = "192.168.45.76"
 BACK_IP = "52.79.51.253"
 BACK_PORT = 6000
 ROS_PORT = 5000
@@ -77,10 +78,18 @@ curmode = mode.AWAIT
 # 콜백함수
 def handle_message(message, IP, PORT):
     global curmode
+    global isSafe
+    global cooltime
+    
     print(f"📩 [handle_message] 수신된 메시지: {message}")  # 디버깅 추가
 
     try:
-        data = json.loads(message)  # JSON 파싱
+        # message가 이미 dict이면 변환하지 않고 그대로 사용
+        if isinstance(message, dict):
+            data = message
+        else:
+            data = json.loads(message)  # JSON 파싱
+
         print(f"📩 [handle_message] JSON 데이터: {data}")  # JSON 파싱 성공 확인
 
         if "response_type" in data:
@@ -89,12 +98,18 @@ def handle_message(message, IP, PORT):
                 database_update.init(data)
             elif data["response_type"] == "MODE_INIT" and curmode == mode.AWAIT:
                 print("로봇 가동")
+                socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_RESUME)
                 playSound("sound/init.mp3")
                 curmode = mode.PATROL
+                isSafe = True
+                cooltime = 3
             elif data["response_type"] == "MODE_ALERT_STOP" and curmode == mode.ALERT:
                 print("경보 해제")
+                socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_RESUME)
                 playSound("sound/alert_cancel.mp3")
                 curmode = mode.PATROL
+                isSafe = True
+                cooltime = 0
             else:
                 print(f"⚠️ [handle_message] 알 수 없는 response_type: {data['response_type']}")
         else:
@@ -134,7 +149,7 @@ with open(MODEL_PATH, 'rb') as f:
 video_capture = cv2.VideoCapture(4)  # 환경에 따라 변경 필요
 
 # 얼굴 인식 함수
-def predict(frame, knn_clf, distance_threshold=0.38):
+def predict(frame, knn_clf, distance_threshold=0.33):
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     face_locations = face_recognition.face_locations(rgb_frame, model='cnn')
     face_encodings = face_recognition.face_encodings(rgb_frame, known_face_locations=face_locations)
@@ -173,6 +188,24 @@ disap_count = 0
 
 try:
     while True:
+        # 비상용
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('s') and curmode == mode.AWAIT:
+            print("로봇을 가동합니다")
+            socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_RESUME)
+            playSound("sound/init.mp3")
+            curmode = mode.PATROL
+            isSafe = True
+            cooltime = 0
+
+        if key == ord('d') and curmode == mode.ALERT:
+            print("경보를 해제합니다")
+            socket_network.send_command(client_socket_ros, ROS_IP, ROS_PORT,CMD_RESUME)
+            playSound("sound/alert_cancel.mp3")
+            curmode = mode.PATROL
+            isSafe = True
+            cooltime = 0
+
         # 소켓 연결 확인
         if client_socket_back is None:
             client_socket_back = socket_network.persistent_connect_request(BACK_IP, BACK_PORT)
@@ -249,7 +282,7 @@ try:
                 safe_person_count += 1
 
             if isCheckNow:
-                if distance <= 0.35:
+                if distance <= 0.33:
                     power = (20 / distance) * delta_time
                     isCheckCount += power
             
