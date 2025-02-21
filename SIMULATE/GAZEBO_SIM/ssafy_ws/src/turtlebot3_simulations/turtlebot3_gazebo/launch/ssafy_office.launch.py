@@ -6,7 +6,7 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
-from launch.actions import ExecuteProcess
+from launch.actions import ExecuteProcess, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.substitutions import Command
@@ -24,6 +24,9 @@ def generate_launch_description():
     entity_name_0=""
 
     return LaunchDescription([
+        # 모델 db를 비활성화 해서 gazebo가 로컬에 설치된 모델을 사용하도록 함
+        # 가제보켜질때 오래걸리는 문제 해결
+        SetEnvironmentVariable(name='GAZEBO_MODEL_DATABASE_URI', value=''),
         ExecuteProcess(
             cmd=['gazebo', '--verbose', world, '-s', 'libgazebo_ros_init.so'],
             output='screen'),
